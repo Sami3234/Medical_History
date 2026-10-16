@@ -1,0 +1,193 @@
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import '../../config/theme.dart';
+import '../../config/routes.dart';
+import '../../config/supabase_config.dart';
+import '../../providers/auth_provider.dart';
+import '../../providers/member_provider.dart';
+import '../../widgets/bottom_nav.dart';
+
+class MemberListScreen extends StatefulWidget {
+  const MemberListScreen({super.key});
+
+  @override
+  State<MemberListScreen> createState() => _MemberListScreenState();
+}
+
+class _MemberListScreenState extends State<MemberListScreen> {
+  final _searchCtrl = TextEditingController();
+  String _query = '';
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final uid = context.read<AuthProvider>().uid ?? SupabaseConfig.currentUserId ?? 'usr-100';
+      context.read<MemberProvider>().loadAll(uid);
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final memberProv = context.watch<MemberProvider>();
+    final members = memberProv.members.where((m) {
+      if (_query.isEmpty) return true;
+      return m.name.toLowerCase().contains(_query.toLowerCase()) ||
+          m.relation.toLowerCase().contains(_query.toLowerCase());
+    }).toList();
+
+    return Scaffold(
+      backgroundColor: AppColors.bg,
+      appBar: AppBar(
+        title: const Text('All Family Members'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
+          onPressed: () => context.pop(),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.person_add_alt_1_rounded, color: AppColors.primary),
+            onPressed: () => context.push(AppRoutes.memberAdd),
+          ),
+        ],
+      ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Search Bar
+              Container(
+                height: 52,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: AppColors.border, width: 1.2),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.shadow,
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: TextField(
+                  controller: _searchCtrl,
+                  onChanged: (v) => setState(() => _query = v),
+                  decoration: const InputDecoration(
+                    hintText: 'Search member by name or relation...',
+                    prefixIcon: Icon(Icons.search_rounded, color: AppColors.textLight, size: 22),
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    contentPadding: EdgeInsets.symmetric(vertical: 14),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              Text(
+                '${members.length} members found',
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textMid,
+                ),
+              ),
+              const SizedBox(height: 14),
+
+              ...members.map((member) {
+                final initials = member.name.split(' ').length >= 2
+                    ? '${member.name.split(' ')[0][0]}${member.name.split(' ')[1][0]}'.toUpperCase()
+                    : member.name.substring(0, member.name.length >= 2 ? 2 : 1).toUpperCase();
+
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: InkWell(
+                    onTap: () => context.push('/members/${member.id}'),
+                    borderRadius: BorderRadius.circular(20),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: AppColors.border, width: 1.2),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.shadow,
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 52,
+                            height: 52,
+                            decoration: const BoxDecoration(
+                              color: Color(0xFFDEF2D7),
+                              shape: BoxShape.circle,
+                            ),
+                            alignment: Alignment.center,
+                            child: Text(
+                              initials,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w800,
+                                color: Color(0xFF235E1E),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  member.name,
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w800,
+                                    color: AppColors.textDark,
+                                  ),
+                                ),
+                                const SizedBox(height: 3),
+                                Text(
+                                  '${member.relation}${member.bloodGroup != null ? " • Blood group ${member.bloodGroup}" : ""}',
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: AppColors.textLight,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const Icon(
+                            Icons.arrow_forward_ios_rounded,
+                            color: AppColors.textLight,
+                            size: 16,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              }),
+              const SizedBox(height: 20),
+            ],
+          ),
+        ),
+      ),
+      bottomNavigationBar: const BottomNav(currentIndex: 1),
+    );
+  }
+}
