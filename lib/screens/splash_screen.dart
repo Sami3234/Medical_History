@@ -4,6 +4,8 @@ import '../config/theme.dart';
 import '../config/routes.dart';
 import '../config/supabase_config.dart';
 
+import 'package:shared_preferences/shared_preferences.dart';
+
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
@@ -37,10 +39,24 @@ class _SplashScreenState extends State<SplashScreen>
   Future<void> _navigate() async {
     await Future.delayed(const Duration(seconds: 2));
     if (!mounted) return;
-    final isLoggedIn = SupabaseConfig.isInitialized
-        ? (SupabaseConfig.auth?.currentUser != null)
-        : true;
-    context.go(isLoggedIn ? AppRoutes.dashboard : AppRoutes.login);
+    
+    final isLoggedIn = SupabaseConfig.isInitialized &&
+        (SupabaseConfig.auth?.currentUser != null);
+
+    if (isLoggedIn) {
+      context.go(AppRoutes.dashboard);
+      return;
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
+    final hasSeenOnboarding = prefs.getBool('has_seen_onboarding') ?? false;
+
+    if (!hasSeenOnboarding) {
+      context.go(AppRoutes.onboarding);
+    } else {
+      context.go(AppRoutes.login);
+    }
   }
 
 

@@ -1,5 +1,6 @@
 import 'package:go_router/go_router.dart';
 import '../screens/splash_screen.dart';
+import '../screens/onboarding/onboarding_screen.dart';
 import '../screens/auth/login_screen.dart';
 import '../screens/auth/register_screen.dart';
 import '../screens/auth/forgot_screen.dart';
@@ -25,6 +26,7 @@ import '../screens/profile/profile_screen.dart';
 
 class AppRoutes {
   static const splash = '/';
+  static const onboarding = '/onboarding';
   static const login = '/login';
   static const register = '/register';
   static const forgot = '/forgot';
@@ -52,6 +54,7 @@ class AppRoutes {
     initialLocation: splash,
     routes: [
       GoRoute(path: splash, builder: (_, _) => const SplashScreen()),
+      GoRoute(path: onboarding, builder: (_, _) => const OnboardingScreen()),
       GoRoute(path: login, builder: (_, _) => const LoginScreen()),
       GoRoute(path: register, builder: (_, _) => const RegisterScreen()),
       GoRoute(path: forgot, builder: (_, _) => const ForgotScreen()),

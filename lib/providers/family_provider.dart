@@ -8,44 +8,95 @@ class FamilyProvider extends ChangeNotifier {
 
   List<FamilyModel> _families = [];
   bool _loading = false;
+  String? _error;
 
   List<FamilyModel> get families => _families;
   bool get loading => _loading;
+  String? get error => _error;
   int get count => _families.length;
 
-  Future<void> loadFamilies(String userId) async {
-    _loading = true;
-    notifyListeners();
-    _families = await _service.getAll(userId);
-    _loading = false;
+  void clearError() {
+    _error = null;
     notifyListeners();
   }
 
-  Future<void> addFamily(Map<String, dynamic> data) async {
-    _loading = true;
-    notifyListeners();
-    final uid = data['user_id'] ?? SupabaseConfig.currentUserId ?? 'usr-100';
-    data['user_id'] = uid;
-    await _service.create(data);
-    _families = await _service.getAll(uid);
-    _loading = false;
+  void _setLoading(bool val) {
+    _loading = val;
     notifyListeners();
   }
 
-  Future<void> updateFamily(String id, Map<String, dynamic> data) async {
-    _loading = true;
-    notifyListeners();
-    await _service.update(id, data);
-    final uid = SupabaseConfig.currentUserId ?? 'usr-100';
-    _families = await _service.getAll(uid);
-    _loading = false;
-    notifyListeners();
+  Future<bool> loadFamilies(String userId) async {
+    _setLoading(true);
+    _error = null;
+    try {
+      _families = await _service.getAll(userId);
+      return true;
+    } catch (e) {
+      _error = _friendlyError(e);
+      return false;
+    } finally {
+      _setLoading(false);
+    }
   }
 
-  Future<void> deleteFamily(String id) async {
-    await _service.delete(id);
-    _families.removeWhere((f) => f.id == id);
-    notifyListeners();
+  Future<bool> addFamily(Map<String, dynamic> data) async {
+    _setLoading(true);
+    _error = null;
+    try {
+      final uid = data['user_id'] ?? SupabaseConfig.currentUserId ?? 'usr-100';
+      data['user_id'] = uid;
+      await _service.create(data);
+      _families = await _service.getAll(uid);
+      return true;
+    } catch (e) {
+      _error = _friendlyError(e);
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<bool> updateFamily(String id, Map<String, dynamic> data) async {
+    _setLoading(true);
+    _error = null;
+    try {
+      await _service.update(id, data);
+      final uid = SupabaseConfig.currentUserId ?? 'usr-100';
+      _families = await _service.getAll(uid);
+      return true;
+    } catch (e) {
+      _error = _friendlyError(e);
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<bool> deleteFamily(String id) async {
+    _error = null;
+    try {
+      await _service.delete(id);
+      _families.removeWhere((f) => f.id == id);
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _error = _friendlyError(e);
+      notifyListeners();
+      return false;
+    }
+  }
+
+  String _friendlyError(Object e) {
+    final msg = e.toString();
+    if (msg.contains('network') || msg.contains('SocketException')) {
+      return 'Network error. Please check your connection.';
+    }
+    if (msg.contains('permission') || msg.contains('403')) {
+      return 'Permission denied. Please log in again.';
+    }
+    if (msg.contains('duplicate') || msg.contains('23505')) {
+      return 'This family already exists.';
+    }
+    return 'Something went wrong. Please try again.';
   }
 }
-

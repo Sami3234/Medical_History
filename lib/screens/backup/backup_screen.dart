@@ -1,16 +1,116 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../config/theme.dart';
-import '../../providers/records_provider.dart';
+import '../../providers/backup_provider.dart';
 import '../../widgets/bottom_nav.dart';
 import '../../widgets/info_banner.dart';
 
 class BackupScreen extends StatelessWidget {
   const BackupScreen({super.key});
 
+  void _showRestoreConfirmation(BuildContext context, BackupProvider backupProv) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: AppColors.warning),
+            SizedBox(width: 8),
+            Text('Restore Backup?', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+          ],
+        ),
+        content: const Text(
+          'This will download and sync records from your Google Drive backup into your account. Existing records will be updated.',
+          style: TextStyle(fontSize: 14, color: AppColors.textSecondary, height: 1.4),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel', style: TextStyle(color: AppColors.textSecondary)),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              final success = await backupProv.triggerRestore();
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    backgroundColor: success ? AppColors.success : AppColors.error,
+                    content: Text(
+                      success
+                          ? 'Backup restored successfully from Google Drive!'
+                          : (backupProv.error ?? 'Restore failed'),
+                    ),
+                  ),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: const Text('Restore Now'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showFrequencyDialog(BuildContext context, BackupProvider backupProv) {
+    final frequencies = ['Daily', 'Weekly', 'Monthly', 'Off'];
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Auto-Backup Frequency',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              'Select how often Medical History should sync backups to Google Drive.',
+              style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+            ),
+            const SizedBox(height: 16),
+            ...frequencies.map((freq) {
+              final isSelected = backupProv.autoBackupFrequency == freq;
+              return ListTile(
+                title: Text(
+                  freq,
+                  style: TextStyle(
+                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                    color: isSelected ? AppColors.primary : AppColors.textPrimary,
+                  ),
+                ),
+                trailing: isSelected
+                    ? const Icon(Icons.check_circle_rounded, color: AppColors.primary)
+                    : null,
+                onTap: () {
+                  backupProv.setAutoBackupFrequency(freq);
+                  Navigator.pop(ctx);
+                },
+              );
+            }),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final recordsProv = context.watch<RecordsProvider>();
+    final backupProv = context.watch<BackupProvider>();
+    final meta = backupProv.backupMetadata;
 
     return Scaffold(
       backgroundColor: AppColors.bg,
@@ -20,8 +120,8 @@ class BackupScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'SECURE STORAGE',
+              const Text(
+                'SECURE CLOUD STORAGE',
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w700,
@@ -29,19 +129,18 @@ class BackupScreen extends StatelessWidget {
                   color: AppColors.primary,
                 ),
               ),
-              const SizedBox(height: 8),
-
+              const SizedBox(height: 6),
               const Text(
-                'Cloud backup',
+                'Google Drive Backup',
                 style: TextStyle(
-                  fontSize: 30,
+                  fontSize: 26,
                   fontWeight: FontWeight.w800,
                   color: AppColors.textDark,
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 18),
 
-              // Green Hero Card
+              // Hero Gradient Banner
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(22),
@@ -59,23 +158,49 @@ class BackupScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(
-                      Icons.cloud_upload_outlined,
-                      color: Colors.white,
-                      size: 32,
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Icon(
+                          Icons.cloud_sync_rounded,
+                          color: Colors.white,
+                          size: 34,
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withAlpha(35),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Row(
+                            children: [
+                              Icon(Icons.lock_rounded, size: 12, color: Colors.white),
+                              SizedBox(width: 4),
+                              Text(
+                                'Hidden AppData',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 16),
                     const Text(
-                      'Your data, always safe.',
+                      'Your data, always protected.',
                       style: TextStyle(
-                        fontSize: 24,
+                        fontSize: 22,
                         fontWeight: FontWeight.w800,
                         color: Colors.white,
                       ),
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      'Encrypted family health backups stored in your Google Drive.',
+                      'WhatsApp-style private backups in your Google Drive. Never lose family records, prescriptions, or history.',
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
@@ -86,28 +211,57 @@ class BackupScreen extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 18),
+
+              // Error banner if any
+              if (backupProv.error != null) ...[
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.error.withAlpha(15),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.error.withAlpha(40)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.error_outline_rounded, color: AppColors.error, size: 20),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          backupProv.error!,
+                          style: const TextStyle(fontSize: 12, color: AppColors.error),
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close_rounded, size: 16, color: AppColors.error),
+                        onPressed: backupProv.clearError,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 14),
+              ],
 
               // Google Drive Account Status Card
               Container(
-                padding: const EdgeInsets.all(18),
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(color: AppColors.border, width: 1.2),
-                  boxShadow: [
+                  boxShadow: const [
                     BoxShadow(
                       color: AppColors.shadow,
                       blurRadius: 6,
-                      offset: const Offset(0, 2),
+                      offset: Offset(0, 2),
                     ),
                   ],
                 ),
                 child: Row(
                   children: [
                     Container(
-                      width: 52,
-                      height: 52,
+                      width: 48,
+                      height: 48,
                       decoration: const BoxDecoration(
                         color: Color(0xFFEFF8EC),
                         shape: BoxShape.circle,
@@ -124,110 +278,259 @@ class BackupScreen extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Text(
-                            'Google Drive',
+                            'Google Account',
                             style: TextStyle(
-                              fontSize: 16,
+                              fontSize: 15,
                               fontWeight: FontWeight.w800,
                               color: AppColors.textDark,
                             ),
                           ),
-                          const SizedBox(height: 3),
+                          const SizedBox(height: 2),
                           Text(
-                            recordsProv.driveConnected
-                                ? 'Connected • Ready to sync'
-                                : 'Not connected • Link your account',
-                            style: const TextStyle(
+                            backupProv.isConnected
+                                ? (backupProv.currentUser?.email ?? 'Connected')
+                                : 'Not connected',
+                            style: TextStyle(
                               fontSize: 12,
-                              color: AppColors.textLight,
+                              fontWeight: FontWeight.w500,
+                              color: backupProv.isConnected
+                                  ? AppColors.primary
+                                  : AppColors.textLight,
                             ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ],
                       ),
                     ),
                     ElevatedButton(
-                      onPressed: () {
-                        recordsProv.toggleDriveConnection();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(recordsProv.driveConnected
-                                ? 'Google Drive unlinked'
-                                : 'Google Drive linked successfully'),
-                          ),
-                        );
-                      },
+                      onPressed: backupProv.isLoadingInfo
+                          ? null
+                          : () {
+                              if (backupProv.isConnected) {
+                                backupProv.disconnectDrive();
+                              } else {
+                                backupProv.connectDrive();
+                              }
+                            },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFEFF8EC),
-                        foregroundColor: const Color(0xFF2E7D32),
+                        backgroundColor: backupProv.isConnected
+                            ? Colors.grey.shade100
+                            : const Color(0xFFEFF8EC),
+                        foregroundColor: backupProv.isConnected
+                            ? Colors.grey.shade700
+                            : const Color(0xFF2E7D32),
                         elevation: 0,
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
+                          borderRadius: BorderRadius.circular(16),
                         ),
                       ),
-                      child: Text(
-                        recordsProv.driveConnected ? 'Disconnect' : 'Connect',
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
+                      child: backupProv.isLoadingInfo
+                          ? const SizedBox(
+                              width: 14,
+                              height: 14,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : Text(
+                              backupProv.isConnected ? 'Disconnect' : 'Connect',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 28),
+              const SizedBox(height: 18),
 
-              // Section: Backup options
+              // Backup Metadata Stats Card
+              Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: AppColors.border, width: 1.2),
+                ),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Last Backup Status',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.textDark,
+                              ),
+                            ),
+                            SizedBox(height: 2),
+                            Text(
+                              'Google Drive AppData Storage',
+                              style: TextStyle(fontSize: 11, color: AppColors.textLight),
+                            ),
+                          ],
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: meta != null
+                                ? AppColors.success.withAlpha(20)
+                                : Colors.grey.shade100,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            meta != null ? 'Synced' : 'No Backup',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              color: meta != null ? AppColors.success : Colors.grey.shade600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const Divider(height: 24),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildStatItem(
+                            icon: Icons.calendar_today_rounded,
+                            label: 'Last Backup',
+                            value: meta != null
+                                ? DateFormat('dd MMM yyyy, hh:mm a').format(meta.modifiedTime)
+                                : 'Never',
+                          ),
+                        ),
+                        Expanded(
+                          child: _buildStatItem(
+                            icon: Icons.data_usage_rounded,
+                            label: 'Backup Size',
+                            value: meta != null ? meta.formattedSize : '0 KB',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 22),
+
+              // Actions Section
               const Text(
-                'Backup options',
+                'Backup & Restore',
                 style: TextStyle(
-                  fontSize: 18,
+                  fontSize: 17,
                   fontWeight: FontWeight.w800,
                   color: AppColors.textDark,
                 ),
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 12),
 
-              // Option 1: Create encrypted backup
-              _buildBackupActionTile(
-                icon: Icons.file_upload_outlined,
-                title: 'Create encrypted backup',
-                subtitle: recordsProv.isBackingUp
-                    ? 'Creating secure backup package...'
-                    : 'Save a new secure copy to Drive',
-                isLoading: recordsProv.isBackingUp,
+              // Button 1: Create Backup
+              _buildActionCard(
+                icon: Icons.cloud_upload_rounded,
+                iconColor: const Color(0xFF10B981),
+                title: 'Back Up Now',
+                subtitle: backupProv.isBackingUp
+                    ? 'Exporting & uploading to Google Drive...'
+                    : 'Create fresh encrypted backup copy',
+                isLoading: backupProv.isBackingUp,
                 onTap: () async {
-                  await recordsProv.triggerBackup();
+                  final success = await backupProv.triggerBackup();
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Backup created & synced to Drive!')),
+                      SnackBar(
+                        backgroundColor: success ? AppColors.success : AppColors.error,
+                        content: Text(
+                          success
+                              ? 'Backup successfully created & saved to Google Drive!'
+                              : (backupProv.error ?? 'Backup failed. Please check connection.'),
+                        ),
+                      ),
                     );
                   }
                 },
               ),
               const SizedBox(height: 12),
 
-              // Option 2: Restore from backup
-              _buildBackupActionTile(
-                icon: Icons.file_download_outlined,
-                title: 'Restore from backup',
-                subtitle: 'Recover records from saved backup',
-                isLoading: false,
-                onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('All records verified & up to date.')),
-                  );
-                },
+              // Button 2: Restore from Backup
+              _buildActionCard(
+                icon: Icons.cloud_download_rounded,
+                iconColor: const Color(0xFF0EA5E9),
+                title: 'Restore from Google Drive',
+                subtitle: backupProv.isRestoring
+                    ? 'Downloading & recovering records...'
+                    : 'Sync records onto this device',
+                isLoading: backupProv.isRestoring,
+                onTap: () => _showRestoreConfirmation(context, backupProv),
+              ),
+              const SizedBox(height: 12),
+
+              // Option 3: Auto-backup Frequency Setting
+              InkWell(
+                onTap: () => _showFrequencyDialog(context, backupProv),
+                borderRadius: BorderRadius.circular(20),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF8B5CF6).withAlpha(20),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: const Icon(
+                          Icons.update_rounded,
+                          color: Color(0xFF8B5CF6),
+                          size: 22,
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Auto-Backup Schedule',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.textDark,
+                              ),
+                            ),
+                            Text(
+                              'Frequency: ${backupProv.autoBackupFrequency}',
+                              style: const TextStyle(fontSize: 12, color: AppColors.textLight),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: AppColors.textLight),
+                    ],
+                  ),
+                ),
               ),
               const SizedBox(height: 20),
 
-              // Info Banner: Backup encryption
+              // Info Banner: Privacy & Encryption
               const InfoBanner(
-                icon: Icons.verified_user_outlined,
-                title: 'Backup encryption',
-                subtitle: 'Your medical data is encrypted before upload.',
+                icon: Icons.shield_rounded,
+                title: 'Private & End-to-End Encrypted',
+                subtitle: 'Backups reside in your personal Google Drive hidden app container. Nobody else has access.',
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 24),
             ],
           ),
         ),
@@ -236,8 +539,44 @@ class BackupScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildBackupActionTile({
+  Widget _buildStatItem({
     required IconData icon,
+    required String label,
+    required String value,
+  }) {
+    return Row(
+      children: [
+        Icon(icon, size: 16, color: AppColors.primary),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: const TextStyle(fontSize: 11, color: AppColors.textLight),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textDark,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildActionCard({
+    required IconData icon,
+    required Color iconColor,
     required String title,
     required String subtitle,
     required bool isLoading,
@@ -251,19 +590,26 @@ class BackupScreen extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: AppColors.border, width: 1.2),
-          boxShadow: [
+          border: Border.all(color: AppColors.border),
+          boxShadow: const [
             BoxShadow(
               color: AppColors.shadow,
               blurRadius: 6,
-              offset: const Offset(0, 2),
+              offset: Offset(0, 2),
             ),
           ],
         ),
         child: Row(
           children: [
-            Icon(icon, color: const Color(0xFF2E7D32), size: 26),
-            const SizedBox(width: 16),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: iconColor.withAlpha(20),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Icon(icon, color: iconColor, size: 22),
+            ),
+            const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -271,12 +617,12 @@ class BackupScreen extends StatelessWidget {
                   Text(
                     title,
                     style: const TextStyle(
-                      fontSize: 15,
+                      fontSize: 14.5,
                       fontWeight: FontWeight.w700,
                       color: AppColors.textDark,
                     ),
                   ),
-                  const SizedBox(height: 3),
+                  const SizedBox(height: 2),
                   Text(
                     subtitle,
                     style: const TextStyle(
@@ -291,7 +637,13 @@ class BackupScreen extends StatelessWidget {
               const SizedBox(
                 width: 20,
                 height: 20,
-                child: CircularProgressIndicator(color: AppColors.primary, strokeWidth: 2),
+                child: CircularProgressIndicator(strokeWidth: 2.2),
+              )
+            else
+              const Icon(
+                Icons.arrow_forward_ios_rounded,
+                size: 14,
+                color: AppColors.textLight,
               ),
           ],
         ),

@@ -8,44 +8,92 @@ class DoctorProvider extends ChangeNotifier {
 
   List<DoctorModel> _doctors = [];
   bool _loading = false;
+  String? _error;
 
   List<DoctorModel> get doctors => _doctors;
   bool get loading => _loading;
+  String? get error => _error;
   int get count => _doctors.length;
 
-  Future<void> loadDoctors(String userId) async {
-    _loading = true;
-    notifyListeners();
-    _doctors = await _service.getAll(userId);
-    _loading = false;
+  void clearError() {
+    _error = null;
     notifyListeners();
   }
 
-  Future<void> addDoctor(Map<String, dynamic> data) async {
-    _loading = true;
-    notifyListeners();
-    final uid = data['user_id'] ?? SupabaseConfig.currentUserId ?? 'usr-100';
-    data['user_id'] = uid;
-    await _service.create(data);
-    _doctors = await _service.getAll(uid);
-    _loading = false;
+  void _setLoading(bool val) {
+    _loading = val;
     notifyListeners();
   }
 
-  Future<void> updateDoctor(String id, Map<String, dynamic> data) async {
-    _loading = true;
-    notifyListeners();
-    await _service.update(id, data);
-    final uid = SupabaseConfig.currentUserId ?? 'usr-100';
-    _doctors = await _service.getAll(uid);
-    _loading = false;
-    notifyListeners();
+  Future<bool> loadDoctors(String userId) async {
+    _setLoading(true);
+    _error = null;
+    try {
+      _doctors = await _service.getAll(userId);
+      return true;
+    } catch (e) {
+      _error = _friendlyError(e);
+      return false;
+    } finally {
+      _setLoading(false);
+    }
   }
 
-  Future<void> deleteDoctor(String id) async {
-    await _service.delete(id);
-    _doctors.removeWhere((d) => d.id == id);
-    notifyListeners();
+  Future<bool> addDoctor(Map<String, dynamic> data) async {
+    _setLoading(true);
+    _error = null;
+    try {
+      final uid = data['user_id'] ?? SupabaseConfig.currentUserId ?? 'usr-100';
+      data['user_id'] = uid;
+      await _service.create(data);
+      _doctors = await _service.getAll(uid);
+      return true;
+    } catch (e) {
+      _error = _friendlyError(e);
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<bool> updateDoctor(String id, Map<String, dynamic> data) async {
+    _setLoading(true);
+    _error = null;
+    try {
+      await _service.update(id, data);
+      final uid = SupabaseConfig.currentUserId ?? 'usr-100';
+      _doctors = await _service.getAll(uid);
+      return true;
+    } catch (e) {
+      _error = _friendlyError(e);
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<bool> deleteDoctor(String id) async {
+    _error = null;
+    try {
+      await _service.delete(id);
+      _doctors.removeWhere((d) => d.id == id);
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _error = _friendlyError(e);
+      notifyListeners();
+      return false;
+    }
+  }
+
+  String _friendlyError(Object e) {
+    final msg = e.toString();
+    if (msg.contains('network') || msg.contains('SocketException')) {
+      return 'Network error. Please check your connection.';
+    }
+    if (msg.contains('permission') || msg.contains('403')) {
+      return 'Permission denied. Please log in again.';
+    }
+    return 'Something went wrong. Please try again.';
   }
 }
-

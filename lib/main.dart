@@ -9,6 +9,7 @@ import 'providers/member_provider.dart';
 import 'providers/doctor_provider.dart';
 import 'providers/visit_provider.dart';
 import 'providers/records_provider.dart';
+import 'providers/backup_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -29,6 +30,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => DoctorProvider()),
         ChangeNotifierProvider(create: (_) => VisitProvider()),
         ChangeNotifierProvider(create: (_) => RecordsProvider()),
+        ChangeNotifierProvider(create: (_) => BackupProvider()),
       ],
       child: MaterialApp.router(
         title: 'Medical History',

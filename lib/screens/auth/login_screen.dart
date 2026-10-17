@@ -5,6 +5,7 @@ import '../../config/theme.dart';
 import '../../config/routes.dart';
 import '../../providers/auth_provider.dart';
 import '../../utils/extensions.dart';
+import '../../services/biometric_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -18,6 +19,18 @@ class _LoginScreenState extends State<LoginScreen> {
   final _email = TextEditingController(text: 'ahmed@example.com');
   final _pass = TextEditingController(text: 'password123');
   bool _showPass = false;
+  bool _biometricAvailable = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkBiometrics();
+  }
+
+  Future<void> _checkBiometrics() async {
+    final available = await BiometricAuthService.isAvailable();
+    if (mounted) setState(() => _biometricAvailable = available);
+  }
 
   @override
   void dispose() {
@@ -38,6 +51,32 @@ class _LoginScreenState extends State<LoginScreen> {
       context.go(AppRoutes.dashboard);
     } else {
       context.showSnack(auth.error ?? 'Login failed', isError: true);
+    }
+  }
+
+  Future<void> _loginWithGoogle() async {
+    final auth = context.read<AuthProvider>();
+    final ok = await auth.signInWithGoogle();
+    if (!mounted) return;
+    if (ok) {
+      context.go(AppRoutes.dashboard);
+    } else if (auth.error != null) {
+      context.showSnack(auth.error!, isError: true);
+    }
+  }
+
+  Future<void> _loginWithBiometric() async {
+    final auth = context.read<AuthProvider>();
+    if (!auth.isLoggedIn) {
+      context.showSnack('Please sign in first before using fingerprint.', isError: false);
+      return;
+    }
+    final ok = await auth.authenticateWithBiometrics();
+    if (!mounted) return;
+    if (ok) {
+      context.go(AppRoutes.dashboard);
+    } else if (auth.error != null) {
+      context.showSnack(auth.error!, isError: true);
     }
   }
 
@@ -113,25 +152,25 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                             ),
                             const SizedBox(width: 14),
-                            Column(
+                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 const Text(
-                                  'JAI',
+                                  'MEDICAL HISTORY',
                                   style: TextStyle(
                                     color: Colors.white,
-                                    fontSize: 18,
+                                    fontSize: 17,
                                     fontWeight: FontWeight.w900,
-                                    letterSpacing: 1.2,
+                                    letterSpacing: 1.1,
                                   ),
                                 ),
                                 Text(
-                                  'MEDICAL HISTORY',
+                                  'Family Health Companion',
                                   style: TextStyle(
                                     color: Colors.white.withAlpha(220),
-                                    fontSize: 10,
+                                    fontSize: 11,
                                     fontWeight: FontWeight.w600,
-                                    letterSpacing: 1,
+                                    letterSpacing: 0.5,
                                   ),
                                 ),
                               ],
@@ -329,7 +368,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         width: double.infinity,
                         height: 50,
                         child: OutlinedButton(
-                          onPressed: _login,
+                          onPressed: auth.loading ? null : _loginWithGoogle,
                           style: OutlinedButton.styleFrom(
                             backgroundColor: AppColors.bg,
                             side: const BorderSide(color: AppColors.border),
@@ -340,12 +379,17 @@ class _LoginScreenState extends State<LoginScreen> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Text(
-                                'G',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w900,
-                                  fontSize: 18,
-                                  color: Colors.grey[800],
+                              Container(
+                                width: 20,
+                                height: 20,
+                                alignment: Alignment.center,
+                                child: Text(
+                                  'G',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w900,
+                                    fontSize: 18,
+                                    color: Colors.grey[800],
+                                  ),
                                 ),
                               ),
                               const SizedBox(width: 10),
@@ -361,6 +405,43 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                       ),
+                      // Fingerprint / Biometric
+                      if (_biometricAvailable) ...[
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 50,
+                          child: OutlinedButton(
+                            onPressed: auth.loading ? null : _loginWithBiometric,
+                            style: OutlinedButton.styleFrom(
+                              backgroundColor: AppColors.bg,
+                              side: const BorderSide(color: AppColors.border),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                            ),
+                            child: const Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.fingerprint_rounded,
+                                  color: AppColors.primary,
+                                  size: 22,
+                                ),
+                                SizedBox(width: 10),
+                                Text(
+                                  'Use Fingerprint',
+                                  style: TextStyle(
+                                    color: AppColors.textDark,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 20),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,

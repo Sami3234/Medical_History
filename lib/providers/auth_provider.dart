@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
+import '../services/google_auth_service.dart';
+import '../services/biometric_service.dart';
 
 class AuthProvider extends ChangeNotifier {
   final _service = AuthService();
@@ -8,11 +10,13 @@ class AuthProvider extends ChangeNotifier {
   UserModel? _user;
   bool _loading = false;
   String? _error;
+  bool _biometricAvailable = false;
 
   UserModel? get user => _user;
   bool get loading => _loading;
   String? get error => _error;
   bool get isLoggedIn => _service.isLoggedIn;
+  bool get biometricAvailable => _biometricAvailable;
   String? get uid => _service.currentUser?.id;
 
   void _setLoading(bool val) {
@@ -22,6 +26,12 @@ class AuthProvider extends ChangeNotifier {
 
   void clearError() {
     _error = null;
+    notifyListeners();
+  }
+
+  /// Check biometric availability on startup
+  Future<void> checkBiometrics() async {
+    _biometricAvailable = await BiometricAuthService.isAvailable();
     notifyListeners();
   }
 
@@ -41,7 +51,7 @@ class AuthProvider extends ChangeNotifier {
       await loadProfile();
       return true;
     } catch (e) {
-      _error = e.toString();
+      _error = _friendlyError(e);
       return false;
     } finally {
       _setLoading(false);
@@ -59,15 +69,56 @@ class AuthProvider extends ChangeNotifier {
       await loadProfile();
       return true;
     } catch (e) {
-      _error = e.toString();
+      _error = _friendlyError(e);
       return false;
     } finally {
       _setLoading(false);
     }
   }
 
+  /// Google Sign-In via Supabase OAuth
+  Future<bool> signInWithGoogle() async {
+    try {
+      _setLoading(true);
+      _error = null;
+      final result = await GoogleAuthService.signInWithGoogle();
+      if (result == null) {
+        _error = null; // user cancelled – not an error
+        return false;
+      }
+      await loadProfile();
+      return true;
+    } catch (e) {
+      _error = _friendlyError(e);
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  /// Biometric authentication (fingerprint / face-id)
+  Future<bool> authenticateWithBiometrics() async {
+    try {
+      _error = null;
+      final ok = await BiometricAuthService.authenticate(
+        reason: 'Verify your identity to access Medical History',
+      );
+      if (!ok) _error = 'Biometric authentication failed. Please try again.';
+      notifyListeners();
+      return ok;
+    } catch (e) {
+      _error = _friendlyError(e);
+      notifyListeners();
+      return false;
+    }
+  }
+
   Future<void> signOut() async {
-    await _service.signOut();
+    try {
+      await GoogleAuthService.signOut();
+    } catch (_) {
+      await _service.signOut();
+    }
     _user = null;
     notifyListeners();
   }
@@ -79,7 +130,7 @@ class AuthProvider extends ChangeNotifier {
       await _service.resetPassword(email);
       return true;
     } catch (e) {
-      _error = e.toString();
+      _error = _friendlyError(e);
       return false;
     } finally {
       _setLoading(false);
@@ -87,13 +138,44 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<void> loadProfile() async {
-    _user = await _service.getProfile();
+    try {
+      _user = await _service.getProfile();
+    } catch (e) {
+      debugPrint('loadProfile error: $e');
+    }
     notifyListeners();
   }
 
   Future<void> updateProfile(Map<String, dynamic> updates) async {
-    await _service.updateProfile(updates);
-    await loadProfile();
+    try {
+      await _service.updateProfile(updates);
+      await loadProfile();
+    } catch (e) {
+      _error = _friendlyError(e);
+      notifyListeners();
+    }
+  }
+
+  String _friendlyError(Object e) {
+    final msg = e.toString().toLowerCase();
+    if (msg.contains('invalid login') || msg.contains('invalid credentials')) {
+      return 'Incorrect email or password. Please try again.';
+    }
+    if (msg.contains('email already')) {
+      return 'This email is already registered. Please sign in instead.';
+    }
+    if (msg.contains('network') || msg.contains('socketexception')) {
+      return 'Network error. Please check your internet connection.';
+    }
+    if (msg.contains('cancelled') || msg.contains('user cancelled')) {
+      return 'Sign-in was cancelled.';
+    }
+    if (msg.contains('supabase is not initialized')) {
+      return 'Google sign-in requires internet connection.';
+    }
+    if (msg.contains('too many requests')) {
+      return 'Too many attempts. Please wait a moment and try again.';
+    }
+    return 'Something went wrong. Please try again.';
   }
 }
-
