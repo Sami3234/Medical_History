@@ -1,4 +1,4 @@
-package com.example.medical_history
+package com.medicalhistory.app
 
 import io.flutter.embedding.android.FlutterActivity
 

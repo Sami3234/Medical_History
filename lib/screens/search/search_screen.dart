@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../config/theme.dart';
 import '../../providers/member_provider.dart';
@@ -32,16 +33,21 @@ class _SearchScreenState extends State<SearchScreen> {
     final recordsProv = context.watch<RecordsProvider>();
 
     final members = memberProv.members.where((m) {
-      if (_selectedFilter != 'All' && _selectedFilter != 'Patients') return false;
+      if (_selectedFilter != 'All' && _selectedFilter != 'Patients') {
+        return false;
+      }
       if (_query.isEmpty) return true;
       return m.name.toLowerCase().contains(_query.toLowerCase());
     }).toList();
 
     final doctors = doctorProv.doctors.where((d) {
-      if (_selectedFilter != 'All' && _selectedFilter != 'Visits') return false;
+      if (_selectedFilter != 'All' && _selectedFilter != 'Doctors') {
+        return false;
+      }
       if (_query.isEmpty) return true;
       return d.name.toLowerCase().contains(_query.toLowerCase()) ||
-          (d.specialization?.toLowerCase().contains(_query.toLowerCase()) ?? false);
+          (d.specialization?.toLowerCase().contains(_query.toLowerCase()) ??
+              false);
     }).toList();
 
     final files = recordsProv.files.where((f) {
@@ -85,9 +91,14 @@ class _SearchScreenState extends State<SearchScreen> {
                   controller: _searchCtrl,
                   autofocus: false,
                   onChanged: (v) => setState(() => _query = v),
+                  onSubmitted: recordsProv.addRecentSearch,
                   decoration: InputDecoration(
                     hintText: 'Search family, patient, doctor, report...',
-                    prefixIcon: const Icon(Icons.search_rounded, color: AppColors.textLight, size: 22),
+                    prefixIcon: const Icon(
+                      Icons.search_rounded,
+                      color: AppColors.textLight,
+                      size: 22,
+                    ),
                     suffixIcon: _query.isNotEmpty
                         ? IconButton(
                             icon: const Icon(Icons.clear_rounded, size: 18),
@@ -107,16 +118,19 @@ class _SearchScreenState extends State<SearchScreen> {
               const SizedBox(height: 18),
 
               // Filter Chips Row
-              Row(
-                children: [
-                  _buildFilterTab('All'),
-                  const SizedBox(width: 8),
-                  _buildFilterTab('Patients'),
-                  const SizedBox(width: 8),
-                  _buildFilterTab('Visits'),
-                  const SizedBox(width: 8),
-                  _buildFilterTab('Files'),
-                ],
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    _buildFilterTab('All'),
+                    const SizedBox(width: 8),
+                    _buildFilterTab('Patients'),
+                    const SizedBox(width: 8),
+                    _buildFilterTab('Doctors'),
+                    const SizedBox(width: 8),
+                    _buildFilterTab('Files'),
+                  ],
+                ),
               ),
               const SizedBox(height: 26),
 
@@ -152,39 +166,52 @@ class _SearchScreenState extends State<SearchScreen> {
                   ],
                 ),
                 const SizedBox(height: 12),
-                ...recordsProv.recentSearches.map((s) => InkWell(
-                      onTap: () {
-                        _searchCtrl.text = s;
-                        setState(() => _query = s);
-                      },
-                      borderRadius: BorderRadius.circular(20),
-                      child: Container(
-                        margin: const EdgeInsets.only(bottom: 10),
-                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: AppColors.border, width: 1.2),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.access_time_rounded, color: AppColors.textLight, size: 20),
-                            const SizedBox(width: 14),
-                            Expanded(
-                              child: Text(
-                                s,
-                                style: const TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.textDark,
-                                ),
+                ...recordsProv.recentSearches.map(
+                  (s) => InkWell(
+                    onTap: () {
+                      _searchCtrl.text = s;
+                      setState(() => _query = s);
+                    },
+                    borderRadius: BorderRadius.circular(20),
+                    child: Container(
+                      margin: const EdgeInsets.only(bottom: 10),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 18,
+                        vertical: 14,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: AppColors.border, width: 1.2),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.access_time_rounded,
+                            color: AppColors.textLight,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Text(
+                              s,
+                              style: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.textDark,
                               ),
                             ),
-                            const Icon(Icons.arrow_forward_ios_rounded, color: AppColors.textLight, size: 14),
-                          ],
-                        ),
+                          ),
+                          const Icon(
+                            Icons.arrow_forward_ios_rounded,
+                            color: AppColors.textLight,
+                            size: 14,
+                          ),
+                        ],
                       ),
-                    )),
+                    ),
+                  ),
+                ),
                 const SizedBox(height: 16),
               ],
 
@@ -199,7 +226,69 @@ class _SearchScreenState extends State<SearchScreen> {
               ),
               const SizedBox(height: 14),
 
-              // Patient Result 1: Ali Ahmed
+              ...members.map(
+                (member) => Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: _buildSearchResultTile(
+                    initials: _initials(member.name),
+                    title: member.name,
+                    subtitle: 'Patient • ${member.relation} • ${member.age}',
+                    onTap: () {
+                      recordsProv.addRecentSearch(member.name);
+                      context.push('/members/${member.id}');
+                    },
+                  ),
+                ),
+              ),
+              ...doctors.map(
+                (doctor) => Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: _buildSearchResultTile(
+                    initials: _initials(doctor.name),
+                    title: doctor.name,
+                    subtitle:
+                        'Doctor • ${doctor.specialization ?? 'Specialization not recorded'}',
+                    onTap: () {
+                      recordsProv.addRecentSearch(doctor.name);
+                      context.push('/doctors/${doctor.id}');
+                    },
+                  ),
+                ),
+              ),
+              ...files.map(
+                (file) => Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: _buildSearchFileTile(
+                    title:
+                        file.description ?? file.fileName ?? 'Medical document',
+                    subtitle: file.fileName ?? file.fileType,
+                    date: DateFormat('dd MMMM yyyy').format(file.createdAt),
+                    onTap: () async {
+                      recordsProv.addRecentSearch(
+                        file.description ?? file.fileName ?? 'Medical document',
+                      );
+                      final opened = await recordsProv.openDocument(file);
+                      if (!opened && context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'No compatible app could open this file.',
+                            ),
+                          ),
+                        );
+                      }
+                    },
+                  ),
+                ),
+              ),
+              if (members.isEmpty && doctors.isEmpty && files.isEmpty)
+                const Center(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(vertical: 30),
+                    child: Text('No matching health records found'),
+                  ),
+                ),
+              /*
               if (members.isNotEmpty)
                 _buildSearchResultTile(
                   initials: 'AL',
@@ -214,7 +303,8 @@ class _SearchScreenState extends State<SearchScreen> {
                 _buildSearchResultTile(
                   initials: 'SM',
                   title: doctors.first.name,
-                  subtitle: 'Doctor • ${doctors.first.specialization ?? "Pediatrician"}',
+                  subtitle:
+                      'Doctor • ${doctors.first.specialization ?? "Pediatrician"}',
                   onTap: () => context.push('/doctors/${doctors.first.id}'),
                 ),
               const SizedBox(height: 12),
@@ -231,6 +321,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     );
                   },
                 ),
+              */
               const SizedBox(height: 20),
             ],
           ),
@@ -238,6 +329,11 @@ class _SearchScreenState extends State<SearchScreen> {
       ),
       bottomNavigationBar: const BottomNav(currentIndex: 0),
     );
+  }
+
+  String _initials(String name) {
+    final parts = name.trim().split(RegExp(r'\s+'));
+    return parts.take(2).map((part) => part[0].toUpperCase()).join();
   }
 
   Widget _buildFilterTab(String label) {

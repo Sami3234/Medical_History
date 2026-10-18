@@ -6,10 +6,7 @@ import '../config/routes.dart';
 class BottomNav extends StatelessWidget {
   final int currentIndex;
 
-  const BottomNav({
-    super.key,
-    required this.currentIndex,
-  });
+  const BottomNav({super.key, required this.currentIndex});
 
   void _onItemTapped(BuildContext context, int index) {
     if (index == currentIndex) return;
@@ -19,7 +16,7 @@ class BottomNav extends StatelessWidget {
         context.go(AppRoutes.dashboard);
         break;
       case 1:
-        context.go(AppRoutes.families);
+        context.go(AppRoutes.members);
         break;
       case 2:
         _showQuickActions(context);
@@ -75,22 +72,11 @@ class BottomNav extends StatelessWidget {
             const SizedBox(height: 20),
             _buildActionItem(
               context: ctx,
-              icon: Icons.medical_services_rounded,
-              color: const Color(0xFF3EA31B),
-              title: 'Add Doctor Visit',
-              subtitle: 'Log consultation, symptoms, and prescriptions',
-              onTap: () {
-                Navigator.pop(ctx);
-                context.push(AppRoutes.visitAdd);
-              },
-            ),
-            const SizedBox(height: 12),
-            _buildActionItem(
-              context: ctx,
               icon: Icons.person_add_alt_1_rounded,
               color: const Color(0xFF2E7D32),
               title: 'Add Family Member',
-              subtitle: 'Create a profile for son, daughter, spouse or parent',
+              subtitle:
+                  'Add Self, Father, Mother, Spouse, Son, Daughter or Sibling',
               onTap: () {
                 Navigator.pop(ctx);
                 context.push(AppRoutes.memberAdd);
@@ -99,13 +85,13 @@ class BottomNav extends StatelessWidget {
             const SizedBox(height: 12),
             _buildActionItem(
               context: ctx,
-              icon: Icons.group_add_rounded,
-              color: const Color(0xFF1B5E20),
-              title: 'Create New Family',
-              subtitle: 'Set up an isolated family health space',
+              icon: Icons.medical_services_rounded,
+              color: const Color(0xFF3EA31B),
+              title: 'Add Doctor Visit',
+              subtitle: 'Log consultation, symptoms, and prescriptions',
               onTap: () {
                 Navigator.pop(ctx);
-                context.push(AppRoutes.familyAdd);
+                context.push(AppRoutes.visitAdd);
               },
             ),
             const SizedBox(height: 12),
@@ -191,7 +177,11 @@ class BottomNav extends StatelessWidget {
                 ],
               ),
             ),
-            const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: AppColors.textLight),
+            const Icon(
+              Icons.arrow_forward_ios_rounded,
+              size: 14,
+              color: AppColors.textLight,
+            ),
           ],
         ),
       ),
@@ -219,11 +209,43 @@ class BottomNav extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildNavItem(context, 0, Icons.home_outlined, Icons.home_rounded, 'Home'),
-              _buildNavItem(context, 1, Icons.group_outlined, Icons.group_rounded, 'Family'),
-              _buildCenterAddButton(context),
-              _buildNavItem(context, 3, Icons.description_outlined, Icons.description_rounded, 'Records'),
-              _buildNavItem(context, 4, Icons.person_outline_rounded, Icons.person_rounded, 'Profile'),
+              Expanded(
+                child: _buildNavItem(
+                  context,
+                  0,
+                  Icons.home_outlined,
+                  Icons.home_rounded,
+                  'Home',
+                ),
+              ),
+              Expanded(
+                child: _buildNavItem(
+                  context,
+                  1,
+                  Icons.group_outlined,
+                  Icons.group_rounded,
+                  'Family',
+                ),
+              ),
+              Expanded(child: _buildCenterAddButton(context)),
+              Expanded(
+                child: _buildNavItem(
+                  context,
+                  3,
+                  Icons.description_outlined,
+                  Icons.description_rounded,
+                  'Records',
+                ),
+              ),
+              Expanded(
+                child: _buildNavItem(
+                  context,
+                  4,
+                  Icons.person_outline_rounded,
+                  Icons.person_rounded,
+                  'Profile',
+                ),
+              ),
             ],
           ),
         ),
@@ -243,7 +265,7 @@ class BottomNav extends StatelessWidget {
       onTap: () => _onItemTapped(context, index),
       borderRadius: BorderRadius.circular(12),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 6),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [

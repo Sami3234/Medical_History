@@ -14,6 +14,7 @@ import '../../widgets/bottom_nav.dart';
 import '../../widgets/hero_health_card.dart';
 import '../../widgets/info_banner.dart';
 import '../../widgets/tree_view.dart';
+import '../../widgets/app_avatar.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -36,38 +37,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     });
   }
 
-  /// Build tree nodes from live family / member data
-  List<TreeNode> _buildFamilyTree(
-    FamilyProvider familyProv,
-    MemberProvider memberProv,
-  ) {
-    return familyProv.families.map((family) {
-      final members = memberProv.members
-          .where((m) => m.familyId == family.id)
-          .toList();
-
-      final memberNodes = members.map((m) {
-        final initials = m.name.trim().split(' ').where((p) => p.isNotEmpty).map((p) => p[0]).take(2).join().toUpperCase();
-        return TreeNode(
-          id: 'member-${m.id}',
-          label: '${m.name} (${m.relation})',
-          icon: Icons.person_rounded,
-          badge: initials,
-          onTap: () => context.push('/members/${m.id}'),
-        );
-      }).toList();
-
-      return TreeNode(
-        id: 'family-${family.id}',
-        label: family.name,
-        icon: Icons.family_restroom_rounded,
-        badge: '${members.length}',
-        children: memberNodes,
-        onTap: () => context.push('/families/${family.id}'),
-      );
-    }).toList();
-  }
-
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
@@ -78,8 +47,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final user = auth.user;
     final userName = user?.fullName ?? 'Ahmed';
     final userFirstName = userName.split(' ').first;
-    final initials = userName.trim().split(' ').where((p) => p.isNotEmpty).map((p) => p[0]).take(2).join().toUpperCase();
-    final primaryFamily = familyProv.families.isNotEmpty ? familyProv.families.first : null;
+    final primaryFamily = familyProv.families.isNotEmpty
+        ? familyProv.families.first
+        : null;
     final visits = visitProv.visits;
 
     // Dynamic greeting
@@ -87,11 +57,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final greeting = hour < 12
         ? 'Good morning'
         : hour < 17
-            ? 'Good afternoon'
-            : 'Good evening';
+        ? 'Good afternoon'
+        : 'Good evening';
     final dateStr = DateFormat('EEEE, d MMMM yyyy').format(DateTime.now());
-
-    final treeNodes = _buildFamilyTree(familyProv, memberProv);
 
     return Scaffold(
       backgroundColor: AppColors.bg,
@@ -115,22 +83,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 // ── Top Header ──────────────────────────────────────────
                 Row(
                   children: [
-                    Container(
-                      width: 48,
-                      height: 48,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFFDEF2D7),
-                        shape: BoxShape.circle,
+                    AppAvatar(
+                      name: userName,
+                      avatarUrl: user?.avatarUrl,
+                      size: 48,
+                      border: Border.all(
+                        color: const Color(0xFF4ADE80),
+                        width: 1.5,
                       ),
-                      alignment: Alignment.center,
-                      child: Text(
-                        initials.isEmpty ? 'AK' : initials,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w800,
-                          color: Color(0xFF235E1E),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.primary.withValues(alpha: 0.15),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
                         ),
-                      ),
+                      ],
+                      onTap: () => context.push(AppRoutes.profile),
                     ),
                     const SizedBox(width: 14),
                     Expanded(
@@ -224,8 +192,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
                     child: const Row(
                       children: [
-                        Icon(Icons.search_rounded,
-                            color: AppColors.textLight, size: 22),
+                        Icon(
+                          Icons.search_rounded,
+                          color: AppColors.textLight,
+                          size: 22,
+                        ),
                         SizedBox(width: 12),
                         Text(
                           'Search family, doctors or reports...',
@@ -253,15 +224,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
                 HeroHealthCard(
                   tag: 'FAMILY HEALTH SPACE',
-                  title: primaryFamily?.name ?? 'Ahmed Family',
-                  subtitle:
-                      '${primaryFamily?.familyId ?? "FAM-1001"} • ${memberProv.count} members',
-                  avatarInitials: const ['AH', 'SA', 'AL', 'AY'],
-                  actionText: 'View family',
-                  onAction: () {
-                    final famId = primaryFamily?.id ?? 'fam-1';
-                    context.push('/families/$famId');
-                  },
+                  title: primaryFamily?.name ?? '$userFirstName Family',
+                  subtitle: '${memberProv.count} family members registered',
+                  memberAvatars: memberProv.members.take(6).map((m) {
+                    return HeroHealthCardAvatar(
+                      name: m.name,
+                      avatarUrl: m.avatarUrl,
+                    );
+                  }).toList(),
+                  actionText: 'View members',
+                  onAction: () => context.push(AppRoutes.members),
                 ),
                 const SizedBox(height: 28),
 
@@ -278,16 +250,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                     ),
                     TextButton.icon(
-                      onPressed: () => context.push(AppRoutes.families),
+                      onPressed: () => context.push(AppRoutes.memberAdd),
                       style: TextButton.styleFrom(
                         padding: EdgeInsets.zero,
                         minimumSize: Size.zero,
                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
-                      icon: const Icon(Icons.add_rounded,
-                          size: 15, color: AppColors.primary),
+                      icon: const Icon(
+                        Icons.person_add_rounded,
+                        size: 15,
+                        color: AppColors.primary,
+                      ),
                       label: const Text(
-                        'Add family',
+                        'Add member',
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
@@ -299,7 +274,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
                 const SizedBox(height: 4),
                 const Text(
-                  'Tap a node to view details. Tap ▾ to expand.',
+                  'Hierarchical family tree with relationship ordering & age',
                   style: TextStyle(fontSize: 11, color: AppColors.textLight),
                 ),
                 const SizedBox(height: 12),
@@ -307,8 +282,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 // Tree Card
                 Container(
                   width: double.infinity,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 16,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(20),
@@ -331,9 +308,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             ),
                           ),
                         )
-                      : treeNodes.isEmpty
-                          ? _buildEmptyTree()
-                          : InteractiveTreeView(nodes: treeNodes),
+                      : memberProv.members.isEmpty
+                      ? _buildEmptyTree()
+                      : InteractiveTreeView(
+                          members: memberProv.members,
+                          familyName:
+                              primaryFamily?.name ?? '$userFirstName Family',
+                          onMemberTap: (m) => context.push('/members/${m.id}'),
+                          onAddMember: () => context.push(AppRoutes.memberAdd),
+                        ),
                 ),
                 const SizedBox(height: 28),
 
@@ -372,7 +355,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 // Error banner for visit loading
                 if (visitProv.error != null)
                   _buildErrorBanner(visitProv.error!, () {
-                    final uid = auth.uid ?? SupabaseConfig.currentUserId ?? 'usr-100';
+                    final uid =
+                        auth.uid ?? SupabaseConfig.currentUserId ?? 'usr-100';
                     visitProv.loadRecent(uid);
                   }),
 
@@ -382,7 +366,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     child: Padding(
                       padding: EdgeInsets.all(16),
                       child: CircularProgressIndicator(
-                          strokeWidth: 2, color: AppColors.primary),
+                        strokeWidth: 2,
+                        color: AppColors.primary,
+                      ),
                     ),
                   )
                 else if (visits.isEmpty)
@@ -395,24 +381,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 else
                   ...visits.take(3).map((v) {
                     final rawName = v.memberName ?? 'Family Member';
-                    final ini = rawName
-                        .trim()
-                        .split(' ')
-                        .where((p) => p.isNotEmpty)
-                        .map((p) => p[0])
-                        .take(2)
-                        .join()
-                        .toUpperCase();
                     final docDesc = v.doctorName != null
                         ? 'Dr. ${v.doctorName}'
                         : 'Routine Checkup';
-                    final diagDesc =
-                        v.diagnosis != null ? ' • ${v.diagnosis}' : '';
+                    final diagDesc = v.diagnosis != null
+                        ? ' • ${v.diagnosis}'
+                        : '';
+                    final member = memberProv.members
+                        .where(
+                          (m) =>
+                              m.id == v.memberId ||
+                              m.name.toLowerCase() == rawName.toLowerCase(),
+                        )
+                        .firstOrNull;
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 12),
                       child: _buildVisitItem(
-                        initials: ini.isNotEmpty ? ini : 'PT',
                         name: rawName,
+                        avatarUrl: member?.avatarUrl,
                         subtitle: '$docDesc$diagDesc',
                         onTap: () => context.push('/visits/${v.id}'),
                       ),
@@ -442,11 +428,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
       padding: const EdgeInsets.symmetric(vertical: 12),
       child: Column(
         children: [
-          Icon(Icons.account_tree_rounded,
-              size: 40, color: AppColors.textLight.withAlpha(120)),
+          Icon(
+            Icons.family_restroom_rounded,
+            size: 40,
+            color: AppColors.textLight.withAlpha(120),
+          ),
           const SizedBox(height: 8),
           const Text(
-            'No families yet',
+            'No family members yet',
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
@@ -455,9 +444,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
           const SizedBox(height: 4),
           GestureDetector(
-            onTap: () => context.push(AppRoutes.familyAdd),
+            onTap: () => context.push(AppRoutes.memberAdd),
             child: const Text(
-              'Tap here to add your first family',
+              'Tap here to add your first member (Self, Parent, Child)',
               style: TextStyle(
                 fontSize: 12,
                 color: AppColors.primary,
@@ -481,8 +470,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
       child: Row(
         children: [
-          const Icon(Icons.error_outline_rounded,
-              color: Color(0xFFE53935), size: 18),
+          const Icon(
+            Icons.error_outline_rounded,
+            color: Color(0xFFE53935),
+            size: 18,
+          ),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
@@ -507,9 +499,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildVisitItem({
-    required String initials,
     required String name,
     required String subtitle,
+    String? avatarUrl,
+    String? initials,
     required VoidCallback onTap,
   }) {
     return InkWell(
@@ -531,22 +524,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
         child: Row(
           children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: const BoxDecoration(
-                color: Color(0xFFDEF2D7),
-                shape: BoxShape.circle,
-              ),
-              alignment: Alignment.center,
-              child: Text(
-                initials,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w800,
-                  color: Color(0xFF235E1E),
-                ),
-              ),
+            AppAvatar(
+              name: name,
+              avatarUrl: avatarUrl,
+              size: 48,
+              border: Border.all(color: AppColors.border),
             ),
             const SizedBox(width: 14),
             Expanded(

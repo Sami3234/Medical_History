@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../config/supabase_config.dart';
 import '../models/user_model.dart';
@@ -9,11 +10,13 @@ class AuthService {
   User? get currentUser =>
       SupabaseConfig.isInitialized ? SupabaseConfig.auth?.currentUser : null;
 
-  bool get isLoggedIn =>
-      SupabaseConfig.isInitialized ? currentUser != null : (_mock.currentUser != null);
+  bool get isLoggedIn => SupabaseConfig.isInitialized
+      ? currentUser != null
+      : (_mock.currentUser != null);
 
-  Stream<AuthState>? get authStream =>
-      SupabaseConfig.isInitialized ? SupabaseConfig.auth?.onAuthStateChange : null;
+  Stream<AuthState>? get authStream => SupabaseConfig.isInitialized
+      ? SupabaseConfig.auth?.onAuthStateChange
+      : null;
 
   Future<void> signUp({
     required String email,
@@ -21,14 +24,11 @@ class AuthService {
     required String fullName,
   }) async {
     if (SupabaseConfig.isInitialized && SupabaseConfig.auth != null) {
-      final res = await SupabaseConfig.auth!.signUp(email: email, password: password);
-      if (res.user != null) {
-        await SupabaseConfig.db!.from('profiles').insert({
-          'id': res.user!.id,
-          'email': email,
-          'full_name': fullName,
-        });
-      }
+      await SupabaseConfig.auth!.signUp(
+        email: email,
+        password: password,
+        data: {'full_name': fullName},
+      );
     } else {
       _mock.currentUser = UserModel(
         id: 'usr-${DateTime.now().millisecondsSinceEpoch}',
@@ -39,12 +39,12 @@ class AuthService {
     }
   }
 
-  Future<void> signIn({
-    required String email,
-    required String password,
-  }) async {
+  Future<void> signIn({required String email, required String password}) async {
     if (SupabaseConfig.isInitialized && SupabaseConfig.auth != null) {
-      await SupabaseConfig.auth!.signInWithPassword(email: email, password: password);
+      await SupabaseConfig.auth!.signInWithPassword(
+        email: email,
+        password: password,
+      );
     } else {
       _mock.currentUser = UserModel(
         id: 'usr-100',
@@ -73,8 +73,34 @@ class AuthService {
     if (SupabaseConfig.isInitialized && SupabaseConfig.db != null) {
       final uid = currentUser?.id;
       if (uid == null) return null;
-      final data = await SupabaseConfig.db!.from('profiles').select().eq('id', uid).single();
-      return UserModel.fromMap(data);
+      final data = await SupabaseConfig.db!
+          .from('profiles')
+          .select()
+          .eq('id', uid)
+          .maybeSingle();
+      if (data != null) {
+        return UserModel.fromMap(data);
+      }
+
+      // Auto-create profile record if it doesn't exist yet
+      try {
+        final email = currentUser?.email ?? '';
+        final nameMeta = currentUser?.userMetadata?['full_name'] as String?;
+        final defaultName = (nameMeta != null && nameMeta.isNotEmpty)
+            ? nameMeta
+            : (email.isNotEmpty ? email.split('@').first : 'User');
+        final newProfile = {
+          'id': uid,
+          'email': email,
+          'full_name': defaultName,
+          'created_at': DateTime.now().toIso8601String(),
+          'updated_at': DateTime.now().toIso8601String(),
+        };
+        await SupabaseConfig.db!.from('profiles').insert(newProfile);
+        return UserModel.fromMap(newProfile);
+      } catch (e) {
+        debugPrint('Auto-create profile note: $e');
+      }
     }
     return _mock.currentUser;
   }
@@ -97,4 +123,3 @@ class AuthService {
     }
   }
 }
-

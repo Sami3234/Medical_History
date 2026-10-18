@@ -5,6 +5,7 @@ import '../../config/theme.dart';
 import '../../config/routes.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/bottom_nav.dart';
+import '../../widgets/app_avatar.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -24,7 +25,7 @@ class ProfileScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
+              const Text(
                 'ACCOUNT & PREFERENCES',
                 style: TextStyle(
                   fontSize: 11,
@@ -52,31 +53,23 @@ class ProfileScreen extends StatelessWidget {
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(22),
                   border: Border.all(color: AppColors.border, width: 1.2),
-                  boxShadow: [
+                  boxShadow: const [
                     BoxShadow(
                       color: AppColors.shadow,
                       blurRadius: 6,
-                      offset: const Offset(0, 2),
+                      offset: Offset(0, 2),
                     ),
                   ],
                 ),
                 child: Row(
                   children: [
-                    Container(
-                      width: 68,
-                      height: 68,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFFDEF2D7),
-                        shape: BoxShape.circle,
-                      ),
-                      alignment: Alignment.center,
-                      child: const Text(
-                        'AK',
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w800,
-                          color: Color(0xFF235E1E),
-                        ),
+                    AppAvatar(
+                      name: fullName,
+                      avatarUrl: user?.avatarUrl,
+                      size: 68,
+                      border: Border.all(
+                        color: const Color(0xFF4ADE80),
+                        width: 1.5,
                       ),
                     ),
                     const SizedBox(width: 16),
@@ -102,22 +95,28 @@ class ProfileScreen extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(height: 10),
-                          ElevatedButton(
-                            onPressed: () {
-                              _showEditProfileDialog(context, fullName);
-                            },
+                          ElevatedButton.icon(
+                            onPressed: () =>
+                                context.push(AppRoutes.editProfile),
+                            icon: const Icon(Icons.edit_rounded, size: 14),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFFEFF8EC),
                               foregroundColor: const Color(0xFF2E7D32),
                               elevation: 0,
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 6,
+                              ),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(20),
                               ),
                             ),
-                            child: const Text(
+                            label: const Text(
                               'Edit profile',
-                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                              ),
                             ),
                           ),
                         ],
@@ -139,12 +138,12 @@ class ProfileScreen extends StatelessWidget {
               ),
               const SizedBox(height: 14),
 
-              // Setting 1: Family access
+              // Setting 1: Family members
               _buildSettingTile(
                 icon: Icons.groups_outlined,
-                title: 'Family access',
-                subtitle: 'Manage family permissions',
-                onTap: () => context.push(AppRoutes.families),
+                title: 'Family members',
+                subtitle: 'Manage family member profiles',
+                onTap: () => context.push(AppRoutes.members),
               ),
               const SizedBox(height: 12),
 
@@ -152,12 +151,8 @@ class ProfileScreen extends StatelessWidget {
               _buildSettingTile(
                 icon: Icons.verified_user_outlined,
                 title: 'Security & privacy',
-                subtitle: 'Authentication and data',
-                onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Two-factor authentication & data privacy enabled.')),
-                  );
-                },
+                subtitle: 'Biometrics, passwords and data',
+                onTap: () => context.push(AppRoutes.security),
               ),
               const SizedBox(height: 12),
 
@@ -165,8 +160,8 @@ class ProfileScreen extends StatelessWidget {
               _buildSettingTile(
                 icon: Icons.cloud_outlined,
                 title: 'Backup & restore',
-                subtitle: 'Google Drive sync',
-                onTap: () => context.push('/backup'),
+                subtitle: 'Google Drive sync & cloud vault',
+                onTap: () => context.push(AppRoutes.backup),
               ),
               const SizedBox(height: 12),
 
@@ -174,8 +169,8 @@ class ProfileScreen extends StatelessWidget {
               _buildSettingTile(
                 icon: Icons.notifications_none_rounded,
                 title: 'Notifications',
-                subtitle: 'Appointments and alerts',
-                onTap: () => context.push('/appointments'),
+                subtitle: 'Appointment & medication alerts',
+                onTap: () => context.push(AppRoutes.notifications),
               ),
               const SizedBox(height: 12),
 
@@ -183,12 +178,8 @@ class ProfileScreen extends StatelessWidget {
               _buildSettingTile(
                 icon: Icons.settings_outlined,
                 title: 'App preferences',
-                subtitle: 'Language and appearance',
-                onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('System default theme & English language active.')),
-                  );
-                },
+                subtitle: 'Language, themes & cache',
+                onTap: () => context.push(AppRoutes.preferences),
               ),
               const SizedBox(height: 24),
 
@@ -213,10 +204,7 @@ class ProfileScreen extends StatelessWidget {
                   ),
                   child: const Text(
                     'Sign out',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                    ),
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
                   ),
                 ),
               ),
@@ -286,37 +274,6 @@ class ProfileScreen extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  void _showEditProfileDialog(BuildContext context, String currentName) {
-    final nameCtrl = TextEditingController(text: currentName);
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Edit Full Name'),
-        content: TextField(
-          controller: nameCtrl,
-          decoration: const InputDecoration(hintText: 'Enter your name'),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              if (nameCtrl.text.isNotEmpty) {
-                context.read<AuthProvider>().updateProfile({
-                  'full_name': nameCtrl.text.trim(),
-                });
-                Navigator.pop(ctx);
-              }
-            },
-            child: const Text('Save'),
-          ),
-        ],
       ),
     );
   }

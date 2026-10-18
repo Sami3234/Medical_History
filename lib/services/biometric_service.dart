@@ -1,5 +1,4 @@
 import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart';
 import 'package:local_auth/local_auth.dart';
 
 /// Service for fingerprint / face-id biometric authentication
@@ -8,6 +7,7 @@ class BiometricAuthService {
 
   /// Check if the device supports biometrics and has them enrolled
   static Future<bool> isAvailable() async {
+    if (kIsWeb) return false;
     try {
       final canCheck = await _auth.canCheckBiometrics;
       final isSupported = await _auth.isDeviceSupported();
@@ -15,7 +15,7 @@ class BiometricAuthService {
 
       final biometrics = await _auth.getAvailableBiometrics();
       return biometrics.isNotEmpty;
-    } on PlatformException catch (e) {
+    } catch (e) {
       debugPrint('BiometricAuthService.isAvailable error: $e');
       return false;
     }
@@ -23,9 +23,10 @@ class BiometricAuthService {
 
   /// Returns the list of available biometric types (fingerprint, face, iris)
   static Future<List<BiometricType>> availableTypes() async {
+    if (kIsWeb) return [];
     try {
       return await _auth.getAvailableBiometrics();
-    } on PlatformException catch (_) {
+    } catch (_) {
       return [];
     }
   }
@@ -35,6 +36,7 @@ class BiometricAuthService {
   static Future<bool> authenticate({
     String reason = 'Verify your identity to access your medical records',
   }) async {
+    if (kIsWeb) return false;
     try {
       return await _auth.authenticate(
         localizedReason: reason,
@@ -43,7 +45,7 @@ class BiometricAuthService {
           stickyAuth: true,
         ),
       );
-    } on PlatformException catch (e) {
+    } catch (e) {
       debugPrint('BiometricAuthService.authenticate error: $e');
       return false;
     }
@@ -51,6 +53,9 @@ class BiometricAuthService {
 
   /// Cancel any in-progress authentication
   static Future<void> stopAuthentication() async {
-    await _auth.stopAuthentication();
+    if (kIsWeb) return;
+    try {
+      await _auth.stopAuthentication();
+    } catch (_) {}
   }
 }

@@ -19,7 +19,11 @@ class DoctorService {
 
   Future<DoctorModel> getById(String id) async {
     if (SupabaseConfig.isInitialized && SupabaseConfig.db != null) {
-      final data = await SupabaseConfig.db!.from('doctors').select().eq('id', id).single();
+      final data = await SupabaseConfig.db!
+          .from('doctors')
+          .select()
+          .eq('id', id)
+          .single();
       return DoctorModel.fromMap(data);
     }
     return _mock.doctors.firstWhere(
@@ -29,17 +33,23 @@ class DoctorService {
   }
 
   Future<void> create(Map<String, dynamic> doctor) async {
-    if (SupabaseConfig.isInitialized && SupabaseConfig.db != null) {
-      await SupabaseConfig.db!.from('doctors').insert(doctor);
+    final docData = Map<String, dynamic>.from(doctor);
+    final uid = docData['user_id'] ?? SupabaseConfig.currentUserId;
+    if (uid != null) docData['user_id'] = uid;
+
+    if (SupabaseConfig.isInitialized &&
+        SupabaseConfig.db != null &&
+        docData['user_id'] != null) {
+      await SupabaseConfig.db!.from('doctors').insert(docData);
     } else {
       final newDoctor = DoctorModel(
         id: 'doc-${DateTime.now().millisecondsSinceEpoch}',
-        userId: doctor['user_id'] ?? 'usr-100',
-        name: doctor['name'] ?? 'Dr. Specialist',
-        specialization: doctor['specialization'],
-        hospital: doctor['hospital'],
-        phone: doctor['phone'],
-        address: doctor['address'],
+        userId: docData['user_id'] ?? 'usr-100',
+        name: docData['name'] ?? 'Dr. Specialist',
+        specialization: docData['specialization'],
+        hospital: docData['hospital'],
+        phone: docData['phone'],
+        address: docData['address'],
         createdAt: DateTime.now(),
       );
       _mock.doctors.add(newDoctor);
@@ -75,4 +85,3 @@ class DoctorService {
     }
   }
 }
-

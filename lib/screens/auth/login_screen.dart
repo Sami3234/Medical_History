@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../config/theme.dart';
 import '../../config/routes.dart';
 import '../../providers/auth_provider.dart';
 import '../../utils/extensions.dart';
-import '../../services/biometric_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -16,21 +16,9 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _form = GlobalKey<FormState>();
-  final _email = TextEditingController(text: 'ahmed@example.com');
-  final _pass = TextEditingController(text: 'password123');
+  final _email = TextEditingController();
+  final _pass = TextEditingController();
   bool _showPass = false;
-  bool _biometricAvailable = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _checkBiometrics();
-  }
-
-  Future<void> _checkBiometrics() async {
-    final available = await BiometricAuthService.isAvailable();
-    if (mounted) setState(() => _biometricAvailable = available);
-  }
 
   @override
   void dispose() {
@@ -66,9 +54,19 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _loginWithBiometric() async {
+    if (kIsWeb) {
+      context.showSnack(
+        'Fingerprint / Biometric login is available on Android & iOS mobile devices.',
+        isError: false,
+      );
+      return;
+    }
     final auth = context.read<AuthProvider>();
     if (!auth.isLoggedIn) {
-      context.showSnack('Please sign in first before using fingerprint.', isError: false);
+      context.showSnack(
+        'Please sign in once with email/password before using fingerprint.',
+        isError: false,
+      );
       return;
     }
     final ok = await auth.authenticateWithBiometrics();
@@ -92,9 +90,7 @@ class _LoginScreenState extends State<LoginScreen> {
           Container(
             height: MediaQuery.of(context).size.height * 0.42,
             width: double.infinity,
-            decoration: const BoxDecoration(
-              gradient: AppColors.heroGradient,
-            ),
+            decoration: const BoxDecoration(gradient: AppColors.heroGradient),
             child: Stack(
               children: [
                 Positioned(
@@ -123,7 +119,10 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 SafeArea(
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 16,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -152,7 +151,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                             ),
                             const SizedBox(width: 14),
-                             Column(
+                            Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 const Text(
@@ -260,10 +259,16 @@ class _LoginScreenState extends State<LoginScreen> {
                         controller: _email,
                         keyboardType: TextInputType.emailAddress,
                         decoration: const InputDecoration(
-                          hintText: 'you@example.com',
-                          prefixIcon: Icon(Icons.mail_outline_rounded, color: AppColors.textLight, size: 20),
+                          hintText: 'Enter your email',
+                          prefixIcon: Icon(
+                            Icons.mail_outline_rounded,
+                            color: AppColors.textLight,
+                            size: 20,
+                          ),
                         ),
-                        validator: (v) => (v == null || !v.contains('@')) ? 'Please enter valid email' : null,
+                        validator: (v) => (v == null || !v.contains('@'))
+                            ? 'Please enter valid email'
+                            : null,
                       ),
                       const SizedBox(height: 16),
                       // Password
@@ -280,18 +285,27 @@ class _LoginScreenState extends State<LoginScreen> {
                         controller: _pass,
                         obscureText: !_showPass,
                         decoration: InputDecoration(
-                          hintText: 'Enter password',
-                          prefixIcon: const Icon(Icons.lock_outline_rounded, color: AppColors.textLight, size: 20),
+                          hintText: 'Enter your password',
+                          prefixIcon: const Icon(
+                            Icons.lock_outline_rounded,
+                            color: AppColors.textLight,
+                            size: 20,
+                          ),
                           suffixIcon: IconButton(
                             icon: Icon(
-                              _showPass ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                              _showPass
+                                  ? Icons.visibility_off_outlined
+                                  : Icons.visibility_outlined,
                               color: AppColors.textLight,
                               size: 20,
                             ),
-                            onPressed: () => setState(() => _showPass = !_showPass),
+                            onPressed: () =>
+                                setState(() => _showPass = !_showPass),
                           ),
                         ),
-                        validator: (v) => (v == null || v.length < 4) ? 'Password must be at least 4 characters' : null,
+                        validator: (v) => (v == null || v.length < 4)
+                            ? 'Password must be at least 4 characters'
+                            : null,
                       ),
                       const SizedBox(height: 8),
                       Align(
@@ -314,42 +328,80 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                       const SizedBox(height: 22),
-                      // Sign In Button
-                      SizedBox(
-                        width: double.infinity,
-                        height: 52,
-                        child: ElevatedButton(
-                          onPressed: auth.loading ? null : _login,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primary,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
+                      // Sign In & Biometric Button Row
+                      Row(
+                        children: [
+                          Expanded(
+                            child: SizedBox(
+                              height: 52,
+                              child: ElevatedButton(
+                                onPressed: auth.loading ? null : _login,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.primary,
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                ),
+                                child: auth.loading
+                                    ? const SizedBox(
+                                        width: 22,
+                                        height: 22,
+                                        child: CircularProgressIndicator(
+                                          color: Colors.white,
+                                          strokeWidth: 2,
+                                        ),
+                                      )
+                                    : const Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          Text(
+                                            'Sign in',
+                                            style: TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                          ),
+                                          SizedBox(width: 8),
+                                          Icon(
+                                            Icons.arrow_forward_rounded,
+                                            size: 18,
+                                          ),
+                                        ],
+                                      ),
+                              ),
                             ),
                           ),
-                          child: auth.loading
-                              ? const SizedBox(
-                                  width: 22,
-                                  height: 22,
-                                  child: CircularProgressIndicator(
-                                    color: Colors.white,
-                                    strokeWidth: 2,
+                          const SizedBox(width: 10),
+                          // Compact Fingerprint button on the right of Sign In
+                          Tooltip(
+                            message: 'Sign in with Fingerprint',
+                            child: InkWell(
+                              onTap: auth.loading ? null : _loginWithBiometric,
+                              borderRadius: BorderRadius.circular(16),
+                              child: Container(
+                                width: 52,
+                                height: 52,
+                                decoration: BoxDecoration(
+                                  color: AppColors.surface,
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(
+                                    color: AppColors.primary.withAlpha(90),
+                                    width: 1.5,
                                   ),
-                                )
-                              : const Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Text(
-                                      'Sign in',
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
-                                    SizedBox(width: 8),
-                                    Icon(Icons.arrow_forward_rounded, size: 18),
-                                  ],
                                 ),
-                        ),
+                                child: const Center(
+                                  child: Icon(
+                                    Icons.fingerprint_rounded,
+                                    color: AppColors.primary,
+                                    size: 28,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 18),
                       Center(
@@ -405,43 +457,6 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                       ),
-                      // Fingerprint / Biometric
-                      if (_biometricAvailable) ...[
-                        const SizedBox(height: 12),
-                        SizedBox(
-                          width: double.infinity,
-                          height: 50,
-                          child: OutlinedButton(
-                            onPressed: auth.loading ? null : _loginWithBiometric,
-                            style: OutlinedButton.styleFrom(
-                              backgroundColor: AppColors.bg,
-                              side: const BorderSide(color: AppColors.border),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                            ),
-                            child: const Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.fingerprint_rounded,
-                                  color: AppColors.primary,
-                                  size: 22,
-                                ),
-                                SizedBox(width: 10),
-                                Text(
-                                  'Use Fingerprint',
-                                  style: TextStyle(
-                                    color: AppColors.textDark,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
                       const SizedBox(height: 20),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,

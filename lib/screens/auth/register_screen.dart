@@ -82,31 +82,42 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 const SizedBox(height: 6),
                 const Text(
                   'Manage everyone\'s care under one account.',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: AppColors.textLight,
-                  ),
+                  style: TextStyle(fontSize: 14, color: AppColors.textLight),
                 ),
                 const SizedBox(height: 28),
                 // Full Name
                 const Text(
                   'Full name',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textDark),
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textDark,
+                  ),
                 ),
                 const SizedBox(height: 6),
                 TextFormField(
                   controller: _name,
                   decoration: const InputDecoration(
                     hintText: 'Enter your full name',
-                    prefixIcon: Icon(Icons.person_outline_rounded, color: AppColors.textLight, size: 20),
+                    prefixIcon: Icon(
+                      Icons.person_outline_rounded,
+                      color: AppColors.textLight,
+                      size: 20,
+                    ),
                   ),
-                  validator: (v) => (v == null || v.isEmpty) ? 'Please enter your name' : null,
+                  validator: (v) => (v == null || v.isEmpty)
+                      ? 'Please enter your name'
+                      : null,
                 ),
                 const SizedBox(height: 18),
                 // Email
                 const Text(
                   'Email address',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textDark),
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textDark,
+                  ),
                 ),
                 const SizedBox(height: 6),
                 TextFormField(
@@ -114,15 +125,25 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   keyboardType: TextInputType.emailAddress,
                   decoration: const InputDecoration(
                     hintText: 'you@example.com',
-                    prefixIcon: Icon(Icons.mail_outline_rounded, color: AppColors.textLight, size: 20),
+                    prefixIcon: Icon(
+                      Icons.mail_outline_rounded,
+                      color: AppColors.textLight,
+                      size: 20,
+                    ),
                   ),
-                  validator: (v) => (v == null || !v.contains('@')) ? 'Please enter valid email' : null,
+                  validator: (v) => (v == null || !v.contains('@'))
+                      ? 'Please enter valid email'
+                      : null,
                 ),
                 const SizedBox(height: 18),
                 // Password
                 const Text(
                   'Password',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textDark),
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textDark,
+                  ),
                 ),
                 const SizedBox(height: 6),
                 TextFormField(
@@ -130,15 +151,25 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   obscureText: true,
                   decoration: const InputDecoration(
                     hintText: 'Enter password',
-                    prefixIcon: Icon(Icons.lock_outline_rounded, color: AppColors.textLight, size: 20),
+                    prefixIcon: Icon(
+                      Icons.lock_outline_rounded,
+                      color: AppColors.textLight,
+                      size: 20,
+                    ),
                   ),
-                  validator: (v) => (v == null || v.length < 6) ? 'Password must be at least 6 characters' : null,
+                  validator: (v) => (v == null || v.length < 6)
+                      ? 'Password must be at least 6 characters'
+                      : null,
                 ),
                 const SizedBox(height: 18),
                 // Confirm Password
                 const Text(
                   'Confirm password',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textDark),
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textDark,
+                  ),
                 ),
                 const SizedBox(height: 6),
                 TextFormField(
@@ -146,7 +177,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   obscureText: true,
                   decoration: const InputDecoration(
                     hintText: 'Enter password again',
-                    prefixIcon: Icon(Icons.lock_outline_rounded, color: AppColors.textLight, size: 20),
+                    prefixIcon: Icon(
+                      Icons.lock_outline_rounded,
+                      color: AppColors.textLight,
+                      size: 20,
+                    ),
                   ),
                   validator: (v) {
                     if (v != _pass.text) return 'Passwords do not match';

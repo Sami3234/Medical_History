@@ -1,9 +1,12 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:extension_google_sign_in_as_googleapis_auth/extension_google_sign_in_as_googleapis_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:googleapis/drive/v3.dart' as drive;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../config/supabase_config.dart';
+import '../config/constants.dart';
+import 'local_document_service.dart';
 
 class DriveBackupMetadata {
   final String fileId;
@@ -20,7 +23,9 @@ class DriveBackupMetadata {
 
   String get formattedSize {
     if (sizeBytes < 1024) return '$sizeBytes B';
-    if (sizeBytes < 1024 * 1024) return '${(sizeBytes / 1024).toStringAsFixed(1)} KB';
+    if (sizeBytes < 1024 * 1024) {
+      return '${(sizeBytes / 1024).toStringAsFixed(1)} KB';
+    }
     return '${(sizeBytes / (1024 * 1024)).toStringAsFixed(2)} MB';
   }
 }
@@ -28,12 +33,13 @@ class DriveBackupMetadata {
 class BackupService {
   static const String _backupFileName = 'medical_history_backup.json';
   static const String _prefLastBackupKey = 'last_google_drive_backup_iso';
+  final LocalDocumentService _localDocuments = LocalDocumentService();
 
   final GoogleSignIn _googleSignIn = GoogleSignIn(
-    scopes: [
-      drive.DriveApi.driveAppdataScope,
-      drive.DriveApi.driveFileScope,
-    ],
+    serverClientId: kIsWeb || AppStrings.googleWebClientId.isEmpty
+        ? null
+        : AppStrings.googleWebClientId,
+    scopes: [drive.DriveApi.driveAppdataScope, drive.DriveApi.driveFileScope],
   );
 
   GoogleSignInAccount? _currentUser;
@@ -146,10 +152,7 @@ class BackupService {
         ..mimeType = 'application/json'
         ..description = 'Medical History AppData Encrypted Backup';
 
-      uploadedFile = await driveApi.files.create(
-        newFile,
-        uploadMedia: media,
-      );
+      uploadedFile = await driveApi.files.create(newFile, uploadMedia: media);
     }
 
     // Save timestamp locally
@@ -177,10 +180,12 @@ class BackupService {
     }
 
     // Download file content
-    final drive.Media downloadedMedia = await driveApi.files.get(
-      backupInfo.fileId,
-      downloadOptions: drive.DownloadOptions.fullMedia,
-    ) as drive.Media;
+    final drive.Media downloadedMedia =
+        await driveApi.files.get(
+              backupInfo.fileId,
+              downloadOptions: drive.DownloadOptions.fullMedia,
+            )
+            as drive.Media;
 
     final List<int> dataBytes = [];
     await for (final chunk in downloadedMedia.stream) {
@@ -190,7 +195,12 @@ class BackupService {
     final jsonString = utf8.decode(dataBytes);
     final Map<String, dynamic> backupMap = jsonDecode(jsonString);
 
-    // Restore to Supabase
+    final localDocuments = backupMap['local_documents'];
+    if (localDocuments is List) {
+      await _localDocuments.restoreFromBackup(localDocuments);
+    }
+
+    // Restore account data to Supabase when available.
     await _restoreDataToSupabase(backupMap);
 
     return backupMap;
@@ -203,6 +213,7 @@ class BackupService {
       'version': '1.0.0',
       'created_at': DateTime.now().toIso8601String(),
       'user_id': userId,
+      'local_documents': await _localDocuments.exportForBackup(),
     };
 
     if (!SupabaseConfig.isInitialized) {
@@ -214,24 +225,27 @@ class BackupService {
       final client = SupabaseConfig.client;
       if (client == null) return data;
 
-      final families = await client.from('families').select().eq('user_id', userId);
-      final members = await client.from('family_members').select();
-      final doctors = await client.from('doctors').select().eq('user_id', userId);
+      final families = await client
+          .from('families')
+          .select()
+          .eq('user_id', userId);
+      final members = await client.from('members').select();
+      final doctors = await client
+          .from('doctors')
+          .select()
+          .eq('user_id', userId);
       final visits = await client.from('visits').select();
-      final records = await client.from('medical_records').select();
 
       data['families'] = families;
-      data['family_members'] = members;
+      data['members'] = members;
       data['doctors'] = doctors;
       data['visits'] = visits;
-      data['medical_records'] = records;
     } catch (_) {
       // Fallback empty if tables don't exist yet
       data['families'] = [];
-      data['family_members'] = [];
+      data['members'] = [];
       data['doctors'] = [];
       data['visits'] = [];
-      data['medical_records'] = [];
     }
 
     return data;
@@ -244,22 +258,21 @@ class BackupService {
     if (client == null) return;
 
     try {
-      if (backupMap['families'] is List && (backupMap['families'] as List).isNotEmpty) {
+      if (backupMap['families'] is List &&
+          (backupMap['families'] as List).isNotEmpty) {
         await client.from('families').upsert(backupMap['families']);
       }
-      if (backupMap['family_members'] is List &&
-          (backupMap['family_members'] as List).isNotEmpty) {
-        await client.from('family_members').upsert(backupMap['family_members']);
+      if (backupMap['members'] is List &&
+          (backupMap['members'] as List).isNotEmpty) {
+        await client.from('members').upsert(backupMap['members']);
       }
-      if (backupMap['doctors'] is List && (backupMap['doctors'] as List).isNotEmpty) {
+      if (backupMap['doctors'] is List &&
+          (backupMap['doctors'] as List).isNotEmpty) {
         await client.from('doctors').upsert(backupMap['doctors']);
       }
-      if (backupMap['visits'] is List && (backupMap['visits'] as List).isNotEmpty) {
+      if (backupMap['visits'] is List &&
+          (backupMap['visits'] as List).isNotEmpty) {
         await client.from('visits').upsert(backupMap['visits']);
-      }
-      if (backupMap['medical_records'] is List &&
-          (backupMap['medical_records'] as List).isNotEmpty) {
-        await client.from('medical_records').upsert(backupMap['medical_records']);
       }
     } catch (e) {
       throw Exception('Data restoration failed: $e');

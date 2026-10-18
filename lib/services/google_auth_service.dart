@@ -2,21 +2,42 @@ import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../config/supabase_config.dart';
+import '../config/constants.dart';
 
 /// Service for Google OAuth sign-in via Supabase
 class GoogleAuthService {
   static final _googleSignIn = GoogleSignIn(
+    serverClientId: kIsWeb || AppStrings.googleWebClientId.isEmpty
+        ? null
+        : AppStrings.googleWebClientId,
     scopes: ['email', 'profile'],
   );
 
   /// Sign in with Google. Returns [AuthResponse] on success or throws.
   static Future<AuthResponse?> signInWithGoogle() async {
     if (!SupabaseConfig.isInitialized) {
-      throw Exception('Supabase is not initialized. Cannot use Google sign-in.');
+      throw Exception(
+        'Supabase is not initialized. Cannot use Google sign-in.',
+      );
     }
 
     try {
-      // Trigger the Google sign-in flow
+      if (kIsWeb) {
+        // On web, direct Supabase OAuth redirect is the official and most reliable method
+        await SupabaseConfig.auth!.signInWithOAuth(
+          OAuthProvider.google,
+          redirectTo: Uri.base.origin,
+        );
+        return null;
+      }
+
+      if (AppStrings.googleWebClientId.isEmpty) {
+        throw Exception(
+          'GOOGLE_WEB_CLIENT_ID is missing. Use the Web application OAuth client ID.',
+        );
+      }
+
+      // Trigger the Google sign-in flow for Android/iOS
       final googleUser = await _googleSignIn.signIn();
       if (googleUser == null) return null; // user cancelled
 
@@ -25,7 +46,7 @@ class GoogleAuthService {
       final accessToken = googleAuth.accessToken;
 
       if (idToken == null) {
-        throw Exception('Failed to get Google ID token.');
+        throw Exception('Failed to get Google ID token from device.');
       }
 
       // Pass Google tokens to Supabase
@@ -48,7 +69,8 @@ class GoogleAuthService {
           await SupabaseConfig.db!.from('profiles').insert({
             'id': uid,
             'email': googleUser.email,
-            'full_name': googleUser.displayName ?? googleUser.email.split('@').first,
+            'full_name':
+                googleUser.displayName ?? googleUser.email.split('@').first,
             'avatar_url': googleUser.photoUrl,
           });
         }

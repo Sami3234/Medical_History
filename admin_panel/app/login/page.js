@@ -26,7 +26,20 @@ export default function LoginPage() {
       if (authError) {
         setError(authError.message);
       } else {
-        router.push('/');
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('is_admin')
+          .eq('id', data.user.id)
+          .maybeSingle();
+
+        if (profileError || !profile?.is_admin) {
+          await supabase.auth.signOut();
+          setError('This account does not have administrator access.');
+          return;
+        }
+
+        router.replace('/');
+        router.refresh();
       }
     } catch (err) {
       setError('An unexpected error occurred during login.');

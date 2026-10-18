@@ -3,13 +3,17 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../config/theme.dart';
 import '../../providers/backup_provider.dart';
+import '../../providers/records_provider.dart';
 import '../../widgets/bottom_nav.dart';
 import '../../widgets/info_banner.dart';
 
 class BackupScreen extends StatelessWidget {
   const BackupScreen({super.key});
 
-  void _showRestoreConfirmation(BuildContext context, BackupProvider backupProv) {
+  void _showRestoreConfirmation(
+    BuildContext context,
+    BackupProvider backupProv,
+  ) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -18,26 +22,41 @@ class BackupScreen extends StatelessWidget {
           children: [
             Icon(Icons.warning_amber_rounded, color: AppColors.warning),
             SizedBox(width: 8),
-            Text('Restore Backup?', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+            Text(
+              'Restore Backup?',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+            ),
           ],
         ),
         content: const Text(
           'This will download and sync records from your Google Drive backup into your account. Existing records will be updated.',
-          style: TextStyle(fontSize: 14, color: AppColors.textSecondary, height: 1.4),
+          style: TextStyle(
+            fontSize: 14,
+            color: AppColors.textSecondary,
+            height: 1.4,
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel', style: TextStyle(color: AppColors.textSecondary)),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(color: AppColors.textSecondary),
+            ),
           ),
           ElevatedButton(
             onPressed: () async {
               Navigator.pop(ctx);
               final success = await backupProv.triggerRestore();
+              if (success && context.mounted) {
+                await context.read<RecordsProvider>().loadAll();
+              }
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    backgroundColor: success ? AppColors.success : AppColors.error,
+                    backgroundColor: success
+                        ? AppColors.success
+                        : AppColors.error,
                     content: Text(
                       success
                           ? 'Backup restored successfully from Google Drive!'
@@ -50,7 +69,9 @@ class BackupScreen extends StatelessWidget {
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
             child: const Text('Restore Now'),
           ),
@@ -74,7 +95,11 @@ class BackupScreen extends StatelessWidget {
           children: [
             const Text(
               'Auto-Backup Frequency',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: AppColors.textPrimary,
+              ),
             ),
             const SizedBox(height: 6),
             const Text(
@@ -89,11 +114,16 @@ class BackupScreen extends StatelessWidget {
                   freq,
                   style: TextStyle(
                     fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                    color: isSelected ? AppColors.primary : AppColors.textPrimary,
+                    color: isSelected
+                        ? AppColors.primary
+                        : AppColors.textPrimary,
                   ),
                 ),
                 trailing: isSelected
-                    ? const Icon(Icons.check_circle_rounded, color: AppColors.primary)
+                    ? const Icon(
+                        Icons.check_circle_rounded,
+                        color: AppColors.primary,
+                      )
                     : null,
                 onTap: () {
                   backupProv.setAutoBackupFrequency(freq);
@@ -167,14 +197,21 @@ class BackupScreen extends StatelessWidget {
                           size: 34,
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.white.withAlpha(35),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: const Row(
                             children: [
-                              Icon(Icons.lock_rounded, size: 12, color: Colors.white),
+                              Icon(
+                                Icons.lock_rounded,
+                                size: 12,
+                                color: Colors.white,
+                              ),
                               SizedBox(width: 4),
                               Text(
                                 'Hidden AppData',
@@ -224,16 +261,27 @@ class BackupScreen extends StatelessWidget {
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.error_outline_rounded, color: AppColors.error, size: 20),
+                      const Icon(
+                        Icons.error_outline_rounded,
+                        color: AppColors.error,
+                        size: 20,
+                      ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           backupProv.error!,
-                          style: const TextStyle(fontSize: 12, color: AppColors.error),
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: AppColors.error,
+                          ),
                         ),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.close_rounded, size: 16, color: AppColors.error),
+                        icon: const Icon(
+                          Icons.close_rounded,
+                          size: 16,
+                          color: AppColors.error,
+                        ),
                         onPressed: backupProv.clearError,
                       ),
                     ],
@@ -321,7 +369,10 @@ class BackupScreen extends StatelessWidget {
                             ? Colors.grey.shade700
                             : const Color(0xFF2E7D32),
                         elevation: 0,
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 8,
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
                         ),
@@ -372,12 +423,18 @@ class BackupScreen extends StatelessWidget {
                             SizedBox(height: 2),
                             Text(
                               'Google Drive AppData Storage',
-                              style: TextStyle(fontSize: 11, color: AppColors.textLight),
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: AppColors.textLight,
+                              ),
                             ),
                           ],
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
                             color: meta != null
                                 ? AppColors.success.withAlpha(20)
@@ -389,7 +446,9 @@ class BackupScreen extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w700,
-                              color: meta != null ? AppColors.success : Colors.grey.shade600,
+                              color: meta != null
+                                  ? AppColors.success
+                                  : Colors.grey.shade600,
                             ),
                           ),
                         ),
@@ -403,7 +462,9 @@ class BackupScreen extends StatelessWidget {
                             icon: Icons.calendar_today_rounded,
                             label: 'Last Backup',
                             value: meta != null
-                                ? DateFormat('dd MMM yyyy, hh:mm a').format(meta.modifiedTime)
+                                ? DateFormat(
+                                    'dd MMM yyyy, hh:mm a',
+                                  ).format(meta.modifiedTime)
                                 : 'Never',
                           ),
                         ),
@@ -446,11 +507,14 @@ class BackupScreen extends StatelessWidget {
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        backgroundColor: success ? AppColors.success : AppColors.error,
+                        backgroundColor: success
+                            ? AppColors.success
+                            : AppColors.error,
                         content: Text(
                           success
                               ? 'Backup successfully created & saved to Google Drive!'
-                              : (backupProv.error ?? 'Backup failed. Please check connection.'),
+                              : (backupProv.error ??
+                                    'Backup failed. Please check connection.'),
                         ),
                       ),
                     );
@@ -477,7 +541,10 @@ class BackupScreen extends StatelessWidget {
                 onTap: () => _showFrequencyDialog(context, backupProv),
                 borderRadius: BorderRadius.circular(20),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 18,
+                    vertical: 14,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(20),
@@ -512,12 +579,19 @@ class BackupScreen extends StatelessWidget {
                             ),
                             Text(
                               'Frequency: ${backupProv.autoBackupFrequency}',
-                              style: const TextStyle(fontSize: 12, color: AppColors.textLight),
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: AppColors.textLight,
+                              ),
                             ),
                           ],
                         ),
                       ),
-                      const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: AppColors.textLight),
+                      const Icon(
+                        Icons.arrow_forward_ios_rounded,
+                        size: 14,
+                        color: AppColors.textLight,
+                      ),
                     ],
                   ),
                 ),
@@ -528,7 +602,8 @@ class BackupScreen extends StatelessWidget {
               const InfoBanner(
                 icon: Icons.shield_rounded,
                 title: 'Private & End-to-End Encrypted',
-                subtitle: 'Backups reside in your personal Google Drive hidden app container. Nobody else has access.',
+                subtitle:
+                    'Backups reside in your personal Google Drive hidden app container. Nobody else has access.',
               ),
               const SizedBox(height: 24),
             ],
@@ -554,7 +629,10 @@ class BackupScreen extends StatelessWidget {
             children: [
               Text(
                 label,
-                style: const TextStyle(fontSize: 11, color: AppColors.textLight),
+                style: const TextStyle(
+                  fontSize: 11,
+                  color: AppColors.textLight,
+                ),
               ),
               const SizedBox(height: 2),
               Text(

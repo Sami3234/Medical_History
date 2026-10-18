@@ -26,12 +26,14 @@ class _SplashScreenState extends State<SplashScreen>
       vsync: this,
       duration: const Duration(milliseconds: 1500),
     );
-    _fade = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(parent: _ctrl, curve: Curves.easeIn),
-    );
-    _scale = Tween<double>(begin: 0.8, end: 1).animate(
-      CurvedAnimation(parent: _ctrl, curve: Curves.elasticOut),
-    );
+    _fade = Tween<double>(
+      begin: 0,
+      end: 1,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeIn));
+    _scale = Tween<double>(
+      begin: 0.8,
+      end: 1,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.elasticOut));
     _ctrl.forward();
     _navigate();
   }
@@ -39,8 +41,9 @@ class _SplashScreenState extends State<SplashScreen>
   Future<void> _navigate() async {
     await Future.delayed(const Duration(seconds: 2));
     if (!mounted) return;
-    
-    final isLoggedIn = SupabaseConfig.isInitialized &&
+
+    final isLoggedIn =
+        SupabaseConfig.isInitialized &&
         (SupabaseConfig.auth?.currentUser != null);
 
     if (isLoggedIn) {
@@ -59,7 +62,6 @@ class _SplashScreenState extends State<SplashScreen>
     }
   }
 
-
   @override
   void dispose() {
     _ctrl.dispose();
@@ -74,7 +76,11 @@ class _SplashScreenState extends State<SplashScreen>
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [AppColors.primaryDark, AppColors.primary, AppColors.primaryLight],
+            colors: [
+              AppColors.primaryDark,
+              AppColors.primary,
+              AppColors.primaryLight,
+            ],
           ),
         ),
         child: Center(

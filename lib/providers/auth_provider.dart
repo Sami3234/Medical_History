@@ -58,10 +58,7 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> signIn({
-    required String email,
-    required String password,
-  }) async {
+  Future<bool> signIn({required String email, required String password}) async {
     try {
       _setLoading(true);
       _error = null;
@@ -158,24 +155,35 @@ class AuthProvider extends ChangeNotifier {
 
   String _friendlyError(Object e) {
     final msg = e.toString().toLowerCase();
-    if (msg.contains('invalid login') || msg.contains('invalid credentials')) {
+    if (msg.contains('invalid login') ||
+        msg.contains('invalid credentials') ||
+        msg.contains('invalid_grant') ||
+        msg.contains('invalid username or password')) {
       return 'Incorrect email or password. Please try again.';
     }
-    if (msg.contains('email already')) {
+    if (msg.contains('email already') || msg.contains('user_already_exists')) {
       return 'This email is already registered. Please sign in instead.';
     }
-    if (msg.contains('network') || msg.contains('socketexception')) {
-      return 'Network error. Please check your internet connection.';
+    if (msg.contains('network') ||
+        msg.contains('socketexception') ||
+        msg.contains('failed host lookup') ||
+        msg.contains('clientexception') ||
+        msg.contains('authretryablefetchexception') ||
+        msg.contains('no address associated') ||
+        msg.contains('connection refused') ||
+        msg.contains('unreachable') ||
+        msg.contains('timed out')) {
+      return 'Unable to connect. Please check your internet connection and try again.';
     }
     if (msg.contains('cancelled') || msg.contains('user cancelled')) {
       return 'Sign-in was cancelled.';
     }
-    if (msg.contains('supabase is not initialized')) {
-      return 'Google sign-in requires internet connection.';
+    if (msg.contains('email not confirmed')) {
+      return 'Please verify your email address to continue.';
     }
-    if (msg.contains('too many requests')) {
+    if (msg.contains('too many requests') || msg.contains('rate limit')) {
       return 'Too many attempts. Please wait a moment and try again.';
     }
-    return 'Something went wrong. Please try again.';
+    return 'Authentication failed. Please verify your details and try again.';
   }
 }

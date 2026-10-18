@@ -5,6 +5,9 @@ class MedFileModel {
   final String fileUrl;
   final String fileType; // prescription, labReport, xray, scan, other
   final String? description;
+  final String? fileName;
+  final String? mimeType;
+  final String? backupUrl;
   final DateTime createdAt;
 
   MedFileModel({
@@ -14,6 +17,9 @@ class MedFileModel {
     required this.fileUrl,
     required this.fileType,
     this.description,
+    this.fileName,
+    this.mimeType,
+    this.backupUrl,
     required this.createdAt,
   });
 
@@ -25,6 +31,9 @@ class MedFileModel {
       fileUrl: map['file_url'] as String,
       fileType: map['file_type'] as String,
       description: map['description'] as String?,
+      fileName: map['file_name'] as String?,
+      mimeType: map['mime_type'] as String?,
+      backupUrl: map['backup_url'] as String?,
       createdAt: DateTime.parse(map['created_at'] as String),
     );
   }
@@ -35,5 +44,22 @@ class MedFileModel {
     'file_url': fileUrl,
     'file_type': fileType,
     'description': description,
+    'file_name': fileName,
+    'mime_type': mimeType,
+    'backup_url': backupUrl,
+    'created_at': createdAt.toIso8601String(),
   };
+
+  MedFileModel copyWith({String? backupUrl}) => MedFileModel(
+    id: id,
+    visitId: visitId,
+    memberId: memberId,
+    fileUrl: fileUrl,
+    fileType: fileType,
+    description: description,
+    fileName: fileName,
+    mimeType: mimeType,
+    backupUrl: backupUrl ?? this.backupUrl,
+    createdAt: createdAt,
+  );
 }

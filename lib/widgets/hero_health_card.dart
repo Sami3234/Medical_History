@@ -1,5 +1,13 @@
 import 'package:flutter/material.dart';
 import '../config/theme.dart';
+import 'app_avatar.dart';
+
+class HeroHealthCardAvatar {
+  final String name;
+  final String? avatarUrl;
+
+  const HeroHealthCardAvatar({required this.name, this.avatarUrl});
+}
 
 class HeroHealthCard extends StatelessWidget {
   final String? tag;
@@ -10,6 +18,7 @@ class HeroHealthCard extends StatelessWidget {
   final VoidCallback? onAction;
   final Widget? leading;
   final List<String>? avatarInitials;
+  final List<HeroHealthCardAvatar>? memberAvatars;
 
   const HeroHealthCard({
     super.key,
@@ -21,6 +30,7 @@ class HeroHealthCard extends StatelessWidget {
     this.onAction,
     this.leading,
     this.avatarInitials,
+    this.memberAvatars,
   });
 
   @override
@@ -124,32 +134,58 @@ class HeroHealthCard extends StatelessWidget {
                     const SizedBox(height: 16),
                     content!,
                   ],
-                  if (avatarInitials != null && avatarInitials!.isNotEmpty) ...[
+                  if ((memberAvatars != null && memberAvatars!.isNotEmpty) ||
+                      (avatarInitials != null &&
+                          avatarInitials!.isNotEmpty)) ...[
                     const SizedBox(height: 20),
                     Row(
                       children: [
                         Expanded(
                           child: Wrap(
                             spacing: 8,
-                            children: avatarInitials!.map((initials) {
-                              return Container(
-                                width: 38,
-                                height: 38,
-                                decoration: const BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: Colors.white,
-                                ),
-                                alignment: Alignment.center,
-                                child: Text(
-                                  initials,
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w700,
-                                    color: Color(0xFF2E7D32),
-                                  ),
-                                ),
-                              );
-                            }).toList(),
+                            runSpacing: 6,
+                            children:
+                                memberAvatars != null &&
+                                    memberAvatars!.isNotEmpty
+                                ? memberAvatars!.map((item) {
+                                    return AppAvatar(
+                                      name: item.name,
+                                      avatarUrl: item.avatarUrl,
+                                      size: 38,
+                                      border: Border.all(
+                                        color: Colors.white,
+                                        width: 2,
+                                      ),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withValues(
+                                            alpha: 0.15,
+                                          ),
+                                          blurRadius: 4,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ],
+                                    );
+                                  }).toList()
+                                : avatarInitials!.map((initials) {
+                                    return Container(
+                                      width: 38,
+                                      height: 38,
+                                      decoration: const BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: Colors.white,
+                                      ),
+                                      alignment: Alignment.center,
+                                      child: Text(
+                                        initials,
+                                        style: const TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w700,
+                                          color: Color(0xFF2E7D32),
+                                        ),
+                                      ),
+                                    );
+                                  }).toList(),
                           ),
                         ),
                         if (actionText != null && onAction != null) ...[
@@ -178,7 +214,10 @@ class HeroHealthCard extends StatelessWidget {
                                   ),
                                 ),
                                 const SizedBox(width: 4),
-                                const Icon(Icons.arrow_forward_rounded, size: 16),
+                                const Icon(
+                                  Icons.arrow_forward_rounded,
+                                  size: 16,
+                                ),
                               ],
                             ),
                           ),

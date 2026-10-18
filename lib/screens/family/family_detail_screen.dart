@@ -30,12 +30,59 @@ class _FamilyDetailScreenState extends State<FamilyDetailScreen> {
     final famProv = context.watch<FamilyProvider>();
     final memberProv = context.watch<MemberProvider>();
 
-    final family = famProv.families.firstWhere(
-      (f) => f.id == widget.id || f.familyId == widget.id,
-      orElse: () => famProv.families.isNotEmpty
-          ? famProv.families.first
-          : throw Exception('Family not found'),
-    );
+    final families = famProv.families;
+    final family =
+        families
+            .where((f) => f.id == widget.id || f.familyId == widget.id)
+            .firstOrNull ??
+        (families.isNotEmpty ? families.first : null);
+
+    if (family == null) {
+      return Scaffold(
+        backgroundColor: AppColors.bg,
+        appBar: AppBar(
+          title: const Text('Family details'),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
+            onPressed: () => context.pop(),
+          ),
+        ),
+        body: Center(
+          child: famProv.loading
+              ? const CircularProgressIndicator(color: AppColors.primary)
+              : Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.family_restroom_rounded,
+                      size: 54,
+                      color: AppColors.textLight,
+                    ),
+                    const SizedBox(height: 14),
+                    const Text(
+                      'Family space not found',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textDark,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () => context.pop(),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                      ),
+                      child: const Text(
+                        'Go Back',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  ],
+                ),
+        ),
+      );
+    }
 
     final members = memberProv.members;
 
@@ -63,7 +110,9 @@ class _FamilyDetailScreenState extends State<FamilyDetailScreen> {
                   if (parts.length >= 2) {
                     return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
                   }
-                  return m.name.substring(0, m.name.length >= 2 ? 2 : 1).toUpperCase();
+                  return m.name
+                      .substring(0, m.name.length >= 2 ? 2 : 1)
+                      .toUpperCase();
                 }).toList(),
                 actionText: 'Edit family',
                 onAction: () => _showEditDialog(context, family),
@@ -75,7 +124,10 @@ class _FamilyDetailScreenState extends State<FamilyDetailScreen> {
                 children: [
                   Expanded(
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 18,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(20),
@@ -92,7 +144,9 @@ class _FamilyDetailScreenState extends State<FamilyDetailScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            members.length < 10 ? '0${members.length}' : '${members.length}',
+                            members.length < 10
+                                ? '0${members.length}'
+                                : '${members.length}',
                             style: const TextStyle(
                               fontSize: 32,
                               fontWeight: FontWeight.w800,
@@ -115,7 +169,10 @@ class _FamilyDetailScreenState extends State<FamilyDetailScreen> {
                   const SizedBox(width: 14),
                   Expanded(
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 18,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(20),
@@ -170,7 +227,11 @@ class _FamilyDetailScreenState extends State<FamilyDetailScreen> {
                   ),
                   TextButton.icon(
                     onPressed: () => context.push(AppRoutes.memberAdd),
-                    icon: const Icon(Icons.add_rounded, size: 18, color: AppColors.primary),
+                    icon: const Icon(
+                      Icons.add_rounded,
+                      size: 18,
+                      color: AppColors.primary,
+                    ),
                     label: const Text(
                       'Add',
                       style: TextStyle(
@@ -187,8 +248,11 @@ class _FamilyDetailScreenState extends State<FamilyDetailScreen> {
               // Members List
               ...members.map((member) {
                 final initials = member.name.split(' ').length >= 2
-                    ? '${member.name.split(' ')[0][0]}${member.name.split(' ')[1][0]}'.toUpperCase()
-                    : member.name.substring(0, member.name.length >= 2 ? 2 : 1).toUpperCase();
+                    ? '${member.name.split(' ')[0][0]}${member.name.split(' ')[1][0]}'
+                          .toUpperCase()
+                    : member.name
+                          .substring(0, member.name.length >= 2 ? 2 : 1)
+                          .toUpperCase();
 
                 String subtitle = member.relation;
                 if (member.notes != null && member.notes!.isNotEmpty) {
@@ -205,7 +269,10 @@ class _FamilyDetailScreenState extends State<FamilyDetailScreen> {
                     onTap: () => context.push('/members/${member.id}'),
                     borderRadius: BorderRadius.circular(20),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 14,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(20),
@@ -300,10 +367,9 @@ class _FamilyDetailScreenState extends State<FamilyDetailScreen> {
           ElevatedButton(
             onPressed: () {
               if (editCtrl.text.isNotEmpty) {
-                context.read<FamilyProvider>().updateFamily(
-                  family.id,
-                  {'name': editCtrl.text.trim()},
-                );
+                context.read<FamilyProvider>().updateFamily(family.id, {
+                  'name': editCtrl.text.trim(),
+                });
                 Navigator.pop(ctx);
               }
             },

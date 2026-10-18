@@ -1,8 +1,11 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:image_picker/image_picker.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../config/supabase_config.dart';
 import '../models/med_file_model.dart';
 import 'mock_data_service.dart';
+import 'cloudinary_service.dart';
 
 class StorageService {
   final _mock = MockDataService();
@@ -12,11 +15,63 @@ class StorageService {
     required String path,
     required File file,
   }) async {
+    // If it's an image, upload to Cloudinary
+    final ext = file.path.split('.').last.toLowerCase();
+    if (['jpg', 'jpeg', 'png', 'webp'].contains(ext)) {
+      final res = await CloudinaryService.uploadImage(
+        file: file,
+        folder: bucket,
+      );
+      if (res.success && res.secureUrl != null) {
+        return res.secureUrl!;
+      }
+    }
+
+    // Fallback to Supabase storage if initialized
     if (SupabaseConfig.isInitialized && SupabaseConfig.storage != null) {
-      await SupabaseConfig.storage!.from(bucket).upload(path, file);
-      return SupabaseConfig.storage!.from(bucket).getPublicUrl(path);
+      return uploadBytes(
+        bucket: bucket,
+        path: path,
+        bytes: await file.readAsBytes(),
+      );
     }
     return 'assets/docs/${file.path.split(Platform.pathSeparator).last}';
+  }
+
+  Future<String> uploadBytes({
+    required String bucket,
+    required String path,
+    required List<int> bytes,
+  }) async {
+    final userId = SupabaseConfig.currentUserId;
+    if (!SupabaseConfig.isInitialized ||
+        SupabaseConfig.storage == null ||
+        userId == null) {
+      throw StateError(
+        'Sign in is required before uploading medical documents.',
+      );
+    }
+
+    final normalizedPath = path
+        .replaceAll('\\', '/')
+        .replaceFirst(RegExp(r'^/+'), '');
+    final securePath = normalizedPath.startsWith('$userId/')
+        ? normalizedPath
+        : '$userId/$normalizedPath';
+    await SupabaseConfig.storage!
+        .from(bucket)
+        .uploadBinary(
+          securePath,
+          Uint8List.fromList(bytes),
+          fileOptions: const FileOptions(upsert: false),
+        );
+
+    if (bucket == 'avatars') {
+      return SupabaseConfig.storage!.from(bucket).getPublicUrl(securePath);
+    }
+    return SupabaseConfig.storage!
+        .from(bucket)
+        .createSignedUrl(securePath, 60 * 60 * 24 * 365);
   }
 
   Future<String?> pickAndUpload({
@@ -27,15 +82,24 @@ class StorageService {
     final picked = await picker.pickImage(source: ImageSource.gallery);
     if (picked == null) return null;
 
-    final file = File(picked.path);
-    final ext = picked.path.split('.').last;
-    final path = '$folder/${DateTime.now().millisecondsSinceEpoch}.$ext';
-    return uploadFile(bucket: bucket, path: path, file: file);
+    final bytes = await picked.readAsBytes();
+    final res = await CloudinaryService.uploadImage(
+      bytes: bytes,
+      filename: picked.name,
+      folder: bucket,
+    );
+    if (res.success && res.secureUrl != null) {
+      return res.secureUrl!;
+    }
+    return null;
   }
 
   Future<void> deleteFile(String bucket, String path) async {
     if (SupabaseConfig.isInitialized && SupabaseConfig.storage != null) {
-      await SupabaseConfig.storage!.from(bucket).remove([path]);
+      final userId = SupabaseConfig.currentUserId;
+      if (userId == null) return;
+      final securePath = path.startsWith('$userId/') ? path : '$userId/$path';
+      await SupabaseConfig.storage!.from(bucket).remove([securePath]);
     }
   }
 

@@ -33,7 +33,10 @@ class _ForgotScreenState extends State<ForgotScreen> {
       setState(() => _sent = true);
       context.showSnack('Password reset link sent to your email');
     } else {
-      context.showSnack(auth.error ?? 'Failed to send reset link', isError: true);
+      context.showSnack(
+        auth.error ?? 'Failed to send reset link',
+        isError: true,
+      );
     }
   }
 
@@ -121,9 +124,15 @@ class _ForgotScreenState extends State<ForgotScreen> {
                   keyboardType: TextInputType.emailAddress,
                   decoration: const InputDecoration(
                     hintText: 'you@example.com',
-                    prefixIcon: Icon(Icons.mail_outline_rounded, color: AppColors.textLight, size: 20),
+                    prefixIcon: Icon(
+                      Icons.mail_outline_rounded,
+                      color: AppColors.textLight,
+                      size: 20,
+                    ),
                   ),
-                  validator: (v) => (v == null || !v.contains('@')) ? 'Please enter valid email' : null,
+                  validator: (v) => (v == null || !v.contains('@'))
+                      ? 'Please enter valid email'
+                      : null,
                 ),
                 const SizedBox(height: 24),
                 SizedBox(
@@ -141,14 +150,20 @@ class _ForgotScreenState extends State<ForgotScreen> {
                         ? const SizedBox(
                             width: 22,
                             height: 22,
-                            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
                           )
                         : Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Text(
                                 _sent ? 'Resend reset link' : 'Send reset link',
-                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                ),
                               ),
                               const SizedBox(width: 8),
                               const Icon(Icons.arrow_forward_rounded, size: 18),
@@ -159,7 +174,11 @@ class _ForgotScreenState extends State<ForgotScreen> {
                 const SizedBox(height: 20),
                 TextButton.icon(
                   onPressed: () => context.pop(),
-                  icon: const Icon(Icons.arrow_back_rounded, size: 16, color: AppColors.primary),
+                  icon: const Icon(
+                    Icons.arrow_back_rounded,
+                    size: 16,
+                    color: AppColors.primary,
+                  ),
                   label: const Text(
                     'Back to sign in',
                     style: TextStyle(

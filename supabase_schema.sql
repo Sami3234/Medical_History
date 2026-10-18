@@ -13,9 +13,49 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   full_name TEXT,
   avatar_url TEXT,
   phone TEXT,
+  is_admin BOOLEAN DEFAULT false NOT NULL,
   created_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL,
   updated_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL
 );
+
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT false NOT NULL;
+
+CREATE OR REPLACE FUNCTION public.is_admin()
+RETURNS BOOLEAN
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT COALESCE(
+    (SELECT profiles.is_admin FROM public.profiles WHERE profiles.id = auth.uid()),
+    false
+  );
+$$;
+
+REVOKE ALL ON FUNCTION public.is_admin() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.is_admin() TO authenticated;
+
+CREATE OR REPLACE FUNCTION public.protect_admin_flag()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF auth.uid() IS NOT NULL
+      AND NEW.is_admin IS DISTINCT FROM OLD.is_admin
+      AND NOT public.is_admin() THEN
+    RAISE EXCEPTION 'Only an administrator can change administrator access';
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS protect_profile_admin_flag ON public.profiles;
+CREATE TRIGGER protect_profile_admin_flag
+  BEFORE UPDATE ON public.profiles
+  FOR EACH ROW EXECUTE FUNCTION public.protect_admin_flag();
 
 -- Trigger to automatically create a profile row when a new user signs up
 CREATE OR REPLACE FUNCTION public.handle_new_user()
@@ -86,6 +126,8 @@ CREATE TABLE IF NOT EXISTS public.visits (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   member_id UUID NOT NULL REFERENCES public.members(id) ON DELETE CASCADE,
   doctor_id UUID REFERENCES public.doctors(id) ON DELETE SET NULL,
+  doctor_name TEXT,
+  hospital TEXT,
   visit_date TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL,
   symptoms TEXT,
   diagnosis TEXT,
@@ -94,6 +136,11 @@ CREATE TABLE IF NOT EXISTS public.visits (
   follow_up_date TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL
 );
+
+-- Ensure columns exist if table was already created
+ALTER TABLE public.visits ADD COLUMN IF NOT EXISTS doctor_name TEXT;
+ALTER TABLE public.visits ADD COLUMN IF NOT EXISTS hospital TEXT;
+ALTER TABLE public.members ADD COLUMN IF NOT EXISTS avatar_url TEXT;
 
 -- 7. Medications Table
 CREATE TABLE IF NOT EXISTS public.medications (
@@ -149,14 +196,28 @@ ALTER TABLE public.med_files ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.appointments ENABLE ROW LEVEL SECURITY;
 
 -- Profiles: Users can only read/update their own profile
+DROP POLICY IF EXISTS "Users can view own profile" ON public.profiles;
 CREATE POLICY "Users can view own profile" ON public.profiles FOR SELECT USING (auth.uid() = id);
+
+DROP POLICY IF EXISTS "Users can update own profile" ON public.profiles;
 CREATE POLICY "Users can update own profile" ON public.profiles FOR UPDATE USING (auth.uid() = id);
+
+DROP POLICY IF EXISTS "Users can insert own profile" ON public.profiles;
 CREATE POLICY "Users can insert own profile" ON public.profiles FOR INSERT WITH CHECK (auth.uid() = id);
 
+DROP POLICY IF EXISTS "Admins can view profiles" ON public.profiles;
+CREATE POLICY "Admins can view profiles" ON public.profiles FOR SELECT USING (public.is_admin());
+
+DROP POLICY IF EXISTS "Admins can update profiles" ON public.profiles;
+CREATE POLICY "Admins can update profiles" ON public.profiles
+FOR UPDATE USING (public.is_admin()) WITH CHECK (public.is_admin());
+
 -- Families: Users manage only their own families
+DROP POLICY IF EXISTS "Users manage own families" ON public.families;
 CREATE POLICY "Users manage own families" ON public.families FOR ALL USING (auth.uid() = user_id);
 
 -- Members: Users manage members belonging to their families
+DROP POLICY IF EXISTS "Users manage own family members" ON public.members;
 CREATE POLICY "Users manage own family members" ON public.members FOR ALL USING (
   EXISTS (
     SELECT 1 FROM public.families
@@ -166,9 +227,11 @@ CREATE POLICY "Users manage own family members" ON public.members FOR ALL USING 
 );
 
 -- Doctors: Users manage only their own doctors
+DROP POLICY IF EXISTS "Users manage own doctors" ON public.doctors;
 CREATE POLICY "Users manage own doctors" ON public.doctors FOR ALL USING (auth.uid() = user_id);
 
 -- Visits: Users manage visits for their family members
+DROP POLICY IF EXISTS "Users manage own visits" ON public.visits;
 CREATE POLICY "Users manage own visits" ON public.visits FOR ALL USING (
   EXISTS (
     SELECT 1 FROM public.members
@@ -179,6 +242,7 @@ CREATE POLICY "Users manage own visits" ON public.visits FOR ALL USING (
 );
 
 -- Medications: Users manage medications for visits of their members
+DROP POLICY IF EXISTS "Users manage medications" ON public.medications;
 CREATE POLICY "Users manage medications" ON public.medications FOR ALL USING (
   EXISTS (
     SELECT 1 FROM public.visits
@@ -190,6 +254,7 @@ CREATE POLICY "Users manage medications" ON public.medications FOR ALL USING (
 );
 
 -- Med Files: Users manage files for their family members
+DROP POLICY IF EXISTS "Users manage med files" ON public.med_files;
 CREATE POLICY "Users manage med files" ON public.med_files FOR ALL USING (
   EXISTS (
     SELECT 1 FROM public.members
@@ -200,24 +265,65 @@ CREATE POLICY "Users manage med files" ON public.med_files FOR ALL USING (
 );
 
 -- Appointments: Users manage their own appointments
+DROP POLICY IF EXISTS "Users manage own appointments" ON public.appointments;
 CREATE POLICY "Users manage own appointments" ON public.appointments FOR ALL USING (auth.uid() = user_id);
 
--- ==============================================================================
--- Storage Buckets Setup
--- ==============================================================================
-INSERT INTO storage.buckets (id, name, public)
-VALUES 
-  ('prescriptions', 'prescriptions', true),
-  ('reports', 'reports', true),
-  ('avatars', 'avatars', true)
-ON CONFLICT (id) DO NOTHING;
+DROP POLICY IF EXISTS "Admins manage families" ON public.families;
+CREATE POLICY "Admins manage families" ON public.families FOR ALL USING (public.is_admin()) WITH CHECK (public.is_admin());
 
--- Public read access for storage objects in these buckets
-CREATE POLICY "Public Access Prescriptions" ON storage.objects FOR SELECT USING (bucket_id = 'prescriptions');
-CREATE POLICY "Public Access Reports" ON storage.objects FOR SELECT USING (bucket_id = 'reports');
-CREATE POLICY "Public Access Avatars" ON storage.objects FOR SELECT USING (bucket_id = 'avatars');
+DROP POLICY IF EXISTS "Admins manage members" ON public.members;
+CREATE POLICY "Admins manage members" ON public.members FOR ALL USING (public.is_admin()) WITH CHECK (public.is_admin());
 
--- Authenticated upload access
-CREATE POLICY "Authenticated users can upload objects" ON storage.objects FOR INSERT WITH CHECK (
-  auth.role() = 'authenticated'
+DROP POLICY IF EXISTS "Admins manage doctors" ON public.doctors;
+CREATE POLICY "Admins manage doctors" ON public.doctors FOR ALL USING (public.is_admin()) WITH CHECK (public.is_admin());
+
+DROP POLICY IF EXISTS "Admins manage visits" ON public.visits;
+CREATE POLICY "Admins manage visits" ON public.visits FOR ALL USING (public.is_admin()) WITH CHECK (public.is_admin());
+
+DROP POLICY IF EXISTS "Admins manage medications" ON public.medications;
+CREATE POLICY "Admins manage medications" ON public.medications FOR ALL USING (public.is_admin()) WITH CHECK (public.is_admin());
+
+DROP POLICY IF EXISTS "Admins manage med files" ON public.med_files;
+CREATE POLICY "Admins manage med files" ON public.med_files FOR ALL USING (public.is_admin()) WITH CHECK (public.is_admin());
+
+DROP POLICY IF EXISTS "Admins manage appointments" ON public.appointments;
+CREATE POLICY "Admins manage appointments" ON public.appointments FOR ALL USING (public.is_admin()) WITH CHECK (public.is_admin());
+
+-- ==============================================================================
+-- Optional Supabase Storage Setup (Note: Cloudinary handles images & avatars)
+-- ==============================================================================
+DO $$
+BEGIN
+  INSERT INTO storage.buckets (id, name, public)
+  VALUES
+    ('prescriptions', 'prescriptions', false),
+    ('reports', 'reports', false),
+    ('avatars', 'avatars', true)
+  ON CONFLICT (id) DO UPDATE SET public = EXCLUDED.public;
+EXCEPTION WHEN OTHERS THEN
+  NULL; -- Ignore if storage permissions differ
+END $$;
+
+DROP POLICY IF EXISTS "Users upload own medical objects" ON storage.objects;
+CREATE POLICY "Users upload own medical objects" ON storage.objects
+FOR INSERT TO authenticated
+WITH CHECK (
+  bucket_id IN ('prescriptions', 'reports', 'avatars')
+  AND (storage.foldername(name))[1] = auth.uid()::text
+);
+
+DROP POLICY IF EXISTS "Users view own medical objects" ON storage.objects;
+CREATE POLICY "Users view own medical objects" ON storage.objects
+FOR SELECT TO authenticated
+USING (
+  bucket_id IN ('prescriptions', 'reports', 'avatars')
+  AND (storage.foldername(name))[1] = auth.uid()::text
+);
+
+DROP POLICY IF EXISTS "Users delete own medical objects" ON storage.objects;
+CREATE POLICY "Users delete own medical objects" ON storage.objects
+FOR DELETE TO authenticated
+USING (
+  bucket_id IN ('prescriptions', 'reports', 'avatars')
+  AND (storage.foldername(name))[1] = auth.uid()::text
 );

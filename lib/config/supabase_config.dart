@@ -5,14 +5,18 @@ import 'constants.dart';
 class SupabaseConfig {
   static bool get isConfigured =>
       AppStrings.supabaseUrl.startsWith('http') &&
-      !AppStrings.supabaseUrl.contains('YOUR_SUPABASE_URL');
+      !AppStrings.supabaseUrl.contains('YOUR_SUPABASE_URL') &&
+      AppStrings.supabaseAnonKey.isNotEmpty &&
+      !AppStrings.supabaseAnonKey.contains('YOUR_SUPABASE_ANON_KEY');
 
   static bool _initialized = false;
   static bool get isInitialized => _initialized;
 
   static Future<void> init() async {
     if (!isConfigured) {
-      debugPrint('Supabase credentials not configured. Using local mock repository.');
+      debugPrint(
+        'Supabase credentials not configured. Using local mock repository.',
+      );
       return;
     }
     try {
@@ -28,10 +32,11 @@ class SupabaseConfig {
   }
 
   // Quick accessors
-  static SupabaseClient? get client => _initialized ? Supabase.instance.client : null;
+  static SupabaseClient? get client =>
+      _initialized ? Supabase.instance.client : null;
   static SupabaseClient? get db => client;
   static GoTrueClient? get auth => _initialized ? client?.auth : null;
   static String? get currentUserId => auth?.currentUser?.id;
-  static SupabaseStorageClient? get storage => _initialized ? client?.storage : null;
+  static SupabaseStorageClient? get storage =>
+      _initialized ? client?.storage : null;
 }
-

@@ -7,6 +7,7 @@ import '../../config/supabase_config.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/member_provider.dart';
 import '../../widgets/bottom_nav.dart';
+import '../../widgets/app_avatar.dart';
 
 class MemberListScreen extends StatefulWidget {
   const MemberListScreen({super.key});
@@ -23,7 +24,10 @@ class _MemberListScreenState extends State<MemberListScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final uid = context.read<AuthProvider>().uid ?? SupabaseConfig.currentUserId ?? 'usr-100';
+      final uid =
+          context.read<AuthProvider>().uid ??
+          SupabaseConfig.currentUserId ??
+          'usr-100';
       context.read<MemberProvider>().loadAll(uid);
     });
   }
@@ -49,11 +53,16 @@ class _MemberListScreenState extends State<MemberListScreen> {
         title: const Text('All Family Members'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
-          onPressed: () => context.pop(),
+          onPressed: () => context.canPop()
+              ? context.pop()
+              : context.go(AppRoutes.dashboard),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.person_add_alt_1_rounded, color: AppColors.primary),
+            icon: const Icon(
+              Icons.person_add_alt_1_rounded,
+              color: AppColors.primary,
+            ),
             onPressed: () => context.push(AppRoutes.memberAdd),
           ),
         ],
@@ -84,7 +93,11 @@ class _MemberListScreenState extends State<MemberListScreen> {
                   onChanged: (v) => setState(() => _query = v),
                   decoration: const InputDecoration(
                     hintText: 'Search member by name or relation...',
-                    prefixIcon: Icon(Icons.search_rounded, color: AppColors.textLight, size: 22),
+                    prefixIcon: Icon(
+                      Icons.search_rounded,
+                      color: AppColors.textLight,
+                      size: 22,
+                    ),
                     border: InputBorder.none,
                     enabledBorder: InputBorder.none,
                     focusedBorder: InputBorder.none,
@@ -105,17 +118,16 @@ class _MemberListScreenState extends State<MemberListScreen> {
               const SizedBox(height: 14),
 
               ...members.map((member) {
-                final initials = member.name.split(' ').length >= 2
-                    ? '${member.name.split(' ')[0][0]}${member.name.split(' ')[1][0]}'.toUpperCase()
-                    : member.name.substring(0, member.name.length >= 2 ? 2 : 1).toUpperCase();
-
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 12),
                   child: InkWell(
                     onTap: () => context.push('/members/${member.id}'),
                     borderRadius: BorderRadius.circular(20),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 14,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(20),
@@ -130,21 +142,13 @@ class _MemberListScreenState extends State<MemberListScreen> {
                       ),
                       child: Row(
                         children: [
-                          Container(
-                            width: 52,
-                            height: 52,
-                            decoration: const BoxDecoration(
-                              color: Color(0xFFDEF2D7),
-                              shape: BoxShape.circle,
-                            ),
-                            alignment: Alignment.center,
-                            child: Text(
-                              initials,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w800,
-                                color: Color(0xFF235E1E),
-                              ),
+                          AppAvatar(
+                            name: member.name,
+                            avatarUrl: member.avatarUrl,
+                            size: 52,
+                            border: Border.all(
+                              color: AppColors.primary.withValues(alpha: 0.25),
+                              width: 1.2,
                             ),
                           ),
                           const SizedBox(width: 14),

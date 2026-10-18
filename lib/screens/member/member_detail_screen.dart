@@ -1,11 +1,19 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../../config/theme.dart';
+import '../../models/member_model.dart';
 import '../../providers/member_provider.dart';
 import '../../providers/visit_provider.dart';
 import '../../providers/records_provider.dart';
+import '../../services/avatar_cache_service.dart';
+import '../../services/cloudinary_service.dart';
+import '../../services/image_cropper_service.dart';
+import '../../utils/extensions.dart';
 import '../../widgets/bottom_nav.dart';
+import '../../widgets/app_avatar.dart';
 
 class MemberDetailScreen extends StatefulWidget {
   final String id;
@@ -16,6 +24,8 @@ class MemberDetailScreen extends StatefulWidget {
 }
 
 class _MemberDetailScreenState extends State<MemberDetailScreen> {
+  bool _uploadingPhoto = false;
+
   @override
   void initState() {
     super.initState();
@@ -24,25 +34,120 @@ class _MemberDetailScreenState extends State<MemberDetailScreen> {
     });
   }
 
+  Future<void> _changeMemberPhoto(MemberModel member) async {
+    if (_uploadingPhoto) return;
+    try {
+      final picker = ImagePicker();
+      final picked = await picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 85,
+      );
+      if (picked == null || !mounted) return;
+
+      final croppedBytes = await ImageCropperService.cropAvatar(
+        file: picked,
+        context: context,
+      );
+      if (croppedBytes == null || !mounted) return;
+
+      // 1. Immediately cache in memory and local storage
+      final dataUri = 'data:image/png;base64,${base64Encode(croppedBytes)}';
+      AvatarMemoryCache.set(member.id, croppedBytes);
+      AvatarMemoryCache.set(member.name, croppedBytes);
+      AvatarMemoryCache.set(member.name.toLowerCase(), croppedBytes);
+      AvatarMemoryCache.set(dataUri, croppedBytes);
+
+      // 2. Immediately update member state so all screens reflect the photo instantly
+      await context.read<MemberProvider>().updateMember(member.id, {
+        'avatar_url': dataUri,
+      });
+      if (mounted) context.showSnack('Photo updated successfully!');
+
+      // 3. Background cloud backup
+      setState(() => _uploadingPhoto = true);
+      final res = await CloudinaryService.uploadImage(
+        bytes: croppedBytes,
+        filename: picked.name,
+        folder: 'medical_history/avatars',
+      );
+
+      if (res.success && res.secureUrl != null && mounted) {
+        AvatarMemoryCache.set(res.secureUrl!, croppedBytes);
+        await context.read<MemberProvider>().updateMember(member.id, {
+          'avatar_url': res.secureUrl,
+        });
+      }
+    } catch (e) {
+      if (mounted) context.showSnack('Unable to update photo', isError: true);
+    } finally {
+      if (mounted) setState(() => _uploadingPhoto = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final memberProv = context.watch<MemberProvider>();
     final visitProv = context.watch<VisitProvider>();
     final recordsProv = context.watch<RecordsProvider>();
 
-    final member = memberProv.members.firstWhere(
-      (m) => m.id == widget.id,
-      orElse: () => memberProv.members.isNotEmpty
-          ? memberProv.members.first
-          : throw Exception('Member not found'),
-    );
+    final members = memberProv.members;
+    final member =
+        members.where((m) => m.id == widget.id).firstOrNull ??
+        (members.isNotEmpty ? members.first : null);
 
-    final initials = member.name.split(' ').length >= 2
-        ? '${member.name.split(' ')[0][0]}${member.name.split(' ')[1][0]}'.toUpperCase()
-        : member.name.substring(0, member.name.length >= 2 ? 2 : 1).toUpperCase();
+    if (member == null) {
+      return Scaffold(
+        backgroundColor: AppColors.bg,
+        appBar: AppBar(
+          title: const Text('Member profile'),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
+            onPressed: () => context.pop(),
+          ),
+        ),
+        body: Center(
+          child: memberProv.loading
+              ? const CircularProgressIndicator(color: AppColors.primary)
+              : Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.person_off_rounded,
+                      size: 54,
+                      color: AppColors.textLight,
+                    ),
+                    const SizedBox(height: 14),
+                    const Text(
+                      'Member profile not found',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textDark,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () => context.pop(),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                      ),
+                      child: const Text(
+                        'Go Back',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  ],
+                ),
+        ),
+      );
+    }
 
-    final totalVisits = visitProv.visits.isNotEmpty ? visitProv.visits.length : 6;
-    final totalFiles = recordsProv.files.where((f) => f.memberId == member.id).length;
+    final totalVisits = visitProv.visits.isNotEmpty
+        ? visitProv.visits.length
+        : 0;
+    final totalFiles = recordsProv.files
+        .where((f) => f.memberId == member.id)
+        .length;
 
     return Scaffold(
       backgroundColor: AppColors.bg,
@@ -79,21 +184,56 @@ class _MemberDetailScreenState extends State<MemberDetailScreen> {
                   children: [
                     Row(
                       children: [
-                        Container(
-                          width: 68,
-                          height: 68,
-                          decoration: const BoxDecoration(
-                            color: Color(0xFFDEF2D7),
-                            shape: BoxShape.circle,
-                          ),
-                          alignment: Alignment.center,
-                          child: Text(
-                            initials,
-                            style: const TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.w800,
-                              color: Color(0xFF235E1E),
-                            ),
+                        GestureDetector(
+                          onTap: () => _changeMemberPhoto(member),
+                          child: Stack(
+                            children: [
+                              AppAvatar(
+                                name: member.name,
+                                avatarUrl: member.avatarUrl,
+                                size: 68,
+                                border: Border.all(
+                                  color: Colors.white,
+                                  width: 2.5,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.2),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              Positioned(
+                                bottom: 0,
+                                right: 0,
+                                child: Container(
+                                  padding: const EdgeInsets.all(5),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF2E7D32),
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: Colors.white,
+                                      width: 1.5,
+                                    ),
+                                  ),
+                                  child: _uploadingPhoto
+                                      ? const SizedBox(
+                                          width: 12,
+                                          height: 12,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 1.5,
+                                            color: Colors.white,
+                                          ),
+                                        )
+                                      : const Icon(
+                                          Icons.camera_alt_rounded,
+                                          color: Colors.white,
+                                          size: 13,
+                                        ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                         const SizedBox(width: 16),
@@ -127,7 +267,9 @@ class _MemberDetailScreenState extends State<MemberDetailScreen> {
                     // Badges row: 12 years, O+, Active
                     Row(
                       children: [
-                        _buildPillBadge(member.age == 'N/A' ? '12 years' : member.age),
+                        _buildPillBadge(
+                          member.age == 'N/A' ? '12 years' : member.age,
+                        ),
                         const SizedBox(width: 10),
                         _buildPillBadge(member.bloodGroup ?? 'O+'),
                         const SizedBox(width: 10),
@@ -144,7 +286,10 @@ class _MemberDetailScreenState extends State<MemberDetailScreen> {
                 children: [
                   Expanded(
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 18,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(20),
@@ -184,7 +329,10 @@ class _MemberDetailScreenState extends State<MemberDetailScreen> {
                   const SizedBox(width: 14),
                   Expanded(
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 18,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(20),
@@ -201,7 +349,11 @@ class _MemberDetailScreenState extends State<MemberDetailScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            totalFiles > 0 ? (totalFiles < 10 ? '0$totalFiles' : '$totalFiles') : '08',
+                            totalFiles > 0
+                                ? (totalFiles < 10
+                                      ? '0$totalFiles'
+                                      : '$totalFiles')
+                                : '08',
                             style: const TextStyle(
                               fontSize: 32,
                               fontWeight: FontWeight.w800,
@@ -259,7 +411,10 @@ class _MemberDetailScreenState extends State<MemberDetailScreen> {
                 decoration: BoxDecoration(
                   color: const Color(0xFFEFF8EC),
                   borderRadius: BorderRadius.circular(22),
-                  border: Border.all(color: const Color(0xFFD6EBD2), width: 1.2),
+                  border: Border.all(
+                    color: const Color(0xFFD6EBD2),
+                    width: 1.2,
+                  ),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -305,7 +460,10 @@ class _MemberDetailScreenState extends State<MemberDetailScreen> {
                         backgroundColor: Colors.white,
                         foregroundColor: const Color(0xFF2E7D32),
                         elevation: 0,
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 12,
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(20),
                         ),

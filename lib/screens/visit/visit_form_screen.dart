@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../config/theme.dart';
+import '../../config/routes.dart';
 import '../../providers/member_provider.dart';
 import '../../providers/visit_provider.dart';
 import '../../utils/extensions.dart';
@@ -17,13 +18,22 @@ class _VisitFormScreenState extends State<VisitFormScreen> {
   final _form = GlobalKey<FormState>();
   final _doctorName = TextEditingController();
   final _hospital = TextEditingController();
-  final _dateCtrl = TextEditingController(text: '16 / 10 / 2026');
-  DateTime _visitDate = DateTime(2026, 10, 16);
+  late final TextEditingController _dateCtrl;
+  DateTime _visitDate = DateTime.now();
   final _symptoms = TextEditingController();
   final _diagnosis = TextEditingController();
   final List<Map<String, String>> _addedMedicines = [];
   String? _selectedMemberId;
   bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _dateCtrl = TextEditingController(
+      text:
+          '${_visitDate.day.toString().padLeft(2, '0')} / ${_visitDate.month.toString().padLeft(2, '0')} / ${_visitDate.year}',
+    );
+  }
 
   @override
   void dispose() {
@@ -45,7 +55,8 @@ class _VisitFormScreenState extends State<VisitFormScreen> {
     if (picked != null) {
       setState(() {
         _visitDate = picked;
-        _dateCtrl.text = '${picked.day.toString().padLeft(2, '0')} / ${picked.month.toString().padLeft(2, '0')} / ${picked.year}';
+        _dateCtrl.text =
+            '${picked.day.toString().padLeft(2, '0')} / ${picked.month.toString().padLeft(2, '0')} / ${picked.year}';
       });
     }
   }
@@ -60,7 +71,12 @@ class _VisitFormScreenState extends State<VisitFormScreen> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) => Container(
-        padding: EdgeInsets.fromLTRB(24, 20, 24, MediaQuery.of(ctx).viewInsets.bottom + 24),
+        padding: EdgeInsets.fromLTRB(
+          24,
+          20,
+          24,
+          MediaQuery.of(ctx).viewInsets.bottom + 24,
+        ),
         decoration: const BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
@@ -73,28 +89,41 @@ class _VisitFormScreenState extends State<VisitFormScreen> {
               child: Container(
                 width: 40,
                 height: 4,
-                decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(10)),
+                decoration: BoxDecoration(
+                  color: AppColors.border,
+                  borderRadius: BorderRadius.circular(10),
+                ),
               ),
             ),
             const SizedBox(height: 18),
             const Text(
               'Add Prescribed Medicine',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.textDark),
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: AppColors.textDark,
+              ),
             ),
             const SizedBox(height: 14),
             TextField(
               controller: medName,
-              decoration: const InputDecoration(hintText: 'Medicine name (e.g. Paracetamol syrup)'),
+              decoration: const InputDecoration(
+                hintText: 'Medicine name (e.g. Paracetamol syrup)',
+              ),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: dosage,
-              decoration: const InputDecoration(hintText: 'Dosage (e.g. 5ml, twice daily)'),
+              decoration: const InputDecoration(
+                hintText: 'Dosage (e.g. 5ml, twice daily)',
+              ),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: duration,
-              decoration: const InputDecoration(hintText: 'Duration (e.g. 3 days)'),
+              decoration: const InputDecoration(
+                hintText: 'Duration (e.g. 3 days)',
+              ),
             ),
             const SizedBox(height: 20),
             SizedBox(
@@ -127,7 +156,11 @@ class _VisitFormScreenState extends State<VisitFormScreen> {
     setState(() => _saving = true);
     try {
       final memberProv = context.read<MemberProvider>();
-      final mId = _selectedMemberId ?? (memberProv.members.isNotEmpty ? memberProv.members.first.id : 'mem-3');
+      if (memberProv.members.isEmpty) {
+        context.showSnack('Please add a family member first.', isError: true);
+        return;
+      }
+      final mId = _selectedMemberId ?? memberProv.members.first.id;
 
       await context.read<VisitProvider>().addVisit({
         'member_id': mId,
@@ -136,6 +169,12 @@ class _VisitFormScreenState extends State<VisitFormScreen> {
         'visit_date': _visitDate.toIso8601String(),
         'symptoms': _symptoms.text.trim(),
         'diagnosis': _diagnosis.text.trim(),
+        'treatment': _addedMedicines
+            .map(
+              (medicine) =>
+                  '${medicine['name']} | ${medicine['dosage']} | ${medicine['duration']}',
+            )
+            .join('\n'),
       });
 
       if (!mounted) return;
@@ -152,10 +191,80 @@ class _VisitFormScreenState extends State<VisitFormScreen> {
   @override
   Widget build(BuildContext context) {
     final memberProv = context.watch<MemberProvider>();
-    final selectedMember = memberProv.members.firstWhere(
-      (m) => m.id == _selectedMemberId,
-      orElse: () => memberProv.members.isNotEmpty ? memberProv.members.first : throw Exception(),
-    );
+    final members = memberProv.members;
+
+    if (members.isEmpty) {
+      return Scaffold(
+        backgroundColor: AppColors.bg,
+        appBar: AppBar(
+          title: const Text('New doctor visit'),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
+            onPressed: () => context.pop(),
+          ),
+        ),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(
+                  Icons.group_add_outlined,
+                  size: 64,
+                  color: AppColors.primary,
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'No family members found',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.textDark,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Please add at least one family member before recording a doctor visit.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 13, color: AppColors.textLight),
+                ),
+                const SizedBox(height: 20),
+                ElevatedButton.icon(
+                  onPressed: () => context.push(AppRoutes.memberAdd),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 12,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  icon: const Icon(
+                    Icons.person_add_alt_1_rounded,
+                    color: Colors.white,
+                    size: 18,
+                  ),
+                  label: const Text(
+                    'Add Family Member',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    final selectedMember =
+        members.where((m) => m.id == _selectedMemberId).firstOrNull ??
+        members.first;
 
     return Scaffold(
       backgroundColor: AppColors.bg,
@@ -181,7 +290,10 @@ class _VisitFormScreenState extends State<VisitFormScreen> {
                   decoration: BoxDecoration(
                     color: const Color(0xFFEFF8EC),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: const Color(0xFFD6EBD2), width: 1.2),
+                    border: Border.all(
+                      color: const Color(0xFFD6EBD2),
+                      width: 1.2,
+                    ),
                   ),
                   child: Row(
                     children: [
@@ -194,7 +306,12 @@ class _VisitFormScreenState extends State<VisitFormScreen> {
                         ),
                         alignment: Alignment.center,
                         child: Text(
-                          selectedMember.name.substring(0, selectedMember.name.length >= 2 ? 2 : 1).toUpperCase(),
+                          selectedMember.name
+                              .substring(
+                                0,
+                                selectedMember.name.length >= 2 ? 2 : 1,
+                              )
+                              .toUpperCase(),
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w800,
@@ -235,30 +352,48 @@ class _VisitFormScreenState extends State<VisitFormScreen> {
                 // Doctor name
                 const Text(
                   'Doctor name',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textDark),
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textDark,
+                  ),
                 ),
                 const SizedBox(height: 6),
                 TextFormField(
                   controller: _doctorName,
                   decoration: const InputDecoration(
                     hintText: 'Enter doctor\'s name',
-                    prefixIcon: Icon(Icons.medical_services_outlined, color: AppColors.textLight, size: 20),
+                    prefixIcon: Icon(
+                      Icons.medical_services_outlined,
+                      color: AppColors.textLight,
+                      size: 20,
+                    ),
                   ),
-                  validator: (v) => (v == null || v.isEmpty) ? 'Please enter doctor name' : null,
+                  validator: (v) => (v == null || v.isEmpty)
+                      ? 'Please enter doctor name'
+                      : null,
                 ),
                 const SizedBox(height: 18),
 
                 // Hospital / Clinic
                 const Text(
                   'Hospital / Clinic',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textDark),
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textDark,
+                  ),
                 ),
                 const SizedBox(height: 6),
                 TextFormField(
                   controller: _hospital,
                   decoration: const InputDecoration(
                     hintText: 'Enter hospital name',
-                    prefixIcon: Icon(Icons.location_on_outlined, color: AppColors.textLight, size: 20),
+                    prefixIcon: Icon(
+                      Icons.location_on_outlined,
+                      color: AppColors.textLight,
+                      size: 20,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 18),
@@ -266,7 +401,11 @@ class _VisitFormScreenState extends State<VisitFormScreen> {
                 // Visit date
                 const Text(
                   'Visit date',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textDark),
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textDark,
+                  ),
                 ),
                 const SizedBox(height: 6),
                 TextFormField(
@@ -275,7 +414,11 @@ class _VisitFormScreenState extends State<VisitFormScreen> {
                   onTap: _pickDate,
                   decoration: const InputDecoration(
                     hintText: 'DD / MM / YYYY',
-                    prefixIcon: Icon(Icons.calendar_today_outlined, color: AppColors.textLight, size: 20),
+                    prefixIcon: Icon(
+                      Icons.calendar_today_outlined,
+                      color: AppColors.textLight,
+                      size: 20,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 18),
@@ -283,23 +426,37 @@ class _VisitFormScreenState extends State<VisitFormScreen> {
                 // Symptoms / reason
                 const Text(
                   'Symptoms / reason',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textDark),
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textDark,
+                  ),
                 ),
                 const SizedBox(height: 6),
                 TextFormField(
                   controller: _symptoms,
                   decoration: const InputDecoration(
                     hintText: 'Describe health complaint',
-                    prefixIcon: Icon(Icons.favorite_outline_rounded, color: AppColors.textLight, size: 20),
+                    prefixIcon: Icon(
+                      Icons.favorite_outline_rounded,
+                      color: AppColors.textLight,
+                      size: 20,
+                    ),
                   ),
-                  validator: (v) => (v == null || v.isEmpty) ? 'Please describe symptoms' : null,
+                  validator: (v) => (v == null || v.isEmpty)
+                      ? 'Please describe symptoms'
+                      : null,
                 ),
                 const SizedBox(height: 18),
 
                 // Diagnosis / treatment
                 const Text(
                   'Diagnosis / treatment',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textDark),
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textDark,
+                  ),
                 ),
                 const SizedBox(height: 6),
                 TextFormField(
@@ -307,32 +464,48 @@ class _VisitFormScreenState extends State<VisitFormScreen> {
                   maxLines: 2,
                   decoration: const InputDecoration(
                     hintText: 'Enter medical notes',
-                    prefixIcon: Icon(Icons.description_outlined, color: AppColors.textLight, size: 20),
+                    prefixIcon: Icon(
+                      Icons.description_outlined,
+                      color: AppColors.textLight,
+                      size: 20,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 18),
 
                 // Added medicines display
                 if (_addedMedicines.isNotEmpty) ...[
-                  ..._addedMedicines.map((m) => Container(
-                        margin: const EdgeInsets.only(bottom: 8),
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: AppColors.border),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.medication_outlined, color: AppColors.primary, size: 20),
-                            const SizedBox(width: 10),
-                            Text(
-                              '${m['name']} (${m['dosage'] ?? ''})',
-                              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                  ..._addedMedicines.map(
+                    (m) => Container(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 10,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: AppColors.border),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.medication_outlined,
+                            color: AppColors.primary,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 10),
+                          Text(
+                            '${m['name']} (${m['dosage'] ?? ''})',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
                             ),
-                          ],
-                        ),
-                      )),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                   const SizedBox(height: 6),
                 ],
 
@@ -346,12 +519,19 @@ class _VisitFormScreenState extends State<VisitFormScreen> {
                     decoration: BoxDecoration(
                       color: const Color(0xFFEFF8EC),
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: const Color(0xFFD6EBD2), width: 1.2),
+                      border: Border.all(
+                        color: const Color(0xFFD6EBD2),
+                        width: 1.2,
+                      ),
                     ),
                     child: const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.add_rounded, color: Color(0xFF2E7D32), size: 20),
+                        Icon(
+                          Icons.add_rounded,
+                          color: Color(0xFF2E7D32),
+                          size: 20,
+                        ),
                         SizedBox(width: 6),
                         Text(
                           '+ Add medicines / prescriptions',
@@ -383,7 +563,10 @@ class _VisitFormScreenState extends State<VisitFormScreen> {
                         ? const SizedBox(
                             width: 22,
                             height: 22,
-                            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
                           )
                         : const Row(
                             mainAxisAlignment: MainAxisAlignment.center,

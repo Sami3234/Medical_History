@@ -22,8 +22,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       description:
           'Keep every family member\'s complete medical journey in one secure place. Track blood groups, allergies, and hereditary conditions effortlessly.',
       icon: Icons.family_restroom_rounded,
-      accentColor: Color(0xFF10B981),
-      features: ['Family Tree View', 'Emergency Blood Groups', 'Member Profiles'],
+      accentColor: AppColors.primary,
+      features: [
+        'Family Tree View',
+        'Emergency Blood Groups',
+        'Member Profiles',
+      ],
     ),
     OnboardingData(
       badge: 'CONSULTATIONS & REPORTS',
@@ -31,7 +35,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       description:
           'Never lose a prescription or lab report again. Log doctor visits, upload medical documents, and keep treatment timelines at your fingertips.',
       icon: Icons.medical_services_rounded,
-      accentColor: Color(0xFF0EA5E9),
+      accentColor: AppColors.primary,
       features: ['Digital Prescriptions', 'Doctor Directory', 'Lab Test Files'],
     ),
     OnboardingData(
@@ -40,7 +44,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       description:
           'Fortified with biometric fingerprint authentication and cloud backup. Your sensitive health data stays private and accessible whenever you need it.',
       icon: Icons.fingerprint_rounded,
-      accentColor: Color(0xFF8B5CF6),
+      accentColor: AppColors.primary,
       features: ['Fingerprint Login', 'Cloud Sync', 'Emergency Access'],
     ),
   ];
@@ -285,7 +289,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       onPressed: _completeOnboarding,
                       style: TextButton.styleFrom(
                         foregroundColor: AppColors.textSecondary,
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
                       ),
                       child: const Text(
                         'Skip',
@@ -311,146 +318,165 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 },
                 itemBuilder: (context, index) {
                   final page = _pages[index];
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 28),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Spacer(),
-
-                        // Visual Icon / Illustration container
-                        Container(
-                          width: 170,
-                          height: 170,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            gradient: RadialGradient(
-                              colors: [
-                                page.accentColor.withAlpha(45),
-                                page.accentColor.withAlpha(10),
-                                Colors.transparent,
-                              ],
-                              stops: const [0.3, 0.7, 1.0],
+                  return LayoutBuilder(
+                    builder: (context, constraints) {
+                      return SingleChildScrollView(
+                        physics: const BouncingScrollPhysics(),
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            minHeight: constraints.maxHeight,
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 24,
+                              vertical: 8,
                             ),
-                          ),
-                          child: Center(
-                            child: Container(
-                              width: 110,
-                              height: 110,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: Colors.white,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: page.accentColor.withAlpha(50),
-                                    blurRadius: 24,
-                                    offset: const Offset(0, 8),
-                                  ),
-                                ],
-                              ),
-                              child: Icon(
-                                page.icon,
-                                size: 54,
-                                color: page.accentColor,
-                              ),
-                            ),
-                          ),
-                        ),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const SizedBox(height: 8),
 
-                        const SizedBox(height: 32),
-
-                        // Badge
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 5,
-                          ),
-                          decoration: BoxDecoration(
-                            color: page.accentColor.withAlpha(20),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            page.badge,
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
-                              color: page.accentColor,
-                              letterSpacing: 0.8,
-                            ),
-                          ),
-                        ),
-
-                        const SizedBox(height: 16),
-
-                        // Main Title
-                        Text(
-                          page.title,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.textPrimary,
-                            height: 1.25,
-                          ),
-                        ),
-
-                        const SizedBox(height: 12),
-
-                        // Description
-                        Text(
-                          page.description,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            height: 1.5,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-
-                        const SizedBox(height: 20),
-
-                        // Feature Chips
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          alignment: WrapAlignment.center,
-                          children: page.features.map((feat) {
-                            return Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 6,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.grey.shade100,
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(color: Colors.grey.shade200),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.check_circle_rounded,
-                                    size: 14,
-                                    color: page.accentColor,
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    feat,
-                                    style: const TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                      color: AppColors.textPrimary,
+                                // Visual Icon / Illustration container
+                                Container(
+                                  width: 140,
+                                  height: 140,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    gradient: RadialGradient(
+                                      colors: [
+                                        page.accentColor.withAlpha(45),
+                                        page.accentColor.withAlpha(10),
+                                        Colors.transparent,
+                                      ],
+                                      stops: const [0.3, 0.7, 1.0],
                                     ),
                                   ),
-                                ],
-                              ),
-                            );
-                          }).toList(),
-                        ),
+                                  child: Center(
+                                    child: Container(
+                                      width: 96,
+                                      height: 96,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: Colors.white,
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: page.accentColor.withAlpha(
+                                              50,
+                                            ),
+                                            blurRadius: 20,
+                                            offset: const Offset(0, 6),
+                                          ),
+                                        ],
+                                      ),
+                                      child: Icon(
+                                        page.icon,
+                                        size: 46,
+                                        color: page.accentColor,
+                                      ),
+                                    ),
+                                  ),
+                                ),
 
-                        const Spacer(),
-                      ],
-                    ),
+                                const SizedBox(height: 20),
+
+                                // Badge
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: page.accentColor.withAlpha(20),
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: Text(
+                                    page.badge,
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w700,
+                                      color: page.accentColor,
+                                      letterSpacing: 0.8,
+                                    ),
+                                  ),
+                                ),
+
+                                const SizedBox(height: 12),
+
+                                // Main Title
+                                Text(
+                                  page.title,
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.w800,
+                                    color: AppColors.textPrimary,
+                                    height: 1.25,
+                                  ),
+                                ),
+
+                                const SizedBox(height: 10),
+
+                                // Description
+                                Text(
+                                  page.description,
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                    fontSize: 13.5,
+                                    height: 1.45,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                ),
+
+                                const SizedBox(height: 16),
+
+                                // Feature Chips
+                                Wrap(
+                                  spacing: 8,
+                                  runSpacing: 8,
+                                  alignment: WrapAlignment.center,
+                                  children: page.features.map((feat) {
+                                    return Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 5,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey.shade100,
+                                        borderRadius: BorderRadius.circular(16),
+                                        border: Border.all(
+                                          color: Colors.grey.shade200,
+                                        ),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(
+                                            Icons.check_circle_rounded,
+                                            size: 14,
+                                            color: page.accentColor,
+                                          ),
+                                          const SizedBox(width: 6),
+                                          Text(
+                                            feat,
+                                            style: const TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w600,
+                                              color: AppColors.textPrimary,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  }).toList(),
+                                ),
+
+                                const SizedBox(height: 12),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    },
                   );
                 },
               ),

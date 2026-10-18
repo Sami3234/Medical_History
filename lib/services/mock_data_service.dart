@@ -5,30 +5,7 @@ import '../models/doctor_model.dart';
 import '../models/visit_model.dart';
 import '../models/medication_model.dart';
 import '../models/med_file_model.dart';
-
-class AppointmentModel {
-  final String id;
-  final String memberId;
-  final String memberName;
-  final String? doctorId;
-  final String doctorName;
-  final String specialization;
-  final DateTime dateTime;
-  final String title;
-  final String status;
-
-  AppointmentModel({
-    required this.id,
-    required this.memberId,
-    required this.memberName,
-    this.doctorId,
-    required this.doctorName,
-    required this.specialization,
-    required this.dateTime,
-    required this.title,
-    this.status = 'Upcoming',
-  });
-}
+import '../models/appointment_model.dart';
 
 class MockDataService {
   static final MockDataService _instance = MockDataService._internal();

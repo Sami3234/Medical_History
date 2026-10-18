@@ -36,7 +36,9 @@ class _DoctorFormScreenState extends State<DoctorFormScreen> {
     setState(() => _saving = true);
     try {
       await context.read<DoctorProvider>().addDoctor({
-        'name': _name.text.startsWith('Dr.') ? _name.text.trim() : 'Dr. ${_name.text.trim()}',
+        'name': _name.text.startsWith('Dr.')
+            ? _name.text.trim()
+            : 'Dr. ${_name.text.trim()}',
         'specialization': _spec.text.trim(),
         'hospital': _hospital.text.trim(),
         'phone': _phone.text.trim(),
@@ -74,50 +76,80 @@ class _DoctorFormScreenState extends State<DoctorFormScreen> {
               children: [
                 const Text(
                   'Doctor name',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textDark),
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textDark,
+                  ),
                 ),
                 const SizedBox(height: 6),
                 TextFormField(
                   controller: _name,
                   decoration: const InputDecoration(
                     hintText: 'e.g. Dr. Sana Malik',
-                    prefixIcon: Icon(Icons.person_outline_rounded, color: AppColors.textLight, size: 20),
+                    prefixIcon: Icon(
+                      Icons.person_outline_rounded,
+                      color: AppColors.textLight,
+                      size: 20,
+                    ),
                   ),
-                  validator: (v) => (v == null || v.isEmpty) ? 'Please enter doctor name' : null,
+                  validator: (v) => (v == null || v.isEmpty)
+                      ? 'Please enter doctor name'
+                      : null,
                 ),
                 const SizedBox(height: 18),
 
                 const Text(
                   'Specialization',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textDark),
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textDark,
+                  ),
                 ),
                 const SizedBox(height: 6),
                 TextFormField(
                   controller: _spec,
                   decoration: const InputDecoration(
                     hintText: 'e.g. Pediatrician, General Physician',
-                    prefixIcon: Icon(Icons.medical_services_outlined, color: AppColors.textLight, size: 20),
+                    prefixIcon: Icon(
+                      Icons.medical_services_outlined,
+                      color: AppColors.textLight,
+                      size: 20,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 18),
 
                 const Text(
                   'Hospital / Clinic',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textDark),
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textDark,
+                  ),
                 ),
                 const SizedBox(height: 6),
                 TextFormField(
                   controller: _hospital,
                   decoration: const InputDecoration(
                     hintText: 'e.g. City Children\'s Clinic',
-                    prefixIcon: Icon(Icons.local_hospital_outlined, color: AppColors.textLight, size: 20),
+                    prefixIcon: Icon(
+                      Icons.local_hospital_outlined,
+                      color: AppColors.textLight,
+                      size: 20,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 18),
 
                 const Text(
                   'Phone number',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textDark),
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textDark,
+                  ),
                 ),
                 const SizedBox(height: 6),
                 TextFormField(
@@ -125,21 +157,33 @@ class _DoctorFormScreenState extends State<DoctorFormScreen> {
                   keyboardType: TextInputType.phone,
                   decoration: const InputDecoration(
                     hintText: '+92 300 1234567',
-                    prefixIcon: Icon(Icons.phone_outlined, color: AppColors.textLight, size: 20),
+                    prefixIcon: Icon(
+                      Icons.phone_outlined,
+                      color: AppColors.textLight,
+                      size: 20,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 18),
 
                 const Text(
                   'Address / City',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textDark),
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textDark,
+                  ),
                 ),
                 const SizedBox(height: 6),
                 TextFormField(
                   controller: _address,
                   decoration: const InputDecoration(
                     hintText: 'Model Town, Lahore',
-                    prefixIcon: Icon(Icons.location_on_outlined, color: AppColors.textLight, size: 20),
+                    prefixIcon: Icon(
+                      Icons.location_on_outlined,
+                      color: AppColors.textLight,
+                      size: 20,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 32),
@@ -159,14 +203,20 @@ class _DoctorFormScreenState extends State<DoctorFormScreen> {
                         ? const SizedBox(
                             width: 22,
                             height: 22,
-                            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
                           )
                         : const Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Text(
                                 'Save doctor',
-                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                ),
                               ),
                               SizedBox(width: 8),
                               Icon(Icons.arrow_forward_rounded, size: 18),

@@ -32,12 +32,20 @@ class BackupProvider extends ChangeNotifier {
 
     try {
       final prefs = await SharedPreferences.getInstance();
-      _autoBackupFrequency = prefs.getString('auto_backup_frequency') ?? 'Daily';
+      _autoBackupFrequency =
+          prefs.getString('auto_backup_frequency') ?? 'Daily';
 
       // Silent sign-in if already logged in
       final account = await _service.signInSilently();
       if (account != null) {
         _backupMetadata = await _service.getLatestBackupInfo();
+        if (_autoBackupIsDue()) {
+          try {
+            _backupMetadata = await _service.createBackup();
+          } catch (_) {
+            // Automatic backup is best-effort and never blocks app startup.
+          }
+        }
       }
     } catch (_) {
       // Ignored on initial launch
@@ -45,6 +53,19 @@ class BackupProvider extends ChangeNotifier {
       _isLoadingInfo = false;
       notifyListeners();
     }
+  }
+
+  bool _autoBackupIsDue() {
+    if (_autoBackupFrequency == 'Off') return false;
+    final lastBackup = _backupMetadata?.modifiedTime;
+    if (lastBackup == null) return true;
+    final elapsed = DateTime.now().difference(lastBackup);
+    return switch (_autoBackupFrequency) {
+      'Daily' => elapsed.inHours >= 24,
+      'Weekly' => elapsed.inDays >= 7,
+      'Monthly' => elapsed.inDays >= 30,
+      _ => false,
+    };
   }
 
   void clearError() {
@@ -69,7 +90,7 @@ class BackupProvider extends ChangeNotifier {
       notifyListeners();
       return false;
     } catch (e) {
-      _error = 'Google Drive connection failed: ${e.toString()}';
+      _error = 'Unable to connect to Google Drive. Please try again.';
       _isLoadingInfo = false;
       notifyListeners();
       return false;
@@ -99,7 +120,8 @@ class BackupProvider extends ChangeNotifier {
       notifyListeners();
       return true;
     } catch (e) {
-      _error = 'Backup failed: ${e.toString()}';
+      _error =
+          'Backup failed. Please check your network connection and try again.';
       _isBackingUp = false;
       notifyListeners();
       return false;
@@ -122,7 +144,7 @@ class BackupProvider extends ChangeNotifier {
       notifyListeners();
       return true;
     } catch (e) {
-      _error = 'Restore failed: ${e.toString()}';
+      _error = 'Restore failed. Please check your connection and try again.';
       _isRestoring = false;
       notifyListeners();
       return false;

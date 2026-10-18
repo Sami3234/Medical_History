@@ -2,6 +2,8 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
+import { supabase } from '../lib/supabase';
 import { 
   LayoutDashboard, 
   Users, 
@@ -39,6 +41,13 @@ const systemNav = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+
+  async function signOut() {
+    await supabase.auth.signOut();
+    router.replace('/login');
+    router.refresh();
+  }
 
   function renderNavItem(item) {
     const isActive = pathname === item.href;
@@ -175,9 +184,14 @@ export default function Sidebar() {
               </div>
             </div>
           </div>
-          <Link href="/login" title="Sign out" style={{ color: 'rgba(255, 255, 255, 0.45)', padding: '6px' }}>
+          <button
+            type="button"
+            onClick={signOut}
+            title="Sign out"
+            style={{ color: 'rgba(255, 255, 255, 0.45)', padding: '6px', background: 'none', border: 0, cursor: 'pointer' }}
+          >
             <LogOut size={16} />
-          </Link>
+          </button>
         </div>
       </div>
     </aside>

@@ -1,5 +1,5 @@
 import './globals.css';
-import Sidebar from '../components/Sidebar';
+import AdminShell from '../components/AdminShell';
 
 export const metadata = {
   title: 'Medical History Admin Console',
@@ -10,12 +10,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body>
-        <div className="admin-layout">
-          <Sidebar />
-          <main className="admin-main">
-            {children}
-          </main>
-        </div>
+        <AdminShell>{children}</AdminShell>
       </body>
     </html>
   );

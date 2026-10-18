@@ -44,6 +44,8 @@ dependencies:
   googleapis: ^17.0.0
   extension_google_sign_in_as_googleapis_auth: ^2.0.13
   http: ^1.6.0
+  image_cropper: ^12.2.1
+  open_filex: ^5.0.0
 
 dev_dependencies:
   flutter_test:

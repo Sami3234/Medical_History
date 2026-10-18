@@ -24,7 +24,10 @@ class _DoctorListScreenState extends State<DoctorListScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final uid = context.read<AuthProvider>().uid ?? SupabaseConfig.currentUserId ?? 'usr-100';
+      final uid =
+          context.read<AuthProvider>().uid ??
+          SupabaseConfig.currentUserId ??
+          'usr-100';
       context.read<DoctorProvider>().loadDoctors(uid);
     });
   }
@@ -41,9 +44,11 @@ class _DoctorListScreenState extends State<DoctorListScreen> {
     final allDoctors = docProv.doctors;
 
     final filteredDoctors = allDoctors.where((doc) {
-      final matchesQuery = _query.isEmpty ||
+      final matchesQuery =
+          _query.isEmpty ||
           doc.name.toLowerCase().contains(_query.toLowerCase()) ||
-          (doc.specialization?.toLowerCase().contains(_query.toLowerCase()) ?? false) ||
+          (doc.specialization?.toLowerCase().contains(_query.toLowerCase()) ??
+              false) ||
           (doc.hospital?.toLowerCase().contains(_query.toLowerCase()) ?? false);
 
       if (!matchesQuery) return false;
@@ -134,7 +139,11 @@ class _DoctorListScreenState extends State<DoctorListScreen> {
                   onChanged: (v) => setState(() => _query = v),
                   decoration: const InputDecoration(
                     hintText: 'Search by doctor or hospital...',
-                    prefixIcon: Icon(Icons.search_rounded, color: AppColors.textLight, size: 22),
+                    prefixIcon: Icon(
+                      Icons.search_rounded,
+                      color: AppColors.textLight,
+                      size: 22,
+                    ),
                     border: InputBorder.none,
                     enabledBorder: InputBorder.none,
                     focusedBorder: InputBorder.none,
@@ -145,14 +154,17 @@ class _DoctorListScreenState extends State<DoctorListScreen> {
               const SizedBox(height: 18),
 
               // Filter Tabs
-              Row(
-                children: [
-                  _buildFilterTab('All'),
-                  const SizedBox(width: 10),
-                  _buildFilterTab('General'),
-                  const SizedBox(width: 10),
-                  _buildFilterTab('Pediatrics'),
-                ],
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    _buildFilterTab('All'),
+                    const SizedBox(width: 10),
+                    _buildFilterTab('General'),
+                    const SizedBox(width: 10),
+                    _buildFilterTab('Pediatrics'),
+                  ],
+                ),
               ),
               const SizedBox(height: 26),
 
@@ -168,20 +180,12 @@ class _DoctorListScreenState extends State<DoctorListScreen> {
                       color: AppColors.textDark,
                     ),
                   ),
-                  TextButton(
-                    onPressed: () {},
-                    style: TextButton.styleFrom(
-                      padding: EdgeInsets.zero,
-                      minimumSize: Size.zero,
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    ),
-                    child: const Text(
-                      'See all',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.primary,
-                      ),
+                  Text(
+                    '${filteredDoctors.length} doctor${filteredDoctors.length == 1 ? '' : 's'}',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.primary,
                     ),
                   ),
                 ],
@@ -249,7 +253,11 @@ class _DoctorListScreenState extends State<DoctorListScreen> {
                               const SizedBox(height: 8),
                               Row(
                                 children: [
-                                  const Icon(Icons.star_rounded, color: Colors.amber, size: 18),
+                                  const Icon(
+                                    Icons.star_rounded,
+                                    color: Colors.amber,
+                                    size: 18,
+                                  ),
                                   const SizedBox(width: 4),
                                   Text(
                                     '4.9 • 8 visits',
@@ -285,7 +293,10 @@ class _DoctorListScreenState extends State<DoctorListScreen> {
                           children: [
                             Text(
                               'View details',
-                              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                              ),
                             ),
                             SizedBox(width: 6),
                             Icon(Icons.arrow_forward_rounded, size: 16),
@@ -394,7 +405,11 @@ class _DoctorListScreenState extends State<DoctorListScreen> {
                                 const SizedBox(height: 4),
                                 const Row(
                                   children: [
-                                    Icon(Icons.star_rounded, color: Colors.amber, size: 16),
+                                    Icon(
+                                      Icons.star_rounded,
+                                      color: Colors.amber,
+                                      size: 16,
+                                    ),
                                     SizedBox(width: 4),
                                     Text(
                                       '4.9 • Excellent',

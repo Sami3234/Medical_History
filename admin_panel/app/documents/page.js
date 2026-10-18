@@ -25,69 +25,29 @@ export default function DocumentsVaultPage() {
   const [category, setCategory] = useState('all');
   const [loading, setLoading] = useState(true);
 
-  // Default sample mock documents integrated with Supabase records
-  const sampleDocs = [
-    {
-      id: 'doc-1',
-      title: 'Complete Blood Count (CBC) Lab Report',
-      category: 'Lab Report',
-      fileType: 'PDF',
-      fileSize: '1.2 MB',
-      memberName: 'Ali Khan',
-      doctorName: 'Dr. Sarah Ahmed',
-      createdAt: '2026-10-12',
-      status: 'Normal',
-    },
-    {
-      id: 'doc-2',
-      title: 'Chest X-Ray Digital Scan',
-      category: 'Radiology',
-      fileType: 'IMG',
-      fileSize: '3.4 MB',
-      memberName: 'Fatima Bibi',
-      doctorName: 'Dr. Tariq Mahmood',
-      createdAt: '2026-10-08',
-      status: 'Reviewed',
-    },
-    {
-      id: 'doc-3',
-      title: 'Cardiology ECG & Prescription Sheet',
-      category: 'Prescription',
-      fileType: 'PDF',
-      fileSize: '850 KB',
-      memberName: 'Mohammad Khan',
-      doctorName: 'Dr. Bilal Qureshi',
-      createdAt: '2026-09-28',
-      status: 'Active Rx',
-    },
-    {
-      id: 'doc-4',
-      title: 'Lipid Profile & Glucose Test',
-      category: 'Lab Report',
-      fileType: 'PDF',
-      fileSize: '1.1 MB',
-      memberName: 'Zainab Bibi',
-      doctorName: 'Dr. Sarah Ahmed',
-      createdAt: '2026-09-15',
-      status: 'Normal',
-    },
-  ];
-
   async function loadDocuments() {
     setLoading(true);
     try {
       const { data } = await supabase
-        .from('medical_records')
-        .select('*')
+        .from('med_files')
+        .select('*, members(name)')
         .order('created_at', { ascending: false });
 
       if (data && data.length > 0) {
-        setDocuments(data);
+        setDocuments(data.map((document) => ({
+          ...document,
+          title: document.description,
+          category: document.file_type,
+          fileSize: document.file_size ? `${Math.ceil(document.file_size / 1024)} KB` : null,
+          memberName: document.members?.name,
+          createdAt: document.created_at,
+          fileUrl: document.file_url,
+        })));
       } else {
-        setDocuments(sampleDocs);
+        setDocuments([]);
       }
     } catch (_) {
-      setDocuments(sampleDocs);
+      setDocuments([]);
     } finally {
       setLoading(false);
     }
@@ -164,7 +124,8 @@ export default function DocumentsVaultPage() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
           {filtered.length === 0 ? (
             <div className="card" style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '40px', color: 'var(--text-light)' }}>
-              No documents found matching current filter.
+              No cloud documents found. Mobile reports are stored on the
+              customer&apos;s device and appear here only after cloud synchronization.
             </div>
           ) : (
             filtered.map((doc) => (
@@ -215,7 +176,8 @@ export default function DocumentsVaultPage() {
                     {doc.fileSize || 'Encrypted File'}
                   </span>
                   <button
-                    onClick={() => alert(`Opening secure document: ${doc.title}`)}
+                    onClick={() => doc.fileUrl && window.open(doc.fileUrl, '_blank', 'noopener,noreferrer')}
+                    disabled={!doc.fileUrl}
                     className="btn btn-secondary"
                     style={{ padding: '6px 12px', fontSize: '12px', gap: '4px' }}
                   >

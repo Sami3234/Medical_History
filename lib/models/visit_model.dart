@@ -13,6 +13,7 @@ class VisitModel {
   // Joined fields (populated from queries)
   final String? memberName;
   final String? doctorName;
+  final String? hospital;
 
   VisitModel({
     required this.id,
@@ -27,6 +28,7 @@ class VisitModel {
     required this.createdAt,
     this.memberName,
     this.doctorName,
+    this.hospital,
   });
 
   factory VisitModel.fromMap(Map<String, dynamic> map) {
@@ -44,7 +46,9 @@ class VisitModel {
           : null,
       createdAt: DateTime.parse(map['created_at'] as String),
       memberName: map['members']?['name'] as String?,
-      doctorName: map['doctors']?['name'] as String?,
+      doctorName:
+          map['doctors']?['name'] as String? ?? map['doctor_name'] as String?,
+      hospital: map['hospital'] as String?,
     );
   }
 
@@ -57,6 +61,8 @@ class VisitModel {
     'treatment': treatment,
     'notes': notes,
     'follow_up_date': followUpDate?.toIso8601String(),
+    'doctor_name': doctorName,
+    'hospital': hospital,
   };
 
   bool get hasFollowUp =>

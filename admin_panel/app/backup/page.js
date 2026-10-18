@@ -40,7 +40,7 @@ export default function BackupHubPage() {
         supabase.from('members').select('id', { count: 'exact', head: true }),
         supabase.from('doctors').select('id', { count: 'exact', head: true }),
         supabase.from('visits').select('id', { count: 'exact', head: true }),
-        supabase.from('medical_records').select('id', { count: 'exact', head: true }),
+        supabase.from('med_files').select('id', { count: 'exact', head: true }),
       ]);
 
       setCounts({
@@ -65,12 +65,14 @@ export default function BackupHubPage() {
   async function downloadFullJsonBackup() {
     setExporting(true);
     try {
-      const [profiles, families, members, doctors, visits] = await Promise.all([
+      const [profiles, families, members, doctors, visits, medFiles, appointments] = await Promise.all([
         supabase.from('profiles').select('*'),
         supabase.from('families').select('*'),
         supabase.from('members').select('*'),
         supabase.from('doctors').select('*'),
         supabase.from('visits').select('*'),
+        supabase.from('med_files').select('*'),
+        supabase.from('appointments').select('*'),
       ]);
 
       const backupPackage = {
@@ -85,6 +87,8 @@ export default function BackupHubPage() {
           members: members.data || [],
           doctors: doctors.data || [],
           visits: visits.data || [],
+          med_files: medFiles.data || [],
+          appointments: appointments.data || [],
         },
       };
 

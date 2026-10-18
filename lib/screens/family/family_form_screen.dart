@@ -41,8 +41,12 @@ class _FamilyFormScreenState extends State<FamilyFormScreen> {
         'family_id': 'FAM-$nextNum',
         'name': _name.text.trim(),
         'contact': _contact.text.trim(),
-        'address': '${_city.text.trim().isNotEmpty ? "${_city.text.trim()}, " : ""}${_address.text.trim()}',
-        'user_id': context.read<AuthProvider>().uid ?? SupabaseConfig.currentUserId ?? 'usr-100',
+        'address':
+            '${_city.text.trim().isNotEmpty ? "${_city.text.trim()}, " : ""}${_address.text.trim()}',
+        'user_id':
+            context.read<AuthProvider>().uid ??
+            SupabaseConfig.currentUserId ??
+            'usr-100',
       });
       if (!mounted) return;
       context.showSnack('Family space created successfully');
@@ -79,10 +83,7 @@ class _FamilyFormScreenState extends State<FamilyFormScreen> {
               children: [
                 const Text(
                   'Create a secure space for your loved ones.',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: AppColors.textLight,
-                  ),
+                  style: TextStyle(fontSize: 14, color: AppColors.textLight),
                 ),
                 const SizedBox(height: 20),
 
@@ -155,23 +156,37 @@ class _FamilyFormScreenState extends State<FamilyFormScreen> {
                 // Family name
                 const Text(
                   'Family name',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textDark),
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textDark,
+                  ),
                 ),
                 const SizedBox(height: 6),
                 TextFormField(
                   controller: _name,
                   decoration: const InputDecoration(
                     hintText: 'Enter family name',
-                    prefixIcon: Icon(Icons.person_outline_rounded, color: AppColors.textLight, size: 20),
+                    prefixIcon: Icon(
+                      Icons.person_outline_rounded,
+                      color: AppColors.textLight,
+                      size: 20,
+                    ),
                   ),
-                  validator: (v) => (v == null || v.isEmpty) ? 'Please enter family name' : null,
+                  validator: (v) => (v == null || v.isEmpty)
+                      ? 'Please enter family name'
+                      : null,
                 ),
                 const SizedBox(height: 18),
 
                 // Contact number
                 const Text(
                   'Contact number',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textDark),
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textDark,
+                  ),
                 ),
                 const SizedBox(height: 6),
                 TextFormField(
@@ -179,7 +194,11 @@ class _FamilyFormScreenState extends State<FamilyFormScreen> {
                   keyboardType: TextInputType.phone,
                   decoration: const InputDecoration(
                     hintText: 'Enter phone number',
-                    prefixIcon: Icon(Icons.phone_outlined, color: AppColors.textLight, size: 20),
+                    prefixIcon: Icon(
+                      Icons.phone_outlined,
+                      color: AppColors.textLight,
+                      size: 20,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 18),
@@ -187,14 +206,22 @@ class _FamilyFormScreenState extends State<FamilyFormScreen> {
                 // City
                 const Text(
                   'City',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textDark),
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textDark,
+                  ),
                 ),
                 const SizedBox(height: 6),
                 TextFormField(
                   controller: _city,
                   decoration: const InputDecoration(
                     hintText: 'Enter city',
-                    prefixIcon: Icon(Icons.location_on_outlined, color: AppColors.textLight, size: 20),
+                    prefixIcon: Icon(
+                      Icons.location_on_outlined,
+                      color: AppColors.textLight,
+                      size: 20,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 18),
@@ -202,14 +229,22 @@ class _FamilyFormScreenState extends State<FamilyFormScreen> {
                 // Address
                 const Text(
                   'Address',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textDark),
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textDark,
+                  ),
                 ),
                 const SizedBox(height: 6),
                 TextFormField(
                   controller: _address,
                   decoration: const InputDecoration(
                     hintText: 'Enter address',
-                    prefixIcon: Icon(Icons.home_outlined, color: AppColors.textLight, size: 20),
+                    prefixIcon: Icon(
+                      Icons.home_outlined,
+                      color: AppColors.textLight,
+                      size: 20,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 32),
@@ -230,7 +265,10 @@ class _FamilyFormScreenState extends State<FamilyFormScreen> {
                         ? const SizedBox(
                             width: 22,
                             height: 22,
-                            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
                           )
                         : const Row(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -252,10 +290,7 @@ class _FamilyFormScreenState extends State<FamilyFormScreen> {
                 Center(
                   child: Text(
                     'Family access is private by default',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AppColors.textLight,
-                    ),
+                    style: TextStyle(fontSize: 12, color: AppColors.textLight),
                   ),
                 ),
                 const SizedBox(height: 24),

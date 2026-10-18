@@ -1,23 +1,45 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../config/theme.dart';
+import '../../providers/records_provider.dart';
 import '../../providers/visit_provider.dart';
 import '../../widgets/bottom_nav.dart';
+
 class VisitDetailScreen extends StatelessWidget {
   final String id;
   const VisitDetailScreen({super.key, required this.id});
 
   @override
   Widget build(BuildContext context) {
-    final visitProv = context.watch<VisitProvider>();
+    final visitProvider = context.watch<VisitProvider>();
+    final recordsProvider = context.watch<RecordsProvider>();
+    final visit = visitProvider.visits
+        .where((item) => item.id == id)
+        .firstOrNull;
 
-    final visit = visitProv.visits.firstWhere(
-      (v) => v.id == id,
-      orElse: () => visitProv.visits.isNotEmpty
-          ? visitProv.visits.first
-          : throw Exception('Visit not found'),
-    );
+    if (visit == null) {
+      return Scaffold(
+        backgroundColor: AppColors.bg,
+        appBar: AppBar(
+          title: const Text('Visit details'),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
+            onPressed: () => context.pop(),
+          ),
+        ),
+        body: Center(
+          child: visitProvider.loading
+              ? const CircularProgressIndicator()
+              : const Text('Visit record not found'),
+        ),
+      );
+    }
+
+    final attachments = recordsProvider.files
+        .where((document) => document.visitId == visit.id)
+        .toList();
 
     return Scaffold(
       backgroundColor: AppColors.bg,
@@ -29,306 +51,162 @@ class VisitDetailScreen extends StatelessWidget {
         ),
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Green Hero Card
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(22),
-                decoration: BoxDecoration(
-                  gradient: AppColors.heroGradient,
-                  borderRadius: BorderRadius.circular(24),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.primary.withAlpha(50),
-                      blurRadius: 16,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.medical_information_outlined,
-                          color: Colors.white,
-                          size: 24,
-                        ),
-                        const SizedBox(width: 10),
-                        Text(
-                          '12 October 2026',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white.withAlpha(230),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 14),
-                    Text(
-                      visit.doctorName != null && visit.doctorName!.isNotEmpty
-                          ? visit.doctorName!
-                          : 'Dr. Sana Malik',
-                      style: const TextStyle(
-                        fontSize: 26,
-                        fontWeight: FontWeight.w800,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Pediatrician • City Children\'s Clinic',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.white.withAlpha(220),
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+          children: [
+            Container(
+              padding: const EdgeInsets.all(22),
+              decoration: BoxDecoration(
+                gradient: AppColors.heroGradient,
+                borderRadius: BorderRadius.circular(24),
               ),
-              const SizedBox(height: 20),
-
-              // Consultation summary Card
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(22),
-                  border: Border.all(color: AppColors.border, width: 1.2),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.shadow,
-                      blurRadius: 6,
-                      offset: const Offset(0, 2),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    DateFormat('dd MMMM yyyy').format(visit.visitDate),
+                    style: TextStyle(color: Colors.white.withAlpha(230)),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    visit.doctorName?.trim().isNotEmpty == true
+                        ? visit.doctorName!
+                        : 'Doctor visit',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 25,
+                      fontWeight: FontWeight.w800,
                     ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Consultation summary',
-                      style: TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.textDark,
-                      ),
-                    ),
-                    const SizedBox(height: 18),
-                    Text(
-                      'SYMPTOMS',
-                      style: TextStyle(
-                        fontSize: 11,
-                        letterSpacing: 1.1,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.primary,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      visit.symptoms ?? 'Fever, sore throat and mild cough',
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textDark,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'DIAGNOSIS',
-                      style: TextStyle(
-                        fontSize: 11,
-                        letterSpacing: 1.1,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.primary,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      visit.diagnosis ?? 'Seasonal viral infection',
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textDark,
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    [
+                      if (visit.memberName?.isNotEmpty == true)
+                        visit.memberName!,
+                      if (visit.hospital?.isNotEmpty == true) visit.hospital!,
+                    ].join(' • '),
+                    style: TextStyle(color: Colors.white.withAlpha(220)),
+                  ),
+                ],
               ),
+            ),
+            const SizedBox(height: 18),
+            _section(
+              title: 'Consultation summary',
+              children: [
+                _field('Symptoms', visit.symptoms),
+                const SizedBox(height: 16),
+                _field('Diagnosis', visit.diagnosis),
+                if (visit.notes?.trim().isNotEmpty == true) ...[
+                  const SizedBox(height: 16),
+                  _field('Notes', visit.notes),
+                ],
+              ],
+            ),
+            if (visit.treatment?.trim().isNotEmpty == true) ...[
               const SizedBox(height: 18),
-
-              // Prescribed medicines Card
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(22),
-                  border: Border.all(color: AppColors.border, width: 1.2),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.shadow,
-                      blurRadius: 6,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Prescribed medicines',
-                      style: TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.textDark,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Icon(
-                          Icons.medication_outlined,
-                          color: AppColors.textDark,
-                          size: 24,
-                        ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                'Paracetamol syrup',
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.textDark,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                '5 ml • Twice daily • 3 days',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: AppColors.textLight,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 12),
-                      child: Divider(color: AppColors.divider, height: 1),
-                    ),
-                    Text(
-                      'After meals; follow doctor\'s advice.',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: AppColors.textMid,
-                      ),
-                    ),
-                  ],
-                ),
+              _section(
+                title: 'Prescribed medicines',
+                children: [
+                  Text(
+                    visit.treatment!.replaceAll(' | ', ' • '),
+                    style: const TextStyle(height: 1.7),
+                  ),
+                ],
               ),
-              const SizedBox(height: 18),
-
-              // Document attachment (Soft Green Card)
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFEFF8EC),
-                  borderRadius: BorderRadius.circular(22),
-                  border: Border.all(color: const Color(0xFFD6EBD2), width: 1.2),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.description_outlined,
-                          color: Color(0xFF2E7D32),
-                          size: 28,
-                        ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                'Prescription_12Oct.pdf',
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.textDark,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                'Medical prescription • PDF',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: AppColors.textMid,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Opening Prescription_12Oct.pdf')),
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: const Color(0xFF2E7D32),
-                        elevation: 0,
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                      ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            'View document',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          SizedBox(width: 6),
-                          Icon(Icons.arrow_forward_rounded, size: 16),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
             ],
-          ),
+            if (visit.followUpDate != null) ...[
+              const SizedBox(height: 18),
+              _section(
+                title: 'Follow-up',
+                children: [
+                  Text(DateFormat('dd MMMM yyyy').format(visit.followUpDate!)),
+                ],
+              ),
+            ],
+            if (attachments.isNotEmpty) ...[
+              const SizedBox(height: 18),
+              _section(
+                title: 'Attached documents',
+                children: attachments
+                    .map(
+                      (document) => ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: const Icon(
+                          Icons.description_outlined,
+                          color: AppColors.primary,
+                        ),
+                        title: Text(
+                          document.description ??
+                              document.fileName ??
+                              'Document',
+                        ),
+                        subtitle: Text(document.fileName ?? document.fileType),
+                        trailing: const Icon(Icons.open_in_new_rounded),
+                        onTap: () async {
+                          final opened = await recordsProvider.openDocument(
+                            document,
+                          );
+                          if (!opened && context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'No compatible app could open this file.',
+                                ),
+                              ),
+                            );
+                          }
+                        },
+                      ),
+                    )
+                    .toList(),
+              ),
+            ],
+          ],
         ),
       ),
       bottomNavigationBar: const BottomNav(currentIndex: 3),
     );
   }
+
+  Widget _field(String label, String? value) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        label.toUpperCase(),
+        style: const TextStyle(
+          color: AppColors.primary,
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 1,
+        ),
+      ),
+      const SizedBox(height: 5),
+      Text(
+        value?.trim().isNotEmpty == true ? value! : 'Not recorded',
+        style: const TextStyle(fontWeight: FontWeight.w600),
+      ),
+    ],
+  );
+
+  Widget _section({required String title, required List<Widget> children}) =>
+      Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 16),
+            ...children,
+          ],
+        ),
+      );
 }

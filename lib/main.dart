@@ -11,9 +11,12 @@ import 'providers/visit_provider.dart';
 import 'providers/records_provider.dart';
 import 'providers/backup_provider.dart';
 
+import 'services/avatar_cache_service.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await SupabaseConfig.init();
+  await AvatarMemoryCache.initPersisted();
   runApp(const MyApp());
 }
 

@@ -57,12 +57,20 @@ class MemberProvider extends ChangeNotifier {
     _setLoading(true);
     _error = null;
     try {
-      await _service.create(data);
-      if (data['family_id'] != null) {
-        _members = await _service.getByFamily(data['family_id']);
-      } else {
-        _members = await _service.getAll(SupabaseConfig.currentUserId ?? 'usr-100');
-      }
+      final newMember = await _service.create(data);
+      // Ensure the member is in local list immediately
+      _members.removeWhere((m) => m.id == newMember.id);
+      _members.add(newMember);
+
+      final uid = SupabaseConfig.currentUserId ?? 'usr-100';
+      try {
+        final live = await _service.getAll(uid);
+        if (live.isNotEmpty) {
+          _members = live;
+        }
+      } catch (_) {}
+
+      notifyListeners();
       return true;
     } catch (e) {
       _error = _friendlyError(e);
@@ -77,11 +85,24 @@ class MemberProvider extends ChangeNotifier {
     _error = null;
     try {
       await _service.update(id, data);
-      if (data['family_id'] != null) {
-        _members = await _service.getByFamily(data['family_id']);
-      } else {
-        _members = await _service.getAll(SupabaseConfig.currentUserId ?? 'usr-100');
+      final idx = _members.indexWhere((m) => m.id == id);
+      if (idx != -1) {
+        final old = _members[idx];
+        _members[idx] = MemberModel(
+          id: old.id,
+          familyId: data['family_id'] ?? old.familyId,
+          name: data['name'] ?? old.name,
+          relation: data['relation'] ?? old.relation,
+          dob: data['dob'] != null ? DateTime.tryParse(data['dob']) : old.dob,
+          gender: data['gender'] ?? old.gender,
+          bloodGroup: data['blood_group'] ?? old.bloodGroup,
+          allergies: data['allergies'] ?? old.allergies,
+          notes: data['notes'] ?? old.notes,
+          avatarUrl: data['avatar_url'] ?? old.avatarUrl,
+          createdAt: old.createdAt,
+        );
       }
+      notifyListeners();
       return true;
     } catch (e) {
       _error = _friendlyError(e);

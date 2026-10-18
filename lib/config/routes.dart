@@ -1,4 +1,5 @@
 import 'package:go_router/go_router.dart';
+import 'supabase_config.dart';
 import '../screens/splash_screen.dart';
 import '../screens/onboarding/onboarding_screen.dart';
 import '../screens/auth/login_screen.dart';
@@ -23,6 +24,10 @@ import '../screens/appointments/appointments_screen.dart';
 import '../screens/search/search_screen.dart';
 import '../screens/backup/backup_screen.dart';
 import '../screens/profile/profile_screen.dart';
+import '../screens/profile/edit_profile_screen.dart';
+import '../screens/profile/security_privacy_screen.dart';
+import '../screens/profile/notifications_settings_screen.dart';
+import '../screens/profile/app_preferences_screen.dart';
 
 class AppRoutes {
   static const splash = '/';
@@ -49,9 +54,33 @@ class AppRoutes {
   static const search = '/search';
   static const backup = '/backup';
   static const profile = '/profile';
+  static const editProfile = '/profile/edit';
+  static const security = '/settings/security';
+  static const notifications = '/settings/notifications';
+  static const preferences = '/settings/preferences';
 
   static final router = GoRouter(
     initialLocation: splash,
+    redirect: (_, state) {
+      if (!SupabaseConfig.isInitialized) return null;
+      final loggedIn = SupabaseConfig.auth?.currentUser != null;
+      final location = state.matchedLocation;
+      final publicRoute =
+          location == splash ||
+          location == onboarding ||
+          location == login ||
+          location == register ||
+          location == forgot;
+
+      if (!loggedIn && !publicRoute) return login;
+      if (loggedIn &&
+          (location == login ||
+              location == register ||
+              location == onboarding)) {
+        return dashboard;
+      }
+      return null;
+    },
     routes: [
       GoRoute(path: splash, builder: (_, _) => const SplashScreen()),
       GoRoute(path: onboarding, builder: (_, _) => const OnboardingScreen()),
@@ -63,40 +92,49 @@ class AppRoutes {
       GoRoute(path: familyAdd, builder: (_, _) => const FamilyFormScreen()),
       GoRoute(
         path: familyDetail,
-        builder: (_, state) => FamilyDetailScreen(
-          id: state.pathParameters['id']!,
-        ),
+        builder: (_, state) =>
+            FamilyDetailScreen(id: state.pathParameters['id']!),
       ),
       GoRoute(path: members, builder: (_, _) => const MemberListScreen()),
       GoRoute(path: memberAdd, builder: (_, _) => const MemberFormScreen()),
       GoRoute(
         path: memberDetail,
-        builder: (_, state) => MemberDetailScreen(
-          id: state.pathParameters['id']!,
-        ),
+        builder: (_, state) =>
+            MemberDetailScreen(id: state.pathParameters['id']!),
       ),
       GoRoute(path: doctors, builder: (_, _) => const DoctorListScreen()),
       GoRoute(path: doctorAdd, builder: (_, _) => const DoctorFormScreen()),
       GoRoute(
         path: doctorDetail,
-        builder: (_, state) => DoctorDetailScreen(
-          id: state.pathParameters['id']!,
-        ),
+        builder: (_, state) =>
+            DoctorDetailScreen(id: state.pathParameters['id']!),
       ),
       GoRoute(path: visits, builder: (_, _) => const VisitListScreen()),
       GoRoute(path: visitAdd, builder: (_, _) => const VisitFormScreen()),
       GoRoute(
         path: visitDetail,
-        builder: (_, state) => VisitDetailScreen(
-          id: state.pathParameters['id']!,
-        ),
+        builder: (_, state) =>
+            VisitDetailScreen(id: state.pathParameters['id']!),
       ),
       GoRoute(path: documents, builder: (_, _) => const DocsScreen()),
       GoRoute(path: uploadDoc, builder: (_, _) => const UploadDocScreen()),
-      GoRoute(path: appointments, builder: (_, _) => const AppointmentsScreen()),
+      GoRoute(
+        path: appointments,
+        builder: (_, _) => const AppointmentsScreen(),
+      ),
       GoRoute(path: search, builder: (_, _) => const SearchScreen()),
       GoRoute(path: backup, builder: (_, _) => const BackupScreen()),
       GoRoute(path: profile, builder: (_, _) => const ProfileScreen()),
+      GoRoute(path: editProfile, builder: (_, _) => const EditProfileScreen()),
+      GoRoute(path: security, builder: (_, _) => const SecurityPrivacyScreen()),
+      GoRoute(
+        path: notifications,
+        builder: (_, _) => const NotificationsSettingsScreen(),
+      ),
+      GoRoute(
+        path: preferences,
+        builder: (_, _) => const AppPreferencesScreen(),
+      ),
     ],
   );
 }

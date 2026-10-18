@@ -19,7 +19,11 @@ class FamilyService {
 
   Future<FamilyModel> getById(String id) async {
     if (SupabaseConfig.isInitialized && SupabaseConfig.db != null) {
-      final data = await SupabaseConfig.db!.from('families').select().eq('id', id).single();
+      final data = await SupabaseConfig.db!
+          .from('families')
+          .select()
+          .eq('id', id)
+          .single();
       return FamilyModel.fromMap(data);
     }
     return _mock.families.firstWhere(
@@ -29,16 +33,23 @@ class FamilyService {
   }
 
   Future<void> create(Map<String, dynamic> family) async {
-    if (SupabaseConfig.isInitialized && SupabaseConfig.db != null) {
-      await SupabaseConfig.db!.from('families').insert(family);
+    final famData = Map<String, dynamic>.from(family);
+    final uid = famData['user_id'] ?? SupabaseConfig.currentUserId;
+    if (uid != null) famData['user_id'] = uid;
+
+    if (SupabaseConfig.isInitialized &&
+        SupabaseConfig.db != null &&
+        famData['user_id'] != null) {
+      await SupabaseConfig.db!.from('families').insert(famData);
     } else {
       final newFamily = FamilyModel(
         id: 'fam-${DateTime.now().millisecondsSinceEpoch}',
-        familyId: family['family_id'] ?? 'FAM-${1000 + _mock.families.length + 1}',
-        name: family['name'] ?? 'New Family',
-        contact: family['contact'],
-        address: family['address'],
-        userId: family['user_id'] ?? 'usr-100',
+        familyId:
+            famData['family_id'] ?? 'FAM-${1000 + _mock.families.length + 1}',
+        name: famData['name'] ?? 'New Family',
+        contact: famData['contact'],
+        address: famData['address'],
+        userId: famData['user_id'] ?? 'usr-100',
         createdAt: DateTime.now(),
       );
       _mock.families.insert(0, newFamily);
@@ -84,4 +95,3 @@ class FamilyService {
     return _mock.families.length;
   }
 }
-

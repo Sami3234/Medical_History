@@ -68,7 +68,7 @@ export default function SettingsPage() {
                   Managed Tables
                 </label>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                  {['profiles', 'families', 'members', 'doctors', 'visits', 'medications', 'medical_records'].map((t) => (
+                  {['profiles', 'families', 'members', 'doctors', 'visits', 'medications', 'med_files', 'appointments'].map((t) => (
                     <span key={t} style={{
                       padding: '4px 10px',
                       borderRadius: '8px',
@@ -85,7 +85,48 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          {/* Card 2: Google Drive Backup Status */}
+          {/* Card 2: Cloudinary Image Storage */}
+          <div className="card">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '14px' }}>
+              <div style={{
+                width: '44px',
+                height: '44px',
+                borderRadius: '12px',
+                backgroundColor: '#EFF8EC',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'var(--primary)'
+              }}>
+                <Cloud size={22} />
+              </div>
+              <div>
+                <h3 style={{ fontSize: '16px', fontWeight: '800', color: 'var(--text-dark)' }}>
+                  Cloudinary Image CDN Storage
+                </h3>
+                <span className="badge badge-primary" style={{ marginTop: '2px' }}>
+                  Cloud: y9g0h85i • Active
+                </span>
+              </div>
+            </div>
+
+            <p style={{ fontSize: '13.5px', color: 'var(--text-mid)', lineHeight: 1.5, marginBottom: '14px' }}>
+              Used by both Mobile App and Web Admin for fast CDN delivery of patient profile pictures, prescription scans, and lab reports.
+            </p>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px', fontSize: '13px' }}>
+              <div style={{ padding: '12px', backgroundColor: '#F8FAF7', borderRadius: '10px', border: '1px solid var(--border)' }}>
+                <div style={{ fontSize: '11px', color: 'var(--text-light)', fontWeight: '700' }}>CLOUD NAME</div>
+                <div style={{ fontWeight: '800', color: 'var(--text-dark)', marginTop: '2px' }}>y9g0h85i</div>
+              </div>
+              <div style={{ padding: '12px', backgroundColor: '#F8FAF7', borderRadius: '10px', border: '1px solid var(--border)' }}>
+                <div style={{ fontSize: '11px', color: 'var(--text-light)', fontWeight: '700' }}>API KEY</div>
+                <div style={{ fontWeight: '800', color: 'var(--text-dark)', marginTop: '2px' }}>812541362389264</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Card 3: Google Drive Backup Status */}
           <div className="card">
             <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '14px' }}>
               <div style={{
@@ -98,7 +139,7 @@ export default function SettingsPage() {
                 justifyContent: 'center',
                 color: '#0EA5E9'
               }}>
-                <Cloud size={22} />
+                <Server size={22} />
               </div>
               <div>
                 <h3 style={{ fontSize: '16px', fontWeight: '800', color: 'var(--text-dark)' }}>

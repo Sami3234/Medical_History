@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import '../../config/theme.dart';
+import '../../models/appointment_model.dart';
+import '../../providers/member_provider.dart';
+import '../../providers/records_provider.dart';
 import '../../widgets/bottom_nav.dart';
 
 class AppointmentsScreen extends StatefulWidget {
@@ -11,18 +16,175 @@ class AppointmentsScreen extends StatefulWidget {
 }
 
 class _AppointmentsScreenState extends State<AppointmentsScreen> {
-  int _selectedDay = 21;
+  late DateTime _selectedDate;
 
-  final List<Map<String, dynamic>> _calendarDays = [
-    {'day': 'MON', 'num': 19},
-    {'day': 'TUE', 'num': 20},
-    {'day': 'WED', 'num': 21},
-    {'day': 'THU', 'num': 22},
-    {'day': 'FRI', 'num': 23},
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _selectedDate = DateTime.now();
+  }
+
+  Future<void> _showAddDialog() async {
+    final members = context.read<MemberProvider>().members;
+    if (members.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Add a family member before scheduling an appointment.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    final doctorController = TextEditingController();
+    final specialtyController = TextEditingController();
+    final titleController = TextEditingController();
+    String memberId = members.first.id;
+    DateTime appointmentDate = DateTime.now().add(const Duration(days: 1));
+    TimeOfDay appointmentTime = const TimeOfDay(hour: 10, minute: 0);
+
+    final saved = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Schedule appointment'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                DropdownButtonFormField<String>(
+                  initialValue: memberId,
+                  decoration: const InputDecoration(labelText: 'Family member'),
+                  items: members
+                      .map(
+                        (member) => DropdownMenuItem(
+                          value: member.id,
+                          child: Text(member.name),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (value) {
+                    if (value != null) memberId = value;
+                  },
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: doctorController,
+                  decoration: const InputDecoration(labelText: 'Doctor name'),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: specialtyController,
+                  decoration: const InputDecoration(labelText: 'Specialty'),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: titleController,
+                  decoration: const InputDecoration(
+                    labelText: 'Reason / notes',
+                  ),
+                ),
+                const SizedBox(height: 12),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.event_outlined),
+                  title: Text(
+                    DateFormat('dd MMM yyyy').format(appointmentDate),
+                  ),
+                  subtitle: Text(appointmentTime.format(context)),
+                  onTap: () async {
+                    final date = await showDatePicker(
+                      context: context,
+                      initialDate: appointmentDate,
+                      firstDate: DateTime.now(),
+                      lastDate: DateTime.now().add(const Duration(days: 730)),
+                    );
+                    if (date == null || !context.mounted) return;
+                    final time = await showTimePicker(
+                      context: context,
+                      initialTime: appointmentTime,
+                    );
+                    if (time == null) return;
+                    setDialogState(() {
+                      appointmentDate = date;
+                      appointmentTime = time;
+                    });
+                  },
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () {
+                if (doctorController.text.trim().isEmpty) return;
+                Navigator.pop(dialogContext, true);
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (saved == true && mounted) {
+      final member = members.firstWhere((item) => item.id == memberId);
+      final dateTime = DateTime(
+        appointmentDate.year,
+        appointmentDate.month,
+        appointmentDate.day,
+        appointmentTime.hour,
+        appointmentTime.minute,
+      );
+      await context.read<RecordsProvider>().addAppointment(
+        AppointmentModel(
+          id: 'appointment-${DateTime.now().millisecondsSinceEpoch}',
+          memberId: member.id,
+          memberName: member.name,
+          doctorName: doctorController.text.trim(),
+          specialization: specialtyController.text.trim(),
+          dateTime: dateTime,
+          title: titleController.text.trim().isEmpty
+              ? 'Medical appointment'
+              : titleController.text.trim(),
+        ),
+      );
+    }
+
+    doctorController.dispose();
+    specialtyController.dispose();
+    titleController.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
+    final records = context.watch<RecordsProvider>();
+    final upcoming =
+        records.appointments
+            .where(
+              (appointment) =>
+                  appointment.dateTime.isAfter(DateTime.now()) &&
+                  appointment.status.toLowerCase() != 'cancelled',
+            )
+            .toList()
+          ..sort((a, b) => a.dateTime.compareTo(b.dateTime));
+    final selectedAppointments = upcoming
+        .where(
+          (appointment) =>
+              DateUtils.isSameDay(appointment.dateTime, _selectedDate),
+        )
+        .toList();
+    final firstDay = _selectedDate.subtract(const Duration(days: 2));
+    final calendarDays = List.generate(
+      5,
+      (index) => firstDay.add(Duration(days: index)),
+    );
+
     return Scaffold(
       backgroundColor: AppColors.bg,
       appBar: AppBar(
@@ -33,10 +195,10 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
         ),
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        child: RefreshIndicator(
+          onRefresh: records.loadAll,
+          child: ListView(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             children: [
               Text(
                 'FAMILY CARE CALENDAR',
@@ -48,67 +210,61 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-
-              // Calendar Card Container
               Container(
-                width: double.infinity,
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(22),
                   border: Border.all(color: AppColors.border, width: 1.2),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.shadow,
-                      blurRadius: 6,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'October 2026',
-                      style: TextStyle(
+                    Text(
+                      DateFormat('MMMM yyyy').format(_selectedDate),
+                      style: const TextStyle(
                         fontSize: 17,
                         fontWeight: FontWeight.w800,
-                        color: AppColors.textDark,
                       ),
                     ),
                     const SizedBox(height: 16),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: _calendarDays.map((d) {
-                        final isSelected = d['num'] == _selectedDay;
-                        return GestureDetector(
-                          onTap: () => setState(() => _selectedDay = d['num'] as int),
+                      children: calendarDays.map((date) {
+                        final selected = DateUtils.isSameDay(
+                          date,
+                          _selectedDate,
+                        );
+                        return InkWell(
+                          borderRadius: BorderRadius.circular(14),
+                          onTap: () => setState(() => _selectedDate = date),
                           child: Column(
                             children: [
                               Text(
-                                d['day'] as String,
+                                DateFormat('EEE').format(date).toUpperCase(),
                                 style: const TextStyle(
                                   fontSize: 11,
-                                  fontWeight: FontWeight.w700,
                                   color: AppColors.textLight,
                                 ),
                               ),
                               const SizedBox(height: 8),
-                              AnimatedContainer(
-                                duration: const Duration(milliseconds: 150),
+                              Container(
                                 width: 44,
                                 height: 44,
+                                alignment: Alignment.center,
                                 decoration: BoxDecoration(
-                                  color: isSelected ? const Color(0xFF5DBB2F) : Colors.transparent,
+                                  color: selected
+                                      ? AppColors.primary
+                                      : Colors.transparent,
                                   borderRadius: BorderRadius.circular(14),
                                 ),
-                                alignment: Alignment.center,
                                 child: Text(
-                                  '${d['num']}',
+                                  '${date.day}',
                                   style: TextStyle(
-                                    fontSize: 16,
                                     fontWeight: FontWeight.w800,
-                                    color: isSelected ? Colors.white : AppColors.textDark,
+                                    color: selected
+                                        ? Colors.white
+                                        : AppColors.textDark,
                                   ),
                                 ),
                               ),
@@ -120,151 +276,66 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: 28),
-
-              // Section: Next appointment
-              const Text(
-                'Next appointment',
-                style: TextStyle(
+              const SizedBox(height: 26),
+              Text(
+                selectedAppointments.isEmpty
+                    ? 'Upcoming appointments'
+                    : 'Selected day',
+                style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w800,
-                  color: AppColors.textDark,
                 ),
               ),
               const SizedBox(height: 14),
-
-              // Green Hero Appointment Card
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(22),
-                decoration: BoxDecoration(
-                  gradient: AppColors.heroGradient,
-                  borderRadius: BorderRadius.circular(24),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.primary.withAlpha(50),
-                      blurRadius: 16,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.calendar_today_outlined,
-                          color: Colors.white,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'UPCOMING FOLLOW-UP',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 1.1,
-                            color: Colors.white.withAlpha(220),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 14),
-                    const Text(
-                      'Dr. Sana Malik',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.w800,
-                        color: Colors.white,
+              if (records.loading)
+                const Center(child: CircularProgressIndicator())
+              else if (upcoming.isEmpty)
+                const _EmptyAppointments()
+              else
+                ...(selectedAppointments.isNotEmpty
+                        ? selectedAppointments
+                        : upcoming)
+                    .map(
+                      (appointment) => Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: _AppointmentCard(appointment: appointment),
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Ali Ahmed • Pediatrician',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.white.withAlpha(230),
-                      ),
-                    ),
-                    const SizedBox(height: 18),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: const Text(
-                        '21 Oct • 11:30 AM',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF2E7D32),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 28),
-
-              // Section: Other scheduled visits
-              const Text(
-                'Other scheduled visits',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.textDark,
-                ),
-              ),
-              const SizedBox(height: 14),
-
-              _buildVisitTile('SA', 'Sara Ahmed', '25 Oct • General check-up'),
-              const SizedBox(height: 12),
-              _buildVisitTile('AH', 'Ahmed', '02 Nov • Lab follow-up'),
-              const SizedBox(height: 20),
             ],
           ),
         ),
       ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _showAddDialog,
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
+        icon: const Icon(Icons.add_rounded),
+        label: const Text('Schedule'),
+      ),
       bottomNavigationBar: const BottomNav(currentIndex: 0),
     );
   }
+}
 
-  Widget _buildVisitTile(String initials, String name, String subtitle) {
+class _AppointmentCard extends StatelessWidget {
+  final AppointmentModel appointment;
+
+  const _AppointmentCard({required this.appointment});
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.border, width: 1.2),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.shadow,
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        border: Border.all(color: AppColors.border),
       ),
       child: Row(
         children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: const BoxDecoration(
-              color: Color(0xFFDEF2D7),
-              shape: BoxShape.circle,
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              initials,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w800,
-                color: Color(0xFF235E1E),
-              ),
-            ),
+          CircleAvatar(
+            backgroundColor: const Color(0xFFDEF2D7),
+            child: Text(appointment.memberName.substring(0, 1).toUpperCase()),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -272,29 +343,62 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  name,
+                  appointment.doctorName,
                   style: const TextStyle(
                     fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textDark,
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
-                const SizedBox(height: 3),
+                const SizedBox(height: 4),
                 Text(
-                  subtitle,
+                  '${appointment.memberName} • ${appointment.specialization.isEmpty ? appointment.title : appointment.specialization}',
                   style: const TextStyle(
                     fontSize: 12,
                     color: AppColors.textLight,
-                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  DateFormat(
+                    'dd MMM yyyy • hh:mm a',
+                  ).format(appointment.dateTime.toLocal()),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.primary,
                   ),
                 ),
               ],
             ),
           ),
-          const Icon(
-            Icons.arrow_forward_ios_rounded,
-            color: AppColors.textLight,
-            size: 16,
+        ],
+      ),
+    );
+  }
+}
+
+class _EmptyAppointments extends StatelessWidget {
+  const _EmptyAppointments();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(28),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: const Column(
+        children: [
+          Icon(
+            Icons.event_available_outlined,
+            size: 42,
+            color: AppColors.primary,
+          ),
+          SizedBox(height: 10),
+          Text(
+            'No upcoming appointments',
+            style: TextStyle(fontWeight: FontWeight.w700),
           ),
         ],
       ),

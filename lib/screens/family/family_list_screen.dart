@@ -25,7 +25,10 @@ class _FamilyListScreenState extends State<FamilyListScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final uid = context.read<AuthProvider>().uid ?? SupabaseConfig.currentUserId ?? 'usr-100';
+      final uid =
+          context.read<AuthProvider>().uid ??
+          SupabaseConfig.currentUserId ??
+          'usr-100';
       context.read<FamilyProvider>().loadFamilies(uid);
     });
   }
@@ -125,7 +128,11 @@ class _FamilyListScreenState extends State<FamilyListScreen> {
                   onChanged: (v) => setState(() => _query = v),
                   decoration: const InputDecoration(
                     hintText: 'Search family name or ID...',
-                    prefixIcon: Icon(Icons.search_rounded, color: AppColors.textLight, size: 22),
+                    prefixIcon: Icon(
+                      Icons.search_rounded,
+                      color: AppColors.textLight,
+                      size: 22,
+                    ),
                     border: InputBorder.none,
                     enabledBorder: InputBorder.none,
                     focusedBorder: InputBorder.none,
@@ -150,10 +157,12 @@ class _FamilyListScreenState extends State<FamilyListScreen> {
               if (families.isNotEmpty) ...[
                 HeroHealthCard(
                   title: families.first.name,
-                  subtitle: '${families.first.familyId} • ${families.first.address ?? "Lahore"}',
+                  subtitle:
+                      '${families.first.familyId} • ${families.first.address ?? "Lahore"}',
                   avatarInitials: const ['AH', 'SA', 'AL', 'AY'],
                   actionText: 'View family',
-                  onAction: () => context.push('/families/${families.first.id}'),
+                  onAction: () =>
+                      context.push('/families/${families.first.id}'),
                 ),
                 const SizedBox(height: 16),
               ],
@@ -171,7 +180,10 @@ class _FamilyListScreenState extends State<FamilyListScreen> {
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: AppColors.border, width: 1.2),
+                          border: Border.all(
+                            color: AppColors.border,
+                            width: 1.2,
+                          ),
                           boxShadow: [
                             BoxShadow(
                               color: AppColors.shadow,
@@ -240,7 +252,8 @@ class _FamilyListScreenState extends State<FamilyListScreen> {
               const InfoBanner(
                 icon: Icons.verified_user_outlined,
                 title: 'Everyone, organized.',
-                subtitle: 'Keep different families\' records securely separated.',
+                subtitle:
+                    'Keep different families\' records securely separated.',
               ),
               const SizedBox(height: 20),
             ],

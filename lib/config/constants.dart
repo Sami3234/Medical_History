@@ -3,13 +3,39 @@ class AppStrings {
   static const appTagline = 'Your Family\'s Health Companion';
 
   // Supabase — Connected to user project
-  static const supabaseUrl = 'https://fqcnpqrdxwttcxrcdnyg.supabase.co';
-  static const supabaseAnonKey = 'sb_publishable_dDQY6go24zOVKRhHBXoh8Q_lbTpzZSh';
+  static const supabaseUrl = String.fromEnvironment(
+    'SUPABASE_URL',
+    defaultValue: 'YOUR_SUPABASE_URL',
+  );
+  static const supabaseAnonKey = String.fromEnvironment(
+    'SUPABASE_ANON_KEY',
+    defaultValue: 'YOUR_SUPABASE_ANON_KEY',
+  );
 
   // Storage Buckets
   static const prescriptionBucket = 'prescriptions';
   static const reportBucket = 'reports';
   static const avatarBucket = 'avatars';
+
+  // Cloudinary Image Storage
+  static const cloudinaryCloudName = String.fromEnvironment(
+    'CLOUDINARY_CLOUD_NAME',
+    defaultValue: 'y9g0h85i',
+  );
+  static const cloudinaryApiKey = String.fromEnvironment(
+    'CLOUDINARY_API_KEY',
+    defaultValue: '812541362389264',
+  );
+  static const cloudinaryUploadPreset = String.fromEnvironment(
+    'CLOUDINARY_UPLOAD_PRESET',
+    defaultValue: 'medical_history',
+  );
+
+  static const googleWebClientId = String.fromEnvironment(
+    'GOOGLE_WEB_CLIENT_ID',
+    defaultValue:
+        '1037238815678-pc1p6sbs2rtr91pj59j1jk3g8jq39gq0.apps.googleusercontent.com',
+  );
 }
 
 class AppKeys {

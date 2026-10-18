@@ -22,7 +22,9 @@ class VisitService {
     if (SupabaseConfig.isInitialized && SupabaseConfig.db != null) {
       final data = await SupabaseConfig.db!
           .from('visits')
-          .select('*, members!inner(name, family_id, families!inner(user_id)), doctors(name)')
+          .select(
+            '*, members!inner(name, family_id, families!inner(user_id)), doctors(name)',
+          )
           .eq('members.families.user_id', userId)
           .order('visit_date', ascending: false)
           .limit(limit);
@@ -38,7 +40,9 @@ class VisitService {
       final now = DateTime.now().toIso8601String();
       final data = await SupabaseConfig.db!
           .from('visits')
-          .select('*, members!inner(name, family_id, families!inner(user_id)), doctors(name)')
+          .select(
+            '*, members!inner(name, family_id, families!inner(user_id)), doctors(name)',
+          )
           .eq('members.families.user_id', userId)
           .gte('follow_up_date', now)
           .order('follow_up_date');
@@ -63,8 +67,25 @@ class VisitService {
   }
 
   Future<void> create(Map<String, dynamic> visit) async {
+    final visitData = Map<String, dynamic>.from(visit);
+    final coreData = <String, dynamic>{
+      'member_id': visitData['member_id'],
+      if (visitData['doctor_id'] != null) 'doctor_id': visitData['doctor_id'],
+      'visit_date': visitData['visit_date'] ?? DateTime.now().toIso8601String(),
+      if (visitData['symptoms'] != null) 'symptoms': visitData['symptoms'],
+      if (visitData['diagnosis'] != null) 'diagnosis': visitData['diagnosis'],
+      if (visitData['treatment'] != null) 'treatment': visitData['treatment'],
+      if (visitData['notes'] != null) 'notes': visitData['notes'],
+      if (visitData['follow_up_date'] != null)
+        'follow_up_date': visitData['follow_up_date'],
+    };
+
     if (SupabaseConfig.isInitialized && SupabaseConfig.db != null) {
-      await SupabaseConfig.db!.from('visits').insert(visit);
+      try {
+        await SupabaseConfig.db!.from('visits').insert(visitData);
+      } catch (_) {
+        await SupabaseConfig.db!.from('visits').insert(coreData);
+      }
     } else {
       String? memberName;
       final mIdx = _mock.members.indexWhere((m) => m.id == visit['member_id']);
@@ -72,23 +93,32 @@ class VisitService {
 
       String? doctorName;
       if (visit['doctor_id'] != null) {
-        final dIdx = _mock.doctors.indexWhere((d) => d.id == visit['doctor_id']);
+        final dIdx = _mock.doctors.indexWhere(
+          (d) => d.id == visit['doctor_id'],
+        );
         if (dIdx != -1) doctorName = _mock.doctors[dIdx].name;
       }
 
       final newVisit = VisitModel(
         id: 'vis-${DateTime.now().millisecondsSinceEpoch}',
-        memberId: visit['member_id'] ?? (_mock.members.isNotEmpty ? _mock.members.first.id : 'mem-1'),
+        memberId:
+            visit['member_id'] ??
+            (_mock.members.isNotEmpty ? _mock.members.first.id : 'mem-1'),
         doctorId: visit['doctor_id'],
-        visitDate: visit['visit_date'] != null ? DateTime.parse(visit['visit_date']) : DateTime.now(),
+        visitDate: visit['visit_date'] != null
+            ? DateTime.parse(visit['visit_date'])
+            : DateTime.now(),
         symptoms: visit['symptoms'],
         diagnosis: visit['diagnosis'],
         treatment: visit['treatment'],
         notes: visit['notes'],
-        followUpDate: visit['follow_up_date'] != null ? DateTime.tryParse(visit['follow_up_date']) : null,
+        followUpDate: visit['follow_up_date'] != null
+            ? DateTime.tryParse(visit['follow_up_date'])
+            : null,
         createdAt: DateTime.now(),
         memberName: memberName ?? 'Member',
         doctorName: doctorName ?? (visit['doctor_name'] as String? ?? 'Doctor'),
+        hospital: visit['hospital'] as String?,
       );
       _mock.visits.insert(0, newVisit);
     }
@@ -105,15 +135,20 @@ class VisitService {
           id: old.id,
           memberId: updates['member_id'] ?? old.memberId,
           doctorId: updates['doctor_id'] ?? old.doctorId,
-          visitDate: updates['visit_date'] != null ? DateTime.parse(updates['visit_date']) : old.visitDate,
+          visitDate: updates['visit_date'] != null
+              ? DateTime.parse(updates['visit_date'])
+              : old.visitDate,
           symptoms: updates['symptoms'] ?? old.symptoms,
           diagnosis: updates['diagnosis'] ?? old.diagnosis,
           treatment: updates['treatment'] ?? old.treatment,
           notes: updates['notes'] ?? old.notes,
-          followUpDate: updates['follow_up_date'] != null ? DateTime.parse(updates['follow_up_date']) : old.followUpDate,
+          followUpDate: updates['follow_up_date'] != null
+              ? DateTime.parse(updates['follow_up_date'])
+              : old.followUpDate,
           createdAt: old.createdAt,
           memberName: old.memberName,
           doctorName: old.doctorName,
+          hospital: updates['hospital'] ?? old.hospital,
         );
       }
     }
@@ -175,4 +210,3 @@ class VisitService {
     return _mock.visits.length;
   }
 }
-
