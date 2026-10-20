@@ -62,13 +62,8 @@ class MemberProvider extends ChangeNotifier {
       _members.removeWhere((m) => m.id == newMember.id);
       _members.add(newMember);
 
-      final uid = SupabaseConfig.currentUserId ?? 'usr-100';
-      try {
-        final live = await _service.getAll(uid);
-        if (live.isNotEmpty) {
-          _members = live;
-        }
-      } catch (_) {}
+      final uid = SupabaseConfig.currentUserId;
+      if (uid != null) _members = await _service.getAll(uid);
 
       notifyListeners();
       return true;

@@ -5,11 +5,11 @@ class AppStrings {
   // Supabase — Connected to user project
   static const supabaseUrl = String.fromEnvironment(
     'SUPABASE_URL',
-    defaultValue: 'YOUR_SUPABASE_URL',
+    defaultValue: 'https://fqcnpqrdxwttcxrcdnyg.supabase.co',
   );
   static const supabaseAnonKey = String.fromEnvironment(
     'SUPABASE_ANON_KEY',
-    defaultValue: 'YOUR_SUPABASE_ANON_KEY',
+    defaultValue: 'sb_publishable_dDQY6go24zOVKRhHBXoh8Q_lbTpzZSh',
   );
 
   // Storage Buckets

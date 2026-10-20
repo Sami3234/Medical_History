@@ -25,10 +25,8 @@ class _MemberListScreenState extends State<MemberListScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final uid =
-          context.read<AuthProvider>().uid ??
-          SupabaseConfig.currentUserId ??
-          'usr-100';
-      context.read<MemberProvider>().loadAll(uid);
+          context.read<AuthProvider>().uid ?? SupabaseConfig.currentUserId;
+      if (uid != null) context.read<MemberProvider>().loadAll(uid);
     });
   }
 

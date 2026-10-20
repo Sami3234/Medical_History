@@ -12,12 +12,23 @@ import 'providers/records_provider.dart';
 import 'providers/backup_provider.dart';
 
 import 'services/avatar_cache_service.dart';
+import 'services/notification_service.dart';
+import 'services/native_document_service.dart';
+
+import 'providers/health_provider.dart';
+import 'providers/theme_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await SupabaseConfig.init();
   await AvatarMemoryCache.initPersisted();
-  runApp(const MyApp());
+  await NotificationService.initialize();
+  await NativeDocumentService.importSharedFilesToDrafts();
+  final themeController = AppThemeController();
+  await themeController.load();
+  runApp(
+    ChangeNotifierProvider.value(value: themeController, child: const MyApp()),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -34,12 +45,17 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => VisitProvider()),
         ChangeNotifierProvider(create: (_) => RecordsProvider()),
         ChangeNotifierProvider(create: (_) => BackupProvider()),
+        ChangeNotifierProvider(create: (_) => HealthProvider()),
       ],
-      child: MaterialApp.router(
-        title: 'Medical History',
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.light,
-        routerConfig: AppRoutes.router,
+      child: Consumer<AppThemeController>(
+        builder: (context, themeController, _) => MaterialApp.router(
+          title: 'Medical History',
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.light,
+          darkTheme: AppTheme.dark,
+          themeMode: themeController.mode,
+          routerConfig: AppRoutes.router,
+        ),
       ),
     );
   }

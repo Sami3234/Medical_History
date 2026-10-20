@@ -8,6 +8,7 @@ class ImageCropperService {
   static Future<Uint8List?> cropAvatar({
     required XFile file,
     required BuildContext context,
+    String title = 'Crop Profile Photo',
   }) async {
     try {
       final rawBytes = await file.readAsBytes();
@@ -15,7 +16,7 @@ class ImageCropperService {
       return await ImageCropDialog.show(
         context: context,
         imageBytes: rawBytes,
-        title: 'Crop Profile Photo',
+        title: title,
       );
     } catch (e) {
       debugPrint('Cropping note: $e');

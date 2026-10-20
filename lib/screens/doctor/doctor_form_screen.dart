@@ -19,6 +19,7 @@ class _DoctorFormScreenState extends State<DoctorFormScreen> {
   final _hospital = TextEditingController();
   final _phone = TextEditingController();
   final _address = TextEditingController();
+  final _availability = TextEditingController();
   bool _saving = false;
 
   @override
@@ -28,6 +29,7 @@ class _DoctorFormScreenState extends State<DoctorFormScreen> {
     _hospital.dispose();
     _phone.dispose();
     _address.dispose();
+    _availability.dispose();
     super.dispose();
   }
 
@@ -43,6 +45,7 @@ class _DoctorFormScreenState extends State<DoctorFormScreen> {
         'hospital': _hospital.text.trim(),
         'phone': _phone.text.trim(),
         'address': _address.text.trim(),
+        'availability': _availability.text.trim(),
       });
       if (!mounted) return;
       context.showSnack('Doctor profile added');
@@ -86,7 +89,7 @@ class _DoctorFormScreenState extends State<DoctorFormScreen> {
                 TextFormField(
                   controller: _name,
                   decoration: const InputDecoration(
-                    hintText: 'e.g. Dr. Sana Malik',
+                    hintText: 'Enter doctor name',
                     prefixIcon: Icon(
                       Icons.person_outline_rounded,
                       color: AppColors.textLight,
@@ -178,7 +181,7 @@ class _DoctorFormScreenState extends State<DoctorFormScreen> {
                 TextFormField(
                   controller: _address,
                   decoration: const InputDecoration(
-                    hintText: 'Model Town, Lahore',
+                    hintText: 'Enter clinic address',
                     prefixIcon: Icon(
                       Icons.location_on_outlined,
                       color: AppColors.textLight,
@@ -187,6 +190,28 @@ class _DoctorFormScreenState extends State<DoctorFormScreen> {
                   ),
                 ),
                 const SizedBox(height: 32),
+
+                const Text(
+                  'Clinic timings',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textDark,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                TextFormField(
+                  controller: _availability,
+                  decoration: const InputDecoration(
+                    hintText: 'e.g. Mon-Fri, 4pm-8pm',
+                    prefixIcon: Icon(
+                      Icons.schedule_outlined,
+                      color: AppColors.textLight,
+                      size: 20,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 18),
 
                 SizedBox(
                   width: double.infinity,

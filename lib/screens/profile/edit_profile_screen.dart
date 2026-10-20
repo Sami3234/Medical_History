@@ -24,15 +24,38 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   late TextEditingController _emailCtrl;
 
   String? _avatarUrl;
+  String _countryCode = '+92';
   bool _uploadingImage = false;
   bool _saving = false;
+
+  static const _countryCodes = [
+    {'code': '+92', 'name': 'Pakistan'},
+    {'code': '+91', 'name': 'India'},
+    {'code': '+971', 'name': 'UAE'},
+    {'code': '+966', 'name': 'Saudi Arabia'},
+    {'code': '+44', 'name': 'United Kingdom'},
+    {'code': '+1', 'name': 'United States / Canada'},
+    {'code': '+61', 'name': 'Australia'},
+  ];
 
   @override
   void initState() {
     super.initState();
     final user = context.read<AuthProvider>().user;
     _nameCtrl = TextEditingController(text: user?.fullName ?? '');
-    _phoneCtrl = TextEditingController(text: user?.phone ?? '');
+    final savedPhone = user?.phone ?? '';
+    final savedCountry = _countryCodes.cast<Map<String, String>?>().firstWhere(
+      (country) => savedPhone.startsWith(country?['code'] ?? ''),
+      orElse: () => null,
+    );
+    if (savedCountry != null) {
+      _countryCode = savedCountry['code']!;
+      _phoneCtrl = TextEditingController(
+        text: savedPhone.substring(_countryCode.length).trim(),
+      );
+    } else {
+      _phoneCtrl = TextEditingController(text: savedPhone);
+    }
     _emailCtrl = TextEditingController(text: user?.email ?? '');
     _avatarUrl = user?.avatarUrl;
   }
@@ -117,7 +140,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       await auth.updateProfile({
         'full_name': _nameCtrl.text.trim(),
         'phone': _phoneCtrl.text.trim().isNotEmpty
-            ? _phoneCtrl.text.trim()
+            ? '$_countryCode ${_phoneCtrl.text.trim().replaceFirst(RegExp(r'^\+\d+\s*'), '')}'
             : null,
         if (_avatarUrl != null) 'avatar_url': _avatarUrl,
       });
@@ -131,6 +154,50 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     } finally {
       if (mounted) setState(() => _saving = false);
     }
+  }
+
+  Future<void> _requestEmailChange() async {
+    final emailController = TextEditingController(text: _emailCtrl.text);
+    final newEmail = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Change email address'),
+        content: TextField(
+          controller: emailController,
+          keyboardType: TextInputType.emailAddress,
+          autofocus: true,
+          decoration: const InputDecoration(
+            labelText: 'New email address',
+            prefixIcon: Icon(Icons.mail_outline_rounded),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(dialogContext, emailController.text),
+            child: const Text('Send verification'),
+          ),
+        ],
+      ),
+    );
+    emailController.dispose();
+    if (!mounted || newEmail == null) return;
+    final normalized = newEmail.trim();
+    if (!normalized.contains('@')) {
+      context.showSnack('Enter a valid email address.', isError: true);
+      return;
+    }
+    final ok = await context.read<AuthProvider>().updateEmail(normalized);
+    if (!mounted) return;
+    context.showSnack(
+      ok
+          ? 'Verification link sent to your new email address.'
+          : (context.read<AuthProvider>().error ?? 'Email update failed.'),
+      isError: !ok,
+    );
   }
 
   @override
@@ -341,6 +408,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     ),
                   ),
                 ),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton.icon(
+                    onPressed: _requestEmailChange,
+                    icon: const Icon(Icons.edit_outlined, size: 15),
+                    label: const Text('Change email'),
+                  ),
+                ),
                 const SizedBox(height: 18),
 
                 // Phone Input
@@ -359,12 +434,50 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 TextFormField(
                   controller: _phoneCtrl,
                   keyboardType: TextInputType.phone,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     hintText: '+92 300 1234567',
-                    prefixIcon: Icon(
-                      Icons.phone_outlined,
-                      color: AppColors.textLight,
-                      size: 20,
+                    prefixIconConstraints: const BoxConstraints(
+                      minWidth: 118,
+                      maxWidth: 132,
+                    ),
+                    prefixIcon: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const SizedBox(width: 10),
+                        const Icon(
+                          Icons.phone_outlined,
+                          color: AppColors.textLight,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 4),
+                        DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            value: _countryCode,
+                            isDense: true,
+                            icon: const Icon(
+                              Icons.keyboard_arrow_down_rounded,
+                              size: 17,
+                            ),
+                            items: _countryCodes.map((country) {
+                              return DropdownMenuItem<String>(
+                                value: country['code'],
+                                child: Text(
+                                  country['code']!,
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                            onChanged: (value) {
+                              if (value != null) {
+                                setState(() => _countryCode = value);
+                              }
+                            },
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),

@@ -6,6 +6,7 @@ import '../../config/theme.dart';
 import '../../providers/member_provider.dart';
 import '../../providers/doctor_provider.dart';
 import '../../providers/records_provider.dart';
+import '../../providers/visit_provider.dart';
 import '../../widgets/bottom_nav.dart';
 
 class SearchScreen extends StatefulWidget {
@@ -31,13 +32,21 @@ class _SearchScreenState extends State<SearchScreen> {
     final memberProv = context.watch<MemberProvider>();
     final doctorProv = context.watch<DoctorProvider>();
     final recordsProv = context.watch<RecordsProvider>();
+    final visitProv = context.watch<VisitProvider>();
 
     final members = memberProv.members.where((m) {
       if (_selectedFilter != 'All' && _selectedFilter != 'Patients') {
         return false;
       }
       if (_query.isEmpty) return true;
-      return m.name.toLowerCase().contains(_query.toLowerCase());
+      final text = [
+        m.name,
+        m.relation,
+        m.bloodGroup,
+        m.allergies,
+        m.notes,
+      ].whereType<String>().join(' ').toLowerCase();
+      return text.contains(_query.toLowerCase());
     }).toList();
 
     final doctors = doctorProv.doctors.where((d) {
@@ -45,16 +54,39 @@ class _SearchScreenState extends State<SearchScreen> {
         return false;
       }
       if (_query.isEmpty) return true;
-      return d.name.toLowerCase().contains(_query.toLowerCase()) ||
-          (d.specialization?.toLowerCase().contains(_query.toLowerCase()) ??
-              false);
+      final text = [
+        d.name,
+        d.specialization,
+        d.hospital,
+        d.address,
+      ].whereType<String>().join(' ').toLowerCase();
+      return text.contains(_query.toLowerCase());
     }).toList();
 
     final files = recordsProv.files.where((f) {
       if (_selectedFilter != 'All' && _selectedFilter != 'Files') return false;
-      final name = f.description ?? f.fileUrl.split('/').last;
+      final name = [
+        f.description,
+        f.fileName,
+        f.fileType,
+        f.ocrText,
+      ].whereType<String>().join(' ');
       if (_query.isEmpty) return true;
       return name.toLowerCase().contains(_query.toLowerCase());
+    }).toList();
+
+    final visits = visitProv.visits.where((visit) {
+      if (_selectedFilter != 'All' && _selectedFilter != 'Visits') return false;
+      final text = [
+        visit.memberName,
+        visit.doctorName,
+        visit.hospital,
+        visit.symptoms,
+        visit.diagnosis,
+        visit.treatment,
+        visit.notes,
+      ].whereType<String>().join(' ').toLowerCase();
+      return _query.isEmpty || text.contains(_query.toLowerCase());
     }).toList();
 
     return Scaffold(
@@ -129,6 +161,8 @@ class _SearchScreenState extends State<SearchScreen> {
                     _buildFilterTab('Doctors'),
                     const SizedBox(width: 8),
                     _buildFilterTab('Files'),
+                    const SizedBox(width: 8),
+                    _buildFilterTab('Visits'),
                   ],
                 ),
               ),
@@ -281,47 +315,37 @@ class _SearchScreenState extends State<SearchScreen> {
                   ),
                 ),
               ),
-              if (members.isEmpty && doctors.isEmpty && files.isEmpty)
+              ...visits.map(
+                (visit) => Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: _buildSearchResultTile(
+                    initials: 'V',
+                    title:
+                        visit.diagnosis ?? visit.doctorName ?? 'Medical visit',
+                    subtitle: [
+                      visit.memberName,
+                      visit.hospital,
+                      DateFormat('dd MMM yyyy').format(visit.visitDate),
+                    ].whereType<String>().join(' • '),
+                    onTap: () {
+                      recordsProv.addRecentSearch(
+                        visit.diagnosis ?? visit.doctorName ?? 'Medical visit',
+                      );
+                      context.push('/visits/${visit.id}');
+                    },
+                  ),
+                ),
+              ),
+              if (members.isEmpty &&
+                  doctors.isEmpty &&
+                  files.isEmpty &&
+                  visits.isEmpty)
                 const Center(
                   child: Padding(
                     padding: EdgeInsets.symmetric(vertical: 30),
                     child: Text('No matching health records found'),
                   ),
                 ),
-              /*
-              if (members.isNotEmpty)
-                _buildSearchResultTile(
-                  initials: 'AL',
-                  title: members.first.name,
-                  subtitle: 'Patient • PAT-003 • 6 doctor visits',
-                  onTap: () => context.push('/members/${members.first.id}'),
-                ),
-              const SizedBox(height: 12),
-
-              // Doctor Result: Dr. Sana Malik
-              if (doctors.isNotEmpty)
-                _buildSearchResultTile(
-                  initials: 'SM',
-                  title: doctors.first.name,
-                  subtitle:
-                      'Doctor • ${doctors.first.specialization ?? "Pediatrician"}',
-                  onTap: () => context.push('/doctors/${doctors.first.id}'),
-                ),
-              const SizedBox(height: 12),
-
-              // File Result: Prescription_12Oct.pdf
-              if (files.isNotEmpty)
-                _buildSearchFileTile(
-                  title: files.first.description ?? 'Prescription_12Oct.pdf',
-                  subtitle: 'Ali Ahmed • Medical prescription',
-                  date: '12 October 2026',
-                  onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Opening file...')),
-                    );
-                  },
-                ),
-              */
               const SizedBox(height: 20),
             ],
           ),

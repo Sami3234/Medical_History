@@ -43,7 +43,8 @@ class FamilyProvider extends ChangeNotifier {
     _setLoading(true);
     _error = null;
     try {
-      final uid = data['user_id'] ?? SupabaseConfig.currentUserId ?? 'usr-100';
+      final uid = data['user_id'] ?? SupabaseConfig.currentUserId;
+      if (uid == null) throw StateError('Sign in is required.');
       data['user_id'] = uid;
       await _service.create(data);
       _families = await _service.getAll(uid);
@@ -61,7 +62,8 @@ class FamilyProvider extends ChangeNotifier {
     _error = null;
     try {
       await _service.update(id, data);
-      final uid = SupabaseConfig.currentUserId ?? 'usr-100';
+      final uid = SupabaseConfig.currentUserId;
+      if (uid == null) throw StateError('Sign in is required.');
       _families = await _service.getAll(uid);
       return true;
     } catch (e) {

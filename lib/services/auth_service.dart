@@ -2,71 +2,70 @@ import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../config/supabase_config.dart';
 import '../models/user_model.dart';
-import 'mock_data_service.dart';
 
 class AuthService {
-  final _mock = MockDataService();
-
   User? get currentUser =>
       SupabaseConfig.isInitialized ? SupabaseConfig.auth?.currentUser : null;
 
-  bool get isLoggedIn => SupabaseConfig.isInitialized
-      ? currentUser != null
-      : (_mock.currentUser != null);
+  bool get isLoggedIn => currentUser != null;
 
   Stream<AuthState>? get authStream => SupabaseConfig.isInitialized
       ? SupabaseConfig.auth?.onAuthStateChange
       : null;
 
-  Future<void> signUp({
+  Future<AuthResponse> signUp({
     required String email,
     required String password,
     required String fullName,
   }) async {
-    if (SupabaseConfig.isInitialized && SupabaseConfig.auth != null) {
-      await SupabaseConfig.auth!.signUp(
-        email: email,
-        password: password,
-        data: {'full_name': fullName},
-      );
-    } else {
-      _mock.currentUser = UserModel(
-        id: 'usr-${DateTime.now().millisecondsSinceEpoch}',
-        email: email,
-        fullName: fullName,
-        createdAt: DateTime.now(),
-      );
-    }
+    final auth = _requireAuth();
+    return auth.signUp(
+      email: email,
+      password: password,
+      data: {'full_name': fullName},
+    );
+  }
+
+  Future<void> resendVerificationEmail(String email) async {
+    await _requireAuth().resend(type: OtpType.signup, email: email.trim());
+  }
+
+  Future<void> updateEmail(String email) async {
+    await _requireAuth().updateUser(UserAttributes(email: email.trim()));
   }
 
   Future<void> signIn({required String email, required String password}) async {
-    if (SupabaseConfig.isInitialized && SupabaseConfig.auth != null) {
-      await SupabaseConfig.auth!.signInWithPassword(
-        email: email,
-        password: password,
-      );
-    } else {
-      _mock.currentUser = UserModel(
-        id: 'usr-100',
-        email: email,
-        fullName: 'Ahmed Khan',
-        createdAt: DateTime.now().subtract(const Duration(days: 120)),
-      );
+    if (email.trim().isEmpty || password.length < 6) {
+      throw const AuthException('Invalid login credentials');
+    }
+    final response = await _requireAuth().signInWithPassword(
+      email: email.trim(),
+      password: password,
+    );
+    if (response.user == null || response.session == null) {
+      throw const AuthException('Invalid login credentials');
     }
   }
 
   Future<void> signOut() async {
-    if (SupabaseConfig.isInitialized && SupabaseConfig.auth != null) {
-      await SupabaseConfig.auth!.signOut();
-    } else {
-      _mock.currentUser = null;
+    await _requireAuth().signOut();
+  }
+
+  Future<void> signOutEverywhere() async {
+    await _requireAuth().signOut(scope: SignOutScope.global);
+  }
+
+  Future<void> deleteAccount() async {
+    final client = SupabaseConfig.db;
+    if (client == null || currentUser == null) {
+      throw StateError('Authentication service is not available.');
     }
+    await client.rpc('delete_my_account');
+    await _requireAuth().signOut();
   }
 
   Future<void> resetPassword(String email) async {
-    if (SupabaseConfig.isInitialized && SupabaseConfig.auth != null) {
-      await SupabaseConfig.auth!.resetPasswordForEmail(email);
-    }
+    await _requireAuth().resetPasswordForEmail(email);
   }
 
   Future<UserModel?> getProfile() async {
@@ -102,7 +101,7 @@ class AuthService {
         debugPrint('Auto-create profile note: $e');
       }
     }
-    return _mock.currentUser;
+    return null;
   }
 
   Future<void> updateProfile(Map<String, dynamic> updates) async {
@@ -110,16 +109,16 @@ class AuthService {
       final uid = currentUser?.id;
       if (uid == null) return;
       await SupabaseConfig.db!.from('profiles').update(updates).eq('id', uid);
-    } else if (_mock.currentUser != null) {
-      final cur = _mock.currentUser!;
-      _mock.currentUser = UserModel(
-        id: cur.id,
-        email: updates['email'] ?? cur.email,
-        fullName: updates['full_name'] ?? cur.fullName,
-        phone: updates['phone'] ?? cur.phone,
-        avatarUrl: updates['avatar_url'] ?? cur.avatarUrl,
-        createdAt: cur.createdAt,
-      );
+    } else {
+      throw StateError('Supabase is not available. Please try again later.');
     }
+  }
+
+  GoTrueClient _requireAuth() {
+    final auth = SupabaseConfig.auth;
+    if (!SupabaseConfig.isInitialized || auth == null) {
+      throw StateError('Supabase is not available. Please try again later.');
+    }
+    return auth;
   }
 }

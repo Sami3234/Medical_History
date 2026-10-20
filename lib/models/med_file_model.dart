@@ -8,6 +8,8 @@ class MedFileModel {
   final String? fileName;
   final String? mimeType;
   final String? backupUrl;
+  final String? fileHash;
+  final String? ocrText;
   final DateTime createdAt;
 
   MedFileModel({
@@ -20,6 +22,8 @@ class MedFileModel {
     this.fileName,
     this.mimeType,
     this.backupUrl,
+    this.fileHash,
+    this.ocrText,
     required this.createdAt,
   });
 
@@ -34,6 +38,8 @@ class MedFileModel {
       fileName: map['file_name'] as String?,
       mimeType: map['mime_type'] as String?,
       backupUrl: map['backup_url'] as String?,
+      fileHash: map['file_hash'] as String?,
+      ocrText: map['ocr_text'] as String?,
       createdAt: DateTime.parse(map['created_at'] as String),
     );
   }
@@ -47,6 +53,8 @@ class MedFileModel {
     'file_name': fileName,
     'mime_type': mimeType,
     'backup_url': backupUrl,
+    'file_hash': fileHash,
+    'ocr_text': ocrText,
     'created_at': createdAt.toIso8601String(),
   };
 
@@ -60,6 +68,8 @@ class MedFileModel {
     fileName: fileName,
     mimeType: mimeType,
     backupUrl: backupUrl ?? this.backupUrl,
+    fileHash: fileHash,
+    ocrText: ocrText,
     createdAt: createdAt,
   );
 }

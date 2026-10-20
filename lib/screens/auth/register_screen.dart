@@ -20,6 +20,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _email = TextEditingController();
   final _pass = TextEditingController();
   final _confirmPass = TextEditingController();
+  bool _passwordChanged = false;
 
   @override
   void dispose() {
@@ -28,6 +29,29 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _pass.dispose();
     _confirmPass.dispose();
     super.dispose();
+  }
+
+  String _passwordStrength(String password) {
+    if (password.isEmpty) return '';
+    var score = 0;
+    if (password.length >= 8) score++;
+    if (RegExp(r'[A-Z]').hasMatch(password)) score++;
+    if (RegExp(r'[0-9]').hasMatch(password)) score++;
+    if (RegExp(r'[^A-Za-z0-9]').hasMatch(password)) score++;
+    if (score <= 1) return 'Weak';
+    if (score == 2) return 'Fair';
+    if (score == 3) return 'Good';
+    return 'Strong';
+  }
+
+  Color _passwordStrengthColor(String strength) {
+    return switch (strength) {
+      'Weak' => AppColors.error,
+      'Fair' => AppColors.warning,
+      'Good' => AppColors.info,
+      'Strong' => AppColors.success,
+      _ => AppColors.textLight,
+    };
   }
 
   Future<void> _register() async {
@@ -40,7 +64,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
     if (!mounted) return;
     if (ok) {
-      context.go(AppRoutes.dashboard);
+      if (auth.emailConfirmationRequired) {
+        if (mounted) {
+          context.go(
+            '${AppRoutes.verifyEmail}?email=${Uri.encodeComponent(_email.text.trim())}',
+          );
+        }
+      } else {
+        context.go(AppRoutes.dashboard);
+      }
     } else {
       context.showSnack(auth.error ?? 'Registration failed', isError: true);
     }
@@ -148,6 +180,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 const SizedBox(height: 6),
                 TextFormField(
                   controller: _pass,
+                  onChanged: (_) => setState(() => _passwordChanged = true),
                   obscureText: true,
                   decoration: const InputDecoration(
                     hintText: 'Enter password',
@@ -161,6 +194,41 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ? 'Password must be at least 6 characters'
                       : null,
                 ),
+                if (_passwordChanged && _pass.text.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: LinearProgressIndicator(
+                          value: switch (_passwordStrength(_pass.text)) {
+                            'Weak' => 0.25,
+                            'Fair' => 0.5,
+                            'Good' => 0.75,
+                            'Strong' => 1,
+                            _ => 0,
+                          },
+                          minHeight: 5,
+                          borderRadius: BorderRadius.circular(4),
+                          color: _passwordStrengthColor(
+                            _passwordStrength(_pass.text),
+                          ),
+                          backgroundColor: AppColors.surface,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Text(
+                        _passwordStrength(_pass.text),
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: _passwordStrengthColor(
+                            _passwordStrength(_pass.text),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
                 const SizedBox(height: 18),
                 // Confirm Password
                 const Text(

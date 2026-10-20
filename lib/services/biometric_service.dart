@@ -1,9 +1,21 @@
 import 'package:flutter/foundation.dart';
 import 'package:local_auth/local_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// Service for fingerprint / face-id biometric authentication
 class BiometricAuthService {
   static final _auth = LocalAuthentication();
+  static const _enabledKey = 'biometrics_enabled';
+
+  static Future<bool> isEnabled() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_enabledKey) ?? false;
+  }
+
+  static Future<void> setEnabled(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_enabledKey, value);
+  }
 
   /// Check if the device supports biometrics and has them enrolled
   static Future<bool> isAvailable() async {
@@ -41,8 +53,9 @@ class BiometricAuthService {
       return await _auth.authenticate(
         localizedReason: reason,
         options: const AuthenticationOptions(
-          biometricOnly: false, // allow device PIN as fallback
+          biometricOnly: true,
           stickyAuth: true,
+          useErrorDialogs: true,
         ),
       );
     } catch (e) {

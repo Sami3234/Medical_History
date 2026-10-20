@@ -17,6 +17,7 @@ class VisitListScreen extends StatefulWidget {
 
 class _VisitListScreenState extends State<VisitListScreen> {
   int? _selectedYear;
+  String _query = '';
 
   @override
   void initState() {
@@ -39,7 +40,20 @@ class _VisitListScreenState extends State<VisitListScreen> {
     final visits = provider.visits
         .where(
           (visit) =>
-              _selectedYear == null || visit.visitDate.year == _selectedYear,
+              (_selectedYear == null ||
+                  visit.visitDate.year == _selectedYear) &&
+              (_query.trim().isEmpty ||
+                  [
+                        visit.doctorName,
+                        visit.memberName,
+                        visit.diagnosis,
+                        visit.treatment,
+                        visit.symptoms,
+                      ]
+                      .whereType<String>()
+                      .join(' ')
+                      .toLowerCase()
+                      .contains(_query.trim().toLowerCase())),
         )
         .toList();
     final grouped = <String, List<dynamic>>{};
@@ -121,6 +135,20 @@ class _VisitListScreenState extends State<VisitListScreen> {
                       ),
                     ),
                     const SizedBox(height: 18),
+                    TextField(
+                      onChanged: (value) => setState(() => _query = value),
+                      decoration: InputDecoration(
+                        hintText: 'Search doctor, member, diagnosis...',
+                        prefixIcon: const Icon(Icons.search_rounded),
+                        suffixIcon: _query.isEmpty
+                            ? null
+                            : IconButton(
+                                onPressed: () => setState(() => _query = ''),
+                                icon: const Icon(Icons.clear_rounded),
+                              ),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
                     SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
                       child: Row(

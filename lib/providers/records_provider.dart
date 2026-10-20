@@ -1,28 +1,44 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../config/supabase_config.dart';
 import '../models/appointment_model.dart';
 import '../models/med_file_model.dart';
 import '../services/cloudinary_service.dart';
 import '../services/local_document_service.dart';
-import '../services/mock_data_service.dart';
 
 class RecordsProvider extends ChangeNotifier {
-  final _mock = MockDataService();
   final _localDocuments = LocalDocumentService();
+  static const _recentSearchesKey = 'recent_health_searches_v1';
 
   List<MedFileModel> _files = [];
+  List<MedFileModel> _drafts = [];
   List<AppointmentModel> _appointments = [];
-  List<String> _recentSearches = [];
+  final List<String> _recentSearches = [];
   bool _loading = false;
 
   List<MedFileModel> get files => _files;
+  List<MedFileModel> get drafts => _drafts;
   List<AppointmentModel> get appointments => _appointments;
   List<String> get recentSearches => _recentSearches;
   bool get loading => _loading;
 
   RecordsProvider() {
+    _loadRecentSearches();
     loadAll();
+  }
+
+  Future<void> _loadRecentSearches() async {
+    final prefs = await SharedPreferences.getInstance();
+    _recentSearches
+      ..clear()
+      ..addAll(prefs.getStringList(_recentSearchesKey) ?? const []);
+    notifyListeners();
+  }
+
+  Future<void> _persistRecentSearches() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList(_recentSearchesKey, _recentSearches);
   }
 
   Future<void> loadAll() async {
@@ -30,6 +46,7 @@ class RecordsProvider extends ChangeNotifier {
     notifyListeners();
     try {
       _files = await _localDocuments.loadDocuments();
+      _drafts = await _localDocuments.loadDrafts();
       if (SupabaseConfig.isInitialized && SupabaseConfig.db != null) {
         final data = await SupabaseConfig.db!
             .from('appointments')
@@ -39,13 +56,51 @@ class RecordsProvider extends ChangeNotifier {
             .map((item) => AppointmentModel.fromMap(item))
             .toList();
       } else {
-        _appointments = List.from(_mock.appointments);
+        _appointments = [];
       }
-      _recentSearches = List.from(_mock.recentSearches);
     } finally {
       _loading = false;
       notifyListeners();
     }
+  }
+
+  Future<MedFileModel> addDraft({
+    required String fileName,
+    required Uint8List bytes,
+    String? mimeType,
+  }) async {
+    final draft = await _localDocuments.saveDraft(
+      bytes: bytes,
+      fileName: fileName,
+      mimeType: mimeType,
+    );
+    _drafts = await _localDocuments.loadDrafts();
+    notifyListeners();
+    return draft;
+  }
+
+  Future<void> deleteDraft(String id) async {
+    await _localDocuments.deleteDraft(id);
+    _drafts = await _localDocuments.loadDrafts();
+    notifyListeners();
+  }
+
+  Future<MedFileModel> organizeDraft(
+    MedFileModel draft, {
+    required String memberId,
+    required String fileType,
+    required String title,
+  }) async {
+    final document = await _localDocuments.promoteDraft(
+      draft,
+      memberId: memberId,
+      fileType: fileType,
+      title: title,
+    );
+    _drafts = await _localDocuments.loadDrafts();
+    _files = await _localDocuments.loadDocuments();
+    notifyListeners();
+    return document;
   }
 
   Future<MedFileModel> addDocument({
@@ -56,6 +111,7 @@ class RecordsProvider extends ChangeNotifier {
     required Uint8List bytes,
     String? mimeType,
     String? visitId,
+    String? ocrText,
   }) async {
     final document = await _localDocuments.saveDocument(
       bytes: bytes,
@@ -65,6 +121,7 @@ class RecordsProvider extends ChangeNotifier {
       description: title,
       visitId: visitId,
       mimeType: mimeType,
+      ocrText: ocrText,
     );
     _files = await _localDocuments.loadDocuments();
     notifyListeners();
@@ -108,24 +165,23 @@ class RecordsProvider extends ChangeNotifier {
       _appointments.add(AppointmentModel.fromMap(data));
       _appointments.sort((a, b) => a.dateTime.compareTo(b.dateTime));
     } else {
-      _mock.appointments.add(appointment);
-      _appointments = List.from(_mock.appointments);
+      throw StateError('Sign in is required before adding an appointment.');
     }
     notifyListeners();
   }
 
   void addRecentSearch(String query) {
     if (query.trim().isEmpty) return;
-    _mock.recentSearches.remove(query);
-    _mock.recentSearches.insert(0, query);
-    if (_mock.recentSearches.length > 8) _mock.recentSearches.removeLast();
-    _recentSearches = List.from(_mock.recentSearches);
+    _recentSearches.remove(query);
+    _recentSearches.insert(0, query);
+    if (_recentSearches.length > 8) _recentSearches.removeLast();
+    _persistRecentSearches();
     notifyListeners();
   }
 
   void clearRecentSearches() {
-    _mock.recentSearches.clear();
     _recentSearches.clear();
+    _persistRecentSearches();
     notifyListeners();
   }
 }

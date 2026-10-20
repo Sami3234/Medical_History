@@ -9,6 +9,8 @@ class MemberModel {
   final String? allergies;
   final String? notes;
   final String? avatarUrl;
+  final String? emergencyContact;
+  final String? parentId;
   final DateTime createdAt;
 
   MemberModel({
@@ -22,6 +24,8 @@ class MemberModel {
     this.allergies,
     this.notes,
     this.avatarUrl,
+    this.emergencyContact,
+    this.parentId,
     required this.createdAt,
   });
 
@@ -37,6 +41,8 @@ class MemberModel {
       allergies: map['allergies'] as String?,
       notes: map['notes'] as String?,
       avatarUrl: map['avatar_url'] as String?,
+      emergencyContact: map['emergency_contact'] as String?,
+      parentId: map['parent_id'] as String?,
       createdAt: DateTime.parse(map['created_at'] as String),
     );
   }
@@ -51,6 +57,8 @@ class MemberModel {
     'allergies': allergies,
     'notes': notes,
     'avatar_url': avatarUrl,
+    'emergency_contact': emergencyContact,
+    'parent_id': parentId,
   };
 
   String get age {

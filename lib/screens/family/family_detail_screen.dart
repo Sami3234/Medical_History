@@ -5,8 +5,10 @@ import '../../config/theme.dart';
 import '../../config/routes.dart';
 import '../../providers/family_provider.dart';
 import '../../providers/member_provider.dart';
+import '../../providers/visit_provider.dart';
 import '../../widgets/bottom_nav.dart';
 import '../../widgets/hero_health_card.dart';
+import '../../utils/extensions.dart';
 
 class FamilyDetailScreen extends StatefulWidget {
   final String id;
@@ -29,6 +31,7 @@ class _FamilyDetailScreenState extends State<FamilyDetailScreen> {
   Widget build(BuildContext context) {
     final famProv = context.watch<FamilyProvider>();
     final memberProv = context.watch<MemberProvider>();
+    final visitProv = context.watch<VisitProvider>();
 
     final families = famProv.families;
     final family =
@@ -85,6 +88,12 @@ class _FamilyDetailScreenState extends State<FamilyDetailScreen> {
     }
 
     final members = memberProv.members;
+    final familyMemberIds = members.map((member) => member.id).toSet();
+    final familyVisitCount = visitProv.visits
+        .where((visit) => familyMemberIds.contains(visit.memberId))
+        .length;
+    final cardColor = Theme.of(context).cardColor;
+    final surfaceColor = Theme.of(context).colorScheme.surface;
 
     return Scaffold(
       backgroundColor: AppColors.bg,
@@ -94,6 +103,16 @@ class _FamilyDetailScreenState extends State<FamilyDetailScreen> {
           icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
           onPressed: () => context.pop(),
         ),
+        actions: [
+          IconButton(
+            tooltip: 'Delete family',
+            icon: const Icon(
+              Icons.delete_outline_rounded,
+              color: AppColors.error,
+            ),
+            onPressed: () => _confirmDeleteFamily(context, family),
+          ),
+        ],
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -105,21 +124,12 @@ class _FamilyDetailScreenState extends State<FamilyDetailScreen> {
               HeroHealthCard(
                 title: family.name,
                 subtitle: '${family.familyId} • ${family.address ?? "Lahore"}',
-                avatarInitials: members.map((m) {
-                  final parts = m.name.split(' ');
-                  if (parts.length >= 2) {
-                    return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
-                  }
-                  return m.name
-                      .substring(0, m.name.length >= 2 ? 2 : 1)
-                      .toUpperCase();
-                }).toList(),
                 actionText: 'Edit family',
                 onAction: () => _showEditDialog(context, family),
               ),
               const SizedBox(height: 20),
 
-              // Stat Boxes: 04 Family members, 12 Doctor visits
+              // Stat Boxes: current family members and recorded visits
               Row(
                 children: [
                   Expanded(
@@ -129,7 +139,7 @@ class _FamilyDetailScreenState extends State<FamilyDetailScreen> {
                         vertical: 18,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: cardColor,
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(color: AppColors.border, width: 1.2),
                         boxShadow: [
@@ -174,7 +184,7 @@ class _FamilyDetailScreenState extends State<FamilyDetailScreen> {
                         vertical: 18,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: cardColor,
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(color: AppColors.border, width: 1.2),
                         boxShadow: [
@@ -185,11 +195,11 @@ class _FamilyDetailScreenState extends State<FamilyDetailScreen> {
                           ),
                         ],
                       ),
-                      child: const Column(
+                      child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            '12',
+                            '$familyVisitCount',
                             style: TextStyle(
                               fontSize: 32,
                               fontWeight: FontWeight.w800,
@@ -274,7 +284,7 @@ class _FamilyDetailScreenState extends State<FamilyDetailScreen> {
                         vertical: 14,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: cardColor,
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(color: AppColors.border, width: 1.2),
                         boxShadow: [
@@ -290,8 +300,8 @@ class _FamilyDetailScreenState extends State<FamilyDetailScreen> {
                           Container(
                             width: 48,
                             height: 48,
-                            decoration: const BoxDecoration(
-                              color: Color(0xFFDEF2D7),
+                            decoration: BoxDecoration(
+                              color: surfaceColor,
                               shape: BoxShape.circle,
                             ),
                             alignment: Alignment.center,
@@ -378,5 +388,42 @@ class _FamilyDetailScreenState extends State<FamilyDetailScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _confirmDeleteFamily(
+    BuildContext context,
+    dynamic family,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Delete family space?'),
+        content: const Text(
+          'All members, visits, health records and local document links in this family may be removed. Create a Google Drive backup first if you need to restore them later.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: AppColors.error),
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Delete permanently'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    final deleted = await context.read<FamilyProvider>().deleteFamily(
+      family.id,
+    );
+    if (!mounted) return;
+    if (deleted) {
+      context.showSnack('Family deleted');
+      context.pop();
+    } else {
+      context.showSnack('Family could not be deleted', isError: true);
+    }
   }
 }

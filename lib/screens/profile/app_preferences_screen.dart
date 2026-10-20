@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:provider/provider.dart';
 import '../../config/theme.dart';
 import '../../utils/extensions.dart';
+import '../../providers/theme_provider.dart';
 
 class AppPreferencesScreen extends StatefulWidget {
   const AppPreferencesScreen({super.key});
@@ -134,7 +136,7 @@ class _AppPreferencesScreenState extends State<AppPreferencesScreen> {
                       onChanged: (val) {
                         if (val != null) {
                           setState(() => _selectedTheme = val);
-                          _savePref('pref_theme', val);
+                          context.read<AppThemeController>().setTheme(val);
                         }
                       },
                     ),
@@ -332,7 +334,7 @@ class _AppPreferencesScreenState extends State<AppPreferencesScreen> {
                     ),
                     const SizedBox(height: 2),
                     const Text(
-                      'Version 1.0.4 • Cloud Powered & Encrypted',
+                      'Version 1.0.4 • Cloud powered with private access',
                       style: TextStyle(
                         fontSize: 12,
                         color: AppColors.textLight,

@@ -30,7 +30,9 @@ class _MemberFormScreenState extends State<MemberFormScreen> {
   String? _selectedBloodGroup;
   String? _selectedRelation;
   final _notes = TextEditingController();
+  final _emergencyContact = TextEditingController();
   String? _selectedFamilyId;
+  String? _selectedParentId;
   String? _avatarUrl;
   Uint8List? _pickedPhotoBytes;
   bool _uploadingAvatar = false;
@@ -126,6 +128,7 @@ class _MemberFormScreenState extends State<MemberFormScreen> {
     _dob.dispose();
     _age.dispose();
     _notes.dispose();
+    _emergencyContact.dispose();
     super.dispose();
   }
 
@@ -232,6 +235,10 @@ class _MemberFormScreenState extends State<MemberFormScreen> {
         'allergies': _notes.text.trim().isNotEmpty ? _notes.text.trim() : null,
         'notes': _notes.text.trim().isNotEmpty ? _notes.text.trim() : null,
         'avatar_url': _avatarUrl,
+        'emergency_contact': _emergencyContact.text.trim().isNotEmpty
+            ? _emergencyContact.text.trim()
+            : null,
+        'parent_id': _selectedParentId,
       });
 
       if (!mounted) return;
@@ -247,6 +254,15 @@ class _MemberFormScreenState extends State<MemberFormScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final memberProv = context.watch<MemberProvider>();
+    final familyProv = context.watch<FamilyProvider>();
+    final familyId =
+        _selectedFamilyId ??
+        (familyProv.families.isNotEmpty ? familyProv.families.first.id : null);
+    final possibleParents = memberProv.members
+        .where((member) => member.familyId == familyId)
+        .toList();
+
     return Scaffold(
       backgroundColor: AppColors.bg,
       appBar: AppBar(
@@ -441,6 +457,38 @@ class _MemberFormScreenState extends State<MemberFormScreen> {
                       : null,
                   onChanged: (val) => setState(() => _selectedRelation = val),
                 ),
+                if (_selectedRelation == 'Son' ||
+                    _selectedRelation == 'Daughter') ...[
+                  const SizedBox(height: 18),
+                  const Text(
+                    'Parent / linked adult',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textDark,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  DropdownButtonFormField<String>(
+                    initialValue: _selectedParentId,
+                    decoration: const InputDecoration(
+                      hintText: 'Select parent or guardian',
+                      prefixIcon: Icon(
+                        Icons.account_tree_outlined,
+                        color: AppColors.textLight,
+                        size: 20,
+                      ),
+                    ),
+                    items: possibleParents.map((parent) {
+                      return DropdownMenuItem<String>(
+                        value: parent.id,
+                        child: Text('${parent.name} • ${parent.relation}'),
+                      );
+                    }).toList(),
+                    onChanged: (value) =>
+                        setState(() => _selectedParentId = value),
+                  ),
+                ],
                 const SizedBox(height: 18),
 
                 // Age (Mandatory) & Date of Birth
@@ -581,6 +629,28 @@ class _MemberFormScreenState extends State<MemberFormScreen> {
                     hintText: 'Optional medical notes',
                     prefixIcon: Icon(
                       Icons.description_outlined,
+                      color: AppColors.textLight,
+                      size: 20,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 18),
+                const Text(
+                  'Emergency contact',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textDark,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                TextFormField(
+                  controller: _emergencyContact,
+                  keyboardType: TextInputType.phone,
+                  decoration: const InputDecoration(
+                    hintText: 'Name and phone number',
+                    prefixIcon: Icon(
+                      Icons.emergency_outlined,
                       color: AppColors.textLight,
                       size: 20,
                     ),

@@ -14,9 +14,7 @@ class SupabaseConfig {
 
   static Future<void> init() async {
     if (!isConfigured) {
-      debugPrint(
-        'Supabase credentials not configured. Using local mock repository.',
-      );
+      debugPrint('Supabase credentials are not configured.');
       return;
     }
     try {
@@ -24,6 +22,10 @@ class SupabaseConfig {
         url: AppStrings.supabaseUrl,
         // ignore: deprecated_member_use
         anonKey: AppStrings.supabaseAnonKey,
+        authOptions: const FlutterAuthClientOptions(
+          autoRefreshToken: true,
+          persistSession: true,
+        ),
       );
       _initialized = true;
     } catch (e) {

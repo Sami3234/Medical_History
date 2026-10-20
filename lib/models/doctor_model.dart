@@ -6,6 +6,8 @@ class DoctorModel {
   final String? hospital;
   final String? phone;
   final String? address;
+  final String? availability;
+  final bool isFavorite;
   final DateTime createdAt;
 
   DoctorModel({
@@ -16,6 +18,8 @@ class DoctorModel {
     this.hospital,
     this.phone,
     this.address,
+    this.availability,
+    this.isFavorite = false,
     required this.createdAt,
   });
 
@@ -28,6 +32,8 @@ class DoctorModel {
       hospital: map['hospital'] as String?,
       phone: map['phone'] as String?,
       address: map['address'] as String?,
+      availability: map['availability'] as String?,
+      isFavorite: map['is_favorite'] as bool? ?? false,
       createdAt: DateTime.parse(map['created_at'] as String),
     );
   }
@@ -39,5 +45,7 @@ class DoctorModel {
     'hospital': hospital,
     'phone': phone,
     'address': address,
+    'availability': availability,
+    'is_favorite': isFavorite,
   };
 }

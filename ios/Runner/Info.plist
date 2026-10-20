@@ -26,6 +26,10 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>Medical History uses the camera to scan and save medical documents.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Medical History uses your photo library to attach medical documents and profile photos.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

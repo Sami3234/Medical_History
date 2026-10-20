@@ -5,6 +5,7 @@ import '../screens/onboarding/onboarding_screen.dart';
 import '../screens/auth/login_screen.dart';
 import '../screens/auth/register_screen.dart';
 import '../screens/auth/forgot_screen.dart';
+import '../screens/auth/email_verification_screen.dart';
 import '../screens/home/dashboard_screen.dart';
 import '../screens/family/family_list_screen.dart';
 import '../screens/family/family_form_screen.dart';
@@ -28,6 +29,7 @@ import '../screens/profile/edit_profile_screen.dart';
 import '../screens/profile/security_privacy_screen.dart';
 import '../screens/profile/notifications_settings_screen.dart';
 import '../screens/profile/app_preferences_screen.dart';
+import '../screens/share/shared_member_screen.dart';
 
 class AppRoutes {
   static const splash = '/';
@@ -35,6 +37,7 @@ class AppRoutes {
   static const login = '/login';
   static const register = '/register';
   static const forgot = '/forgot';
+  static const verifyEmail = '/verify-email';
   static const dashboard = '/dashboard';
   static const families = '/families';
   static const familyAdd = '/families/add';
@@ -58,6 +61,7 @@ class AppRoutes {
   static const security = '/settings/security';
   static const notifications = '/settings/notifications';
   static const preferences = '/settings/preferences';
+  static const sharedMember = '/shared-member';
 
   static final router = GoRouter(
     initialLocation: splash,
@@ -70,13 +74,12 @@ class AppRoutes {
           location == onboarding ||
           location == login ||
           location == register ||
-          location == forgot;
+          location == forgot ||
+          location == verifyEmail ||
+          location == sharedMember;
 
       if (!loggedIn && !publicRoute) return login;
-      if (loggedIn &&
-          (location == login ||
-              location == register ||
-              location == onboarding)) {
+      if (loggedIn && (location == register || location == onboarding)) {
         return dashboard;
       }
       return null;
@@ -87,6 +90,17 @@ class AppRoutes {
       GoRoute(path: login, builder: (_, _) => const LoginScreen()),
       GoRoute(path: register, builder: (_, _) => const RegisterScreen()),
       GoRoute(path: forgot, builder: (_, _) => const ForgotScreen()),
+      GoRoute(
+        path: verifyEmail,
+        builder: (_, state) => EmailVerificationScreen(
+          email: state.uri.queryParameters['email'] ?? '',
+        ),
+      ),
+      GoRoute(
+        path: sharedMember,
+        builder: (_, state) =>
+            SharedMemberScreen(token: state.uri.queryParameters['token'] ?? ''),
+      ),
       GoRoute(path: dashboard, builder: (_, _) => const DashboardScreen()),
       GoRoute(path: families, builder: (_, _) => const FamilyListScreen()),
       GoRoute(path: familyAdd, builder: (_, _) => const FamilyFormScreen()),

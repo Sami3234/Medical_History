@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../config/theme.dart';
 import '../config/routes.dart';
 import '../config/supabase_config.dart';
+import '../services/biometric_service.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -47,7 +48,9 @@ class _SplashScreenState extends State<SplashScreen>
         (SupabaseConfig.auth?.currentUser != null);
 
     if (isLoggedIn) {
-      context.go(AppRoutes.dashboard);
+      final biometricEnabled = await BiometricAuthService.isEnabled();
+      if (!mounted) return;
+      context.go(biometricEnabled ? AppRoutes.login : AppRoutes.dashboard);
       return;
     }
 

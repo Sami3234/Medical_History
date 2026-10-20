@@ -56,24 +56,8 @@ class GoogleAuthService {
         accessToken: accessToken,
       );
 
-      // Ensure profile row exists for new users
-      if (response.user != null) {
-        final uid = response.user!.id;
-        final existing = await SupabaseConfig.db!
-            .from('profiles')
-            .select('id')
-            .eq('id', uid)
-            .maybeSingle();
-
-        if (existing == null) {
-          await SupabaseConfig.db!.from('profiles').insert({
-            'id': uid,
-            'email': googleUser.email,
-            'full_name':
-                googleUser.displayName ?? googleUser.email.split('@').first,
-            'avatar_url': googleUser.photoUrl,
-          });
-        }
+      if (response.user == null || response.session == null) {
+        throw const AuthException('Google Sign-In did not create a session.');
       }
 
       return response;

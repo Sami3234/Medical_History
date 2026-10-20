@@ -43,7 +43,8 @@ class DoctorProvider extends ChangeNotifier {
     _setLoading(true);
     _error = null;
     try {
-      final uid = data['user_id'] ?? SupabaseConfig.currentUserId ?? 'usr-100';
+      final uid = data['user_id'] ?? SupabaseConfig.currentUserId;
+      if (uid == null) throw StateError('Sign in is required.');
       data['user_id'] = uid;
       await _service.create(data);
       _doctors = await _service.getAll(uid);
@@ -61,7 +62,8 @@ class DoctorProvider extends ChangeNotifier {
     _error = null;
     try {
       await _service.update(id, data);
-      final uid = SupabaseConfig.currentUserId ?? 'usr-100';
+      final uid = SupabaseConfig.currentUserId;
+      if (uid == null) throw StateError('Sign in is required.');
       _doctors = await _service.getAll(uid);
       return true;
     } catch (e) {
@@ -84,6 +86,12 @@ class DoctorProvider extends ChangeNotifier {
       notifyListeners();
       return false;
     }
+  }
+
+  Future<bool> toggleFavorite(DoctorModel doctor) async {
+    final updated = !doctor.isFavorite;
+    final ok = await updateDoctor(doctor.id, {'is_favorite': updated});
+    return ok;
   }
 
   String _friendlyError(Object e) {

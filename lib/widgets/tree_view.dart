@@ -156,11 +156,13 @@ class TreeBranchLinePainter extends CustomPainter {
   final bool isLast;
   final Color lineColor;
   final double strokeWidth;
+  final double? trunkX;
 
   TreeBranchLinePainter({
     required this.isLast,
     this.lineColor = const Color(0xFF94A3B8),
     this.strokeWidth = 2.0,
+    this.trunkX,
   });
 
   @override
@@ -171,7 +173,7 @@ class TreeBranchLinePainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
 
-    final startX = size.width / 2;
+    final startX = trunkX ?? size.width / 2;
     final midY = size.height / 2;
 
     // Continuous vertical trunk line:
@@ -200,7 +202,8 @@ class TreeBranchLinePainter extends CustomPainter {
   bool shouldRepaint(covariant TreeBranchLinePainter oldDelegate) =>
       oldDelegate.isLast != isLast ||
       oldDelegate.lineColor != lineColor ||
-      oldDelegate.strokeWidth != strokeWidth;
+      oldDelegate.strokeWidth != strokeWidth ||
+      oldDelegate.trunkX != trunkX;
 }
 
 /// Modern interactive family tree with genuine tree branch connectors,
@@ -280,10 +283,12 @@ class _InteractiveTreeViewState extends State<InteractiveTreeView> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // ── Top Bar: Hierarchy Stats & Mode Switcher ───────────────────
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Row(
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final stats = Wrap(
+              spacing: 8,
+              runSpacing: 6,
+              crossAxisAlignment: WrapCrossAlignment.center,
               children: [
                 Container(
                   padding: const EdgeInsets.symmetric(
@@ -314,10 +319,8 @@ class _InteractiveTreeViewState extends State<InteractiveTreeView> {
                   ),
                 ),
               ],
-            ),
-
-            // Mode Toggle: Tree (Ordered) vs Branches (Generational)
-            Container(
+            );
+            final modeToggle = Container(
               padding: const EdgeInsets.all(2.5),
               decoration: BoxDecoration(
                 color: const Color(0xFFF1F5F9),
@@ -345,8 +348,27 @@ class _InteractiveTreeViewState extends State<InteractiveTreeView> {
                   ),
                 ],
               ),
-            ),
-          ],
+            );
+
+            if (constraints.maxWidth < 420) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  stats,
+                  const SizedBox(height: 8),
+                  Align(alignment: Alignment.centerRight, child: modeToggle),
+                ],
+              );
+            }
+
+            return Row(
+              children: [
+                Expanded(child: stats),
+                const SizedBox(width: 10),
+                modeToggle,
+              ],
+            );
+          },
         ),
         const SizedBox(height: 12),
 
@@ -361,16 +383,15 @@ class _InteractiveTreeViewState extends State<InteractiveTreeView> {
               ? Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Trunk top stem connector
+                    // Trunk top stem connector - centered at 24.0 to match branches
                     Padding(
-                      padding: const EdgeInsets.only(left: 36),
+                      padding: const EdgeInsets.only(left: 23),
                       child: Container(
                         width: 2,
                         height: 14,
                         color: const Color(0xFF94A3B8),
                       ),
                     ),
-
                     if (_displayMode == TreeDisplayMode.hierarchical)
                       // Direct relational tree
                       ..._buildDirectTreeMembers(members)
@@ -523,28 +544,66 @@ class _InteractiveTreeViewState extends State<InteractiveTreeView> {
 
   // ── Mode 1: Direct Relational Tree (Tree branch lines to each member) ─
   List<Widget> _buildDirectTreeMembers(List<MemberModel> members) {
-    return List.generate(members.length, (index) {
-      final member = members[index];
-      final isLast = index == members.length - 1;
+    // Keep the direct mode explicit as separate generation branches. A single
+    // continuous trunk makes children look attached to the wrong adult.
+    return _buildGenerationalTreeBranches(members);
+  }
 
+  String _childrenParentLabel(
+    List<MemberModel> members, {
+    List<MemberModel>? children,
+  }) {
+    final parentIds = children
+        ?.map((child) => child.parentId)
+        .whereType<String>()
+        .toSet();
+    if (parentIds != null && parentIds.isNotEmpty) {
+      final parentNames = members
+          .where((member) => parentIds.contains(member.id))
+          .map((member) => member.name)
+          .toList();
+      if (parentNames.isNotEmpty) return parentNames.join(' & ');
+    }
+
+    String? selfName;
+    String? spouseName;
+
+    for (final member in members) {
+      final relation = member.relation.toLowerCase().trim();
+      if (relation == 'self') selfName = member.name;
+      if (relation == 'spouse' || relation == 'wife' || relation == 'husband') {
+        spouseName = member.name;
+      }
+    }
+
+    if (selfName != null && spouseName != null) {
+      return '$selfName & $spouseName';
+    }
+    return selfName ?? spouseName ?? widget.familyName ?? 'Core Family';
+  }
+
+  List<Widget> _buildLocalBranchMembers(
+    List<MemberModel> members,
+    FamilyGeneration generation, {
+    bool compact = false,
+  }) {
+    return List.generate(members.length, (index) {
       return Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Authentic vertical trunk and branch arm
           CustomPaint(
             painter: TreeBranchLinePainter(
-              isLast: isLast,
-              lineColor: const Color(0xFF94A3B8),
-              strokeWidth: 2.0,
+              isLast: index == members.length - 1,
+              lineColor: generation.color.withAlpha(145),
+              strokeWidth: 1.8,
+              trunkX: 10,
             ),
-            size: const Size(40, 78),
+            size: Size(30, compact ? 62 : 74),
           ),
-
-          // Member Node Card
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: _buildMemberCard(member),
+              padding: const EdgeInsets.only(bottom: 6),
+              child: _buildMemberCard(members[index], compact: compact),
             ),
           ),
         ],
@@ -600,137 +659,102 @@ class _InteractiveTreeViewState extends State<InteractiveTreeView> {
     return List.generate(activeGroups.length, (gIndex) {
       final gen = activeGroups[gIndex].key;
       final groupMembers = activeGroups[gIndex].value;
-      final isLastGen = gIndex == activeGroups.length - 1;
       final branchId = 'gen-${gen.level}';
       final isExpanded = _expandedBranches.contains(branchId);
+      final isChildrenGroup = gen == FamilyGeneration.children;
+      final headerTitle = isChildrenGroup
+          ? 'Children of ${_childrenParentLabel(members, children: groupMembers)}'
+          : gen.title;
 
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Generation Branch Header Row
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              CustomPaint(
-                painter: TreeBranchLinePainter(
-                  isLast: isLastGen && !isExpanded,
-                  lineColor: gen.color,
-                  strokeWidth: 2.2,
+      return Container(
+        margin: EdgeInsets.only(top: gIndex == 0 ? 10 : 4, bottom: 10),
+        padding: const EdgeInsets.fromLTRB(10, 8, 10, 4),
+        decoration: BoxDecoration(
+          color: gen.bgColor.withAlpha(125),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: gen.borderColor),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            GestureDetector(
+              onTap: () => _toggleBranch(branchId),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 7),
+                decoration: BoxDecoration(
+                  color: gen.bgColor,
+                  borderRadius: BorderRadius.circular(11),
+                  border: Border.all(color: gen.borderColor, width: 1.1),
                 ),
-                size: const Size(40, 46),
-              ),
-              Expanded(
-                child: GestureDetector(
-                  onTap: () => _toggleBranch(branchId),
-                  child: Container(
-                    margin: const EdgeInsets.only(bottom: 6),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 7,
+                child: Row(
+                  children: [
+                    Icon(
+                      isChildrenGroup
+                          ? Icons.family_restroom_rounded
+                          : Icons.hub_rounded,
+                      size: 15,
+                      color: gen.color,
                     ),
-                    decoration: BoxDecoration(
-                      color: gen.bgColor,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: gen.borderColor, width: 1.2),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        headerTitle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: gen.color,
+                        ),
+                      ),
                     ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.hub_rounded, size: 14, color: gen.color),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            gen.title,
-                            style: TextStyle(
-                              fontSize: 12.5,
-                              fontWeight: FontWeight.w700,
-                              color: gen.color,
-                            ),
-                          ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: gen.borderColor),
+                      ),
+                      child: Text(
+                        '${groupMembers.length}',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          color: gen.color,
                         ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: gen.borderColor),
-                          ),
-                          child: Text(
-                            '${groupMembers.length}',
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w700,
-                              color: gen.color,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        AnimatedRotation(
-                          turns: isExpanded ? 0.5 : 0.0,
-                          duration: const Duration(milliseconds: 200),
-                          child: Icon(
-                            Icons.keyboard_arrow_down_rounded,
-                            size: 16,
-                            color: gen.color,
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
-                  ),
+                    const SizedBox(width: 5),
+                    AnimatedRotation(
+                      turns: isExpanded ? 0.5 : 0,
+                      duration: const Duration(milliseconds: 200),
+                      child: Icon(
+                        Icons.keyboard_arrow_down_rounded,
+                        size: 16,
+                        color: gen.color,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ],
-          ),
-
-          // Sub-members of this generation
-          if (isExpanded)
-            ...List.generate(groupMembers.length, (mIndex) {
-              final member = groupMembers[mIndex];
-              final isLastMember = mIndex == groupMembers.length - 1;
-
-              return Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  // Outer trunk spacer line
-                  SizedBox(
-                    width: 40,
-                    height: 74,
-                    child: Center(
-                      child: !isLastGen
-                          ? Container(width: 2, color: const Color(0xFF94A3B8))
-                          : const SizedBox.shrink(),
-                    ),
-                  ),
-
-                  // Inner generation branch line
-                  CustomPaint(
-                    painter: TreeBranchLinePainter(
-                      isLast: isLastMember,
-                      lineColor: gen.color.withAlpha(140),
-                      strokeWidth: 1.8,
-                    ),
-                    size: const Size(28, 74),
-                  ),
-
-                  // Member Card
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.only(bottom: 6),
-                      child: _buildMemberCard(member),
-                    ),
-                  ),
-                ],
-              );
-            }),
-        ],
+            ),
+            if (isExpanded)
+              ..._buildLocalBranchMembers(
+                groupMembers,
+                gen,
+                compact: isChildrenGroup,
+              ),
+          ],
+        ),
       );
     });
   }
 
   // ── Modern Member Node Card ──────────────────────────────────────────
-  Widget _buildMemberCard(MemberModel member) {
+  Widget _buildMemberCard(MemberModel member, {bool compact = false}) {
     final relation = member.relation;
     final isSelf = relation.toLowerCase().trim() == 'self';
     final relIcon = getRelationIcon(relation);
@@ -744,7 +768,10 @@ class _InteractiveTreeViewState extends State<InteractiveTreeView> {
         borderRadius: BorderRadius.circular(16),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 180),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          padding: EdgeInsets.symmetric(
+            horizontal: compact ? 10 : 14,
+            vertical: compact ? 7 : 10,
+          ),
           decoration: BoxDecoration(
             color: isSelf ? const Color(0xFFF0FDF4) : Colors.white,
             borderRadius: BorderRadius.circular(16),
@@ -770,7 +797,8 @@ class _InteractiveTreeViewState extends State<InteractiveTreeView> {
                   AppAvatar(
                     name: member.name,
                     avatarUrl: member.avatarUrl,
-                    size: 40,
+                    memberId: member.id,
+                    size: compact ? 33 : 40,
                     border: Border.all(
                       color: isSelf ? AppColors.primary : gen.color,
                       width: 1.8,
@@ -795,7 +823,7 @@ class _InteractiveTreeViewState extends State<InteractiveTreeView> {
                     ),
                 ],
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: compact ? 9 : 12),
 
               // Name, Relation, Age & Blood Group
               Expanded(
@@ -808,8 +836,8 @@ class _InteractiveTreeViewState extends State<InteractiveTreeView> {
                         Flexible(
                           child: Text(
                             member.name,
-                            style: const TextStyle(
-                              fontSize: 14,
+                            style: TextStyle(
+                              fontSize: compact ? 12.5 : 14,
                               fontWeight: FontWeight.w700,
                               color: AppColors.textDark,
                             ),
@@ -845,7 +873,7 @@ class _InteractiveTreeViewState extends State<InteractiveTreeView> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 5),
+                    SizedBox(height: compact ? 3 : 5),
 
                     // Badges Wrap: Age (Prominent), Blood Group, Generation
                     Wrap(
@@ -874,8 +902,8 @@ class _InteractiveTreeViewState extends State<InteractiveTreeView> {
                               const SizedBox(width: 3),
                               Text(
                                 member.age,
-                                style: const TextStyle(
-                                  fontSize: 10.5,
+                                style: TextStyle(
+                                  fontSize: compact ? 9.5 : 10.5,
                                   fontWeight: FontWeight.w700,
                                   color: AppColors.textDark,
                                 ),
@@ -929,6 +957,84 @@ class _InteractiveTreeViewState extends State<InteractiveTreeView> {
                             ),
                           ),
                         ),
+
+                        // Hereditary / Chronic Condition Badge
+                        if (member.notes != null &&
+                            member.notes!.trim().isNotEmpty)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 5,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFEF3C7),
+                              borderRadius: BorderRadius.circular(5),
+                              border: Border.all(
+                                color: const Color(0xFFFDE68A),
+                                width: 0.8,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.favorite_rounded,
+                                  size: 9,
+                                  color: Color(0xFFD97706),
+                                ),
+                                const SizedBox(width: 3),
+                                Text(
+                                  member.notes!.length > 12
+                                      ? '${member.notes!.substring(0, 10)}..'
+                                      : member.notes!,
+                                  style: const TextStyle(
+                                    fontSize: 9.5,
+                                    fontWeight: FontWeight.w700,
+                                    color: Color(0xFFB45309),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                        // Allergy Alert Badge
+                        if (member.allergies != null &&
+                            member.allergies!.trim().isNotEmpty)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 5,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFEE2E2),
+                              borderRadius: BorderRadius.circular(5),
+                              border: Border.all(
+                                color: const Color(0xFFFECACA),
+                                width: 0.8,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.warning_amber_rounded,
+                                  size: 9,
+                                  color: Color(0xFFDC2626),
+                                ),
+                                const SizedBox(width: 3),
+                                Text(
+                                  member.allergies!.length > 10
+                                      ? '${member.allergies!.substring(0, 8)}..'
+                                      : member.allergies!,
+                                  style: const TextStyle(
+                                    fontSize: 9.5,
+                                    fontWeight: FontWeight.w700,
+                                    color: Color(0xFFB91C1C),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                       ],
                     ),
                   ],

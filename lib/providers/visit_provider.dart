@@ -72,7 +72,8 @@ class VisitProvider extends ChangeNotifier {
     _error = null;
     try {
       await _service.create(data);
-      final uid = SupabaseConfig.currentUserId ?? 'usr-100';
+      final uid = SupabaseConfig.currentUserId;
+      if (uid == null) throw StateError('Sign in is required.');
       if (data['member_id'] != null) {
         _visits = await _service.getByMember(data['member_id']);
       } else {
@@ -93,7 +94,8 @@ class VisitProvider extends ChangeNotifier {
     _error = null;
     try {
       await _service.update(id, data);
-      final uid = SupabaseConfig.currentUserId ?? 'usr-100';
+      final uid = SupabaseConfig.currentUserId;
+      if (uid == null) throw StateError('Sign in is required.');
       if (data['member_id'] != null) {
         _visits = await _service.getByMember(data['member_id']);
       } else {

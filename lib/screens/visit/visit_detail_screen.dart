@@ -2,7 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
 import '../../config/theme.dart';
+import '../../models/visit_model.dart';
 import '../../providers/records_provider.dart';
 import '../../providers/visit_provider.dart';
 import '../../widgets/bottom_nav.dart';
@@ -49,6 +53,23 @@ class VisitDetailScreen extends StatelessWidget {
           icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
           onPressed: () => context.pop(),
         ),
+        actions: [
+          IconButton(
+            tooltip: 'Export visit',
+            onPressed: () => _exportVisit(visit),
+            icon: const Icon(Icons.picture_as_pdf_outlined),
+          ),
+          IconButton(
+            tooltip: 'Attach document',
+            onPressed: () => _attachDocument(context, visit, recordsProvider),
+            icon: const Icon(Icons.attach_file_rounded),
+          ),
+          IconButton(
+            tooltip: 'Delete visit',
+            onPressed: () => _confirmDelete(context),
+            icon: const Icon(Icons.delete_outline_rounded),
+          ),
+        ],
       ),
       body: SafeArea(
         child: ListView(
@@ -209,4 +230,106 @@ class VisitDetailScreen extends StatelessWidget {
           ],
         ),
       );
+
+  Future<void> _confirmDelete(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Delete visit?'),
+        content: const Text('This visit record will be permanently removed.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true && context.mounted) {
+      final deleted = await context.read<VisitProvider>().deleteVisit(id);
+      if (deleted && context.mounted) context.pop();
+    }
+  }
+
+  Future<void> _attachDocument(
+    BuildContext context,
+    VisitModel visit,
+    RecordsProvider records,
+  ) async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
+      withData: true,
+    );
+    final file = result?.files.firstOrNull;
+    if (file == null || file.bytes == null || !context.mounted) return;
+    await records.addDocument(
+      memberId: visit.memberId,
+      visitId: visit.id,
+      title: file.name,
+      fileType: file.extension?.toLowerCase() == 'pdf'
+          ? 'prescription'
+          : 'scan',
+      fileName: file.name,
+      bytes: file.bytes!,
+      mimeType: file.extension?.toLowerCase() == 'pdf'
+          ? 'application/pdf'
+          : 'image/${file.extension ?? 'jpeg'}',
+    );
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Document attached to this visit.')),
+      );
+    }
+  }
+
+  Future<void> _exportVisit(VisitModel visit) async {
+    final document = pw.Document();
+    document.addPage(
+      pw.Page(
+        build: (_) => pw.Column(
+          crossAxisAlignment: pw.CrossAxisAlignment.start,
+          children: [
+            pw.Text(
+              'Doctor Visit Summary',
+              style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold),
+            ),
+            pw.SizedBox(height: 18),
+            pw.Text(
+              'Date: ${DateFormat('dd MMMM yyyy').format(visit.visitDate)}',
+            ),
+            pw.Text('Doctor: ${visit.doctorName ?? 'Not recorded'}'),
+            pw.Text('Member: ${visit.memberName ?? 'Not recorded'}'),
+            if (visit.hospital?.isNotEmpty == true)
+              pw.Text('Hospital: ${visit.hospital}'),
+            pw.SizedBox(height: 14),
+            pw.Text(
+              'Symptoms: ${visit.symptoms?.isNotEmpty == true ? visit.symptoms : 'Not recorded'}',
+            ),
+            pw.Text(
+              'Diagnosis: ${visit.diagnosis?.isNotEmpty == true ? visit.diagnosis : 'Not recorded'}',
+            ),
+            pw.Text(
+              'Treatment: ${visit.treatment?.isNotEmpty == true ? visit.treatment : 'Not recorded'}',
+            ),
+            pw.Text(
+              'Notes: ${visit.notes?.isNotEmpty == true ? visit.notes : 'Not recorded'}',
+            ),
+            if (visit.followUpDate != null)
+              pw.Text(
+                'Follow-up: ${DateFormat('dd MMMM yyyy').format(visit.followUpDate!)}',
+              ),
+          ],
+        ),
+      ),
+    );
+    await Printing.sharePdf(
+      bytes: await document.save(),
+      filename: 'doctor_visit_${visit.id}.pdf',
+    );
+  }
 }

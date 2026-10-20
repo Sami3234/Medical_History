@@ -1,11 +1,8 @@
 import '../config/supabase_config.dart';
 import '../models/visit_model.dart';
 import '../models/medication_model.dart';
-import 'mock_data_service.dart';
 
 class VisitService {
-  final _mock = MockDataService();
-
   Future<List<VisitModel>> getByMember(String memberId) async {
     if (SupabaseConfig.isInitialized && SupabaseConfig.db != null) {
       final data = await SupabaseConfig.db!
@@ -15,7 +12,7 @@ class VisitService {
           .order('visit_date', ascending: false);
       return data.map((e) => VisitModel.fromMap(e)).toList();
     }
-    return _mock.visits.where((v) => v.memberId == memberId).toList();
+    return [];
   }
 
   Future<List<VisitModel>> getRecent(String userId, {int limit = 5}) async {
@@ -30,9 +27,7 @@ class VisitService {
           .limit(limit);
       return data.map((e) => VisitModel.fromMap(e)).toList();
     }
-    final sorted = List<VisitModel>.from(_mock.visits)
-      ..sort((a, b) => b.visitDate.compareTo(a.visitDate));
-    return sorted.take(limit).toList();
+    return [];
   }
 
   Future<List<VisitModel>> getUpcoming(String userId) async {
@@ -48,7 +43,7 @@ class VisitService {
           .order('follow_up_date');
       return data.map((e) => VisitModel.fromMap(e)).toList();
     }
-    return _mock.visits.where((v) => v.followUpDate != null).toList();
+    return [];
   }
 
   Future<VisitModel> getById(String id) async {
@@ -60,10 +55,7 @@ class VisitService {
           .single();
       return VisitModel.fromMap(data);
     }
-    return _mock.visits.firstWhere(
-      (v) => v.id == id,
-      orElse: () => _mock.visits.first,
-    );
+    throw StateError('Supabase is not available. Please try again later.');
   }
 
   Future<void> create(Map<String, dynamic> visit) async {
@@ -87,40 +79,7 @@ class VisitService {
         await SupabaseConfig.db!.from('visits').insert(coreData);
       }
     } else {
-      String? memberName;
-      final mIdx = _mock.members.indexWhere((m) => m.id == visit['member_id']);
-      if (mIdx != -1) memberName = _mock.members[mIdx].name;
-
-      String? doctorName;
-      if (visit['doctor_id'] != null) {
-        final dIdx = _mock.doctors.indexWhere(
-          (d) => d.id == visit['doctor_id'],
-        );
-        if (dIdx != -1) doctorName = _mock.doctors[dIdx].name;
-      }
-
-      final newVisit = VisitModel(
-        id: 'vis-${DateTime.now().millisecondsSinceEpoch}',
-        memberId:
-            visit['member_id'] ??
-            (_mock.members.isNotEmpty ? _mock.members.first.id : 'mem-1'),
-        doctorId: visit['doctor_id'],
-        visitDate: visit['visit_date'] != null
-            ? DateTime.parse(visit['visit_date'])
-            : DateTime.now(),
-        symptoms: visit['symptoms'],
-        diagnosis: visit['diagnosis'],
-        treatment: visit['treatment'],
-        notes: visit['notes'],
-        followUpDate: visit['follow_up_date'] != null
-            ? DateTime.tryParse(visit['follow_up_date'])
-            : null,
-        createdAt: DateTime.now(),
-        memberName: memberName ?? 'Member',
-        doctorName: doctorName ?? (visit['doctor_name'] as String? ?? 'Doctor'),
-        hospital: visit['hospital'] as String?,
-      );
-      _mock.visits.insert(0, newVisit);
+      throw StateError('Sign in is required before adding a visit.');
     }
   }
 
@@ -128,29 +87,7 @@ class VisitService {
     if (SupabaseConfig.isInitialized && SupabaseConfig.db != null) {
       await SupabaseConfig.db!.from('visits').update(updates).eq('id', id);
     } else {
-      final idx = _mock.visits.indexWhere((v) => v.id == id);
-      if (idx != -1) {
-        final old = _mock.visits[idx];
-        _mock.visits[idx] = VisitModel(
-          id: old.id,
-          memberId: updates['member_id'] ?? old.memberId,
-          doctorId: updates['doctor_id'] ?? old.doctorId,
-          visitDate: updates['visit_date'] != null
-              ? DateTime.parse(updates['visit_date'])
-              : old.visitDate,
-          symptoms: updates['symptoms'] ?? old.symptoms,
-          diagnosis: updates['diagnosis'] ?? old.diagnosis,
-          treatment: updates['treatment'] ?? old.treatment,
-          notes: updates['notes'] ?? old.notes,
-          followUpDate: updates['follow_up_date'] != null
-              ? DateTime.parse(updates['follow_up_date'])
-              : old.followUpDate,
-          createdAt: old.createdAt,
-          memberName: old.memberName,
-          doctorName: old.doctorName,
-          hospital: updates['hospital'] ?? old.hospital,
-        );
-      }
+      throw StateError('Supabase is not available. Please try again later.');
     }
   }
 
@@ -158,7 +95,7 @@ class VisitService {
     if (SupabaseConfig.isInitialized && SupabaseConfig.db != null) {
       await SupabaseConfig.db!.from('visits').delete().eq('id', id);
     } else {
-      _mock.visits.removeWhere((v) => v.id == id);
+      throw StateError('Supabase is not available. Please try again later.');
     }
   }
 
@@ -171,23 +108,14 @@ class VisitService {
           .eq('visit_id', visitId);
       return data.map((e) => MedicationModel.fromMap(e)).toList();
     }
-    return _mock.medications.where((m) => m.visitId == visitId).toList();
+    return [];
   }
 
   Future<void> addMedication(Map<String, dynamic> med) async {
     if (SupabaseConfig.isInitialized && SupabaseConfig.db != null) {
       await SupabaseConfig.db!.from('medications').insert(med);
     } else {
-      final newMed = MedicationModel(
-        id: 'med-${DateTime.now().millisecondsSinceEpoch}',
-        visitId: med['visit_id'] ?? '',
-        name: med['name'] ?? '',
-        dosage: med['dosage'],
-        frequency: med['frequency'],
-        duration: med['duration'],
-        notes: med['notes'],
-      );
-      _mock.medications.add(newMed);
+      throw StateError('Sign in is required before adding medication.');
     }
   }
 
@@ -195,7 +123,7 @@ class VisitService {
     if (SupabaseConfig.isInitialized && SupabaseConfig.db != null) {
       await SupabaseConfig.db!.from('medications').delete().eq('id', id);
     } else {
-      _mock.medications.removeWhere((m) => m.id == id);
+      throw StateError('Supabase is not available. Please try again later.');
     }
   }
 
@@ -207,6 +135,6 @@ class VisitService {
           .eq('members.families.user_id', userId);
       return data.length;
     }
-    return _mock.visits.length;
+    return 0;
   }
 }

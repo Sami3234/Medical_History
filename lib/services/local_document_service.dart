@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:crypto/crypto.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -8,6 +9,7 @@ import '../models/med_file_model.dart';
 
 class LocalDocumentService {
   static const _metadataKey = 'local_medical_documents_v1';
+  static const _draftMetadataKey = 'local_medical_document_drafts_v1';
 
   Future<List<MedFileModel>> loadDocuments() async {
     final prefs = await SharedPreferences.getInstance();
@@ -32,7 +34,13 @@ class LocalDocumentService {
     required String description,
     String? visitId,
     String? mimeType,
+    String? ocrText,
   }) async {
+    final fileHash = sha256.convert(bytes).toString();
+    final existing = (await loadDocuments())
+        .where((document) => document.fileHash == fileHash)
+        .firstOrNull;
+    if (existing != null) return existing;
     final id = 'local-${DateTime.now().microsecondsSinceEpoch}';
     final safeName = fileName.replaceAll(RegExp(r'[^A-Za-z0-9._-]'), '_');
     final localUrl = kIsWeb
@@ -47,11 +55,75 @@ class LocalDocumentService {
       description: description,
       fileName: fileName,
       mimeType: mimeType ?? _mimeForName(fileName),
+      fileHash: fileHash,
+      ocrText: ocrText,
       createdAt: DateTime.now(),
     );
     final documents = await loadDocuments()
       ..insert(0, document);
     await _persist(documents);
+    return document;
+  }
+
+  Future<MedFileModel> saveDraft({
+    required Uint8List bytes,
+    required String fileName,
+    String? mimeType,
+  }) async {
+    final fileHash = sha256.convert(bytes).toString();
+    final existing = (await loadDrafts())
+        .where((draft) => draft.fileHash == fileHash)
+        .firstOrNull;
+    if (existing != null) return existing;
+    final id = 'draft-${DateTime.now().microsecondsSinceEpoch}';
+    final safeName = fileName.replaceAll(RegExp(r'[^A-Za-z0-9._-]'), '_');
+    final localUrl = kIsWeb
+        ? 'data:${mimeType ?? _mimeForName(fileName)};base64,${base64Encode(bytes)}'
+        : await _writeFile(id, safeName, bytes);
+    final draft = MedFileModel(
+      id: id,
+      visitId: null,
+      memberId: '',
+      fileUrl: localUrl,
+      fileType: 'draft',
+      description: fileName,
+      fileName: fileName,
+      mimeType: mimeType ?? _mimeForName(fileName),
+      fileHash: fileHash,
+      createdAt: DateTime.now(),
+    );
+    final drafts = await loadDrafts()
+      ..insert(0, draft);
+    await _persistList(_draftMetadataKey, drafts);
+    return draft;
+  }
+
+  Future<List<MedFileModel>> loadDrafts() => _loadList(_draftMetadataKey);
+
+  Future<void> deleteDraft(String id) async {
+    final drafts = await loadDrafts();
+    final index = drafts.indexWhere((item) => item.id == id);
+    if (index < 0) return;
+    final draft = drafts.removeAt(index);
+    await _deleteLocalFile(draft);
+    await _persistList(_draftMetadataKey, drafts);
+  }
+
+  Future<MedFileModel> promoteDraft(
+    MedFileModel draft, {
+    required String memberId,
+    required String fileType,
+    required String title,
+  }) async {
+    final document = await saveDocument(
+      bytes: await readBytes(draft),
+      fileName: draft.fileName ?? 'medical_document',
+      memberId: memberId,
+      fileType: fileType,
+      description: title,
+      mimeType: draft.mimeType,
+    );
+    await deleteDraft(draft.id);
     return document;
   }
 
@@ -86,10 +158,7 @@ class LocalDocumentService {
     final index = documents.indexWhere((item) => item.id == id);
     if (index < 0) return;
     final document = documents.removeAt(index);
-    if (!kIsWeb && !document.fileUrl.startsWith('data:')) {
-      final file = File(document.fileUrl);
-      if (await file.exists()) await file.delete();
-    }
+    await _deleteLocalFile(document);
     await _persist(documents);
   }
 
@@ -132,13 +201,39 @@ class LocalDocumentService {
   }
 
   Future<void> _persist(List<MedFileModel> documents) async {
+    await _persistList(_metadataKey, documents);
+  }
+
+  Future<List<MedFileModel>> _loadList(String key) async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(key);
+    if (raw == null || raw.isEmpty) return [];
+    final decoded = jsonDecode(raw) as List<dynamic>;
+    final documents = decoded
+        .map(
+          (item) =>
+              MedFileModel.fromMap(Map<String, dynamic>.from(item as Map)),
+        )
+        .toList();
+    documents.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return documents;
+  }
+
+  Future<void> _persistList(String key, List<MedFileModel> documents) async {
     final prefs = await SharedPreferences.getInstance();
     final records = documents.map((document) {
       final map = document.toMap();
       map['id'] = document.id;
       return map;
     }).toList();
-    await prefs.setString(_metadataKey, jsonEncode(records));
+    await prefs.setString(key, jsonEncode(records));
+  }
+
+  Future<void> _deleteLocalFile(MedFileModel document) async {
+    if (!kIsWeb && !document.fileUrl.startsWith('data:')) {
+      final file = File(document.fileUrl);
+      if (await file.exists()) await file.delete();
+    }
   }
 
   String _mimeForName(String fileName) {

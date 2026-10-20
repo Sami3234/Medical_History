@@ -8,6 +8,7 @@ import '../../providers/records_provider.dart';
 import '../../providers/member_provider.dart';
 import '../../widgets/bottom_nav.dart';
 import '../../widgets/info_banner.dart';
+import '../../services/native_document_service.dart';
 
 class DocsScreen extends StatefulWidget {
   const DocsScreen({super.key});
@@ -20,6 +21,15 @@ class _DocsScreenState extends State<DocsScreen> {
   final _searchCtrl = TextEditingController();
   String _selectedFilter = 'All files';
   String _query = '';
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await NativeDocumentService.importSharedFilesToDrafts();
+      if (mounted) await context.read<RecordsProvider>().loadAll();
+    });
+  }
 
   @override
   void dispose() {
@@ -87,11 +97,106 @@ class _DocsScreenState extends State<DocsScreen> {
     }
   }
 
+  Future<void> _organizeDraft(MedFileModel draft) async {
+    final records = context.read<RecordsProvider>();
+    final members = context.read<MemberProvider>().members;
+    if (members.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Add a family member before organizing a draft.'),
+        ),
+      );
+      return;
+    }
+    String memberId = members.first.id;
+    String fileType = 'other';
+    final titleController = TextEditingController(
+      text: draft.fileName?.split('.').first,
+    );
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Organize draft'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: titleController,
+                decoration: const InputDecoration(labelText: 'Document title'),
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                value: memberId,
+                decoration: const InputDecoration(labelText: 'Family member'),
+                items: members
+                    .map(
+                      (member) => DropdownMenuItem(
+                        value: member.id,
+                        child: Text(member.name),
+                      ),
+                    )
+                    .toList(),
+                onChanged: (value) =>
+                    setDialogState(() => memberId = value ?? memberId),
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                value: fileType,
+                decoration: const InputDecoration(labelText: 'Document type'),
+                items: const [
+                  DropdownMenuItem(
+                    value: 'prescription',
+                    child: Text('Prescription'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'labReport',
+                    child: Text('Lab report'),
+                  ),
+                  DropdownMenuItem(value: 'other', child: Text('Other')),
+                ],
+                onChanged: (value) =>
+                    setDialogState(() => fileType = value ?? fileType),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(
+                context,
+                titleController.text.trim().isNotEmpty,
+              ),
+              child: const Text('Save'),
+            ),
+          ],
+        ),
+      ),
+    );
+    final title = titleController.text.trim();
+    titleController.dispose();
+    if (confirmed != true || !mounted) return;
+    await records.organizeDraft(
+      draft,
+      memberId: memberId,
+      fileType: fileType,
+      title: title,
+    );
+  }
+
+  Future<void> _deleteDraft(MedFileModel draft) async {
+    await context.read<RecordsProvider>().deleteDraft(draft.id);
+  }
+
   @override
   Widget build(BuildContext context) {
     final recordsProv = context.watch<RecordsProvider>();
     final memberProv = context.watch<MemberProvider>();
     final driveConnected = context.watch<BackupProvider>().isConnected;
+    final drafts = recordsProv.drafts;
     final files = recordsProv.files.where((f) {
       final name = f.description ?? f.fileUrl.split('/').last;
       final matchesQuery =
@@ -211,6 +316,64 @@ class _DocsScreenState extends State<DocsScreen> {
                 ),
               ),
               const SizedBox(height: 26),
+
+              if (drafts.isNotEmpty) ...[
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Draft inbox',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.textDark,
+                      ),
+                    ),
+                    Text(
+                      '${drafts.length} pending',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.warning,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                ...drafts.map(
+                  (draft) => Card(
+                    margin: const EdgeInsets.only(bottom: 8),
+                    child: ListTile(
+                      leading: const Icon(
+                        Icons.inbox_outlined,
+                        color: AppColors.warning,
+                      ),
+                      title: Text(draft.fileName ?? 'Incoming document'),
+                      subtitle: const Text(
+                        'Not organized yet • Stored locally',
+                      ),
+                      onTap: () => _openDocument(draft),
+                      trailing: PopupMenuButton<String>(
+                        onSelected: (value) {
+                          if (value == 'organize') _organizeDraft(draft);
+                          if (value == 'delete') _deleteDraft(draft);
+                        },
+                        itemBuilder: (_) => const [
+                          PopupMenuItem(
+                            value: 'organize',
+                            child: Text('Organize'),
+                          ),
+                          PopupMenuItem(
+                            value: 'delete',
+                            child: Text('Delete draft'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 14),
+              ],
 
               // Section: Recent uploads
               Row(

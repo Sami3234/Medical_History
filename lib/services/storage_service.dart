@@ -4,12 +4,9 @@ import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../config/supabase_config.dart';
 import '../models/med_file_model.dart';
-import 'mock_data_service.dart';
 import 'cloudinary_service.dart';
 
 class StorageService {
-  final _mock = MockDataService();
-
   Future<String> uploadFile({
     required String bucket,
     required String path,
@@ -113,23 +110,14 @@ class StorageService {
           .order('created_at', ascending: false);
       return data.map((e) => MedFileModel.fromMap(e)).toList();
     }
-    return _mock.files.where((f) => f.memberId == memberId).toList();
+    return [];
   }
 
   Future<void> saveMedFile(Map<String, dynamic> medFile) async {
     if (SupabaseConfig.isInitialized && SupabaseConfig.db != null) {
       await SupabaseConfig.db!.from('med_files').insert(medFile);
     } else {
-      final newFile = MedFileModel(
-        id: 'file-${DateTime.now().millisecondsSinceEpoch}',
-        visitId: medFile['visit_id'],
-        memberId: medFile['member_id'] ?? 'mem-3',
-        fileUrl: medFile['file_url'] ?? 'assets/docs/file.pdf',
-        fileType: medFile['file_type'] ?? 'prescription',
-        description: medFile['description'] ?? 'Medical Document',
-        createdAt: DateTime.now(),
-      );
-      _mock.files.insert(0, newFile);
+      throw StateError('Sign in is required before saving document metadata.');
     }
   }
 
@@ -137,7 +125,7 @@ class StorageService {
     if (SupabaseConfig.isInitialized && SupabaseConfig.db != null) {
       await SupabaseConfig.db!.from('med_files').delete().eq('id', id);
     } else {
-      _mock.files.removeWhere((f) => f.id == id);
+      throw StateError('Supabase is not available. Please try again later.');
     }
   }
 }

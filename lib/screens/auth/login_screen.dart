@@ -21,6 +21,14 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _showPass = false;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<AuthProvider>().checkBiometrics();
+    });
+  }
+
+  @override
   void dispose() {
     _email.dispose();
     _pass.dispose();
@@ -62,13 +70,6 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
     final auth = context.read<AuthProvider>();
-    if (!auth.isLoggedIn) {
-      context.showSnack(
-        'Please sign in once with email/password before using fingerprint.',
-        isError: false,
-      );
-      return;
-    }
     final ok = await auth.authenticateWithBiometrics();
     if (!mounted) return;
     if (ok) {
@@ -266,9 +267,13 @@ class _LoginScreenState extends State<LoginScreen> {
                             size: 20,
                           ),
                         ),
-                        validator: (v) => (v == null || !v.contains('@'))
-                            ? 'Please enter valid email'
-                            : null,
+                        validator: (value) {
+                          final email = value?.trim() ?? '';
+                          final valid = RegExp(
+                            r'^[^@\s]+@[^@\s]+\.[^@\s]+$',
+                          ).hasMatch(email);
+                          return valid ? null : 'Please enter a valid email';
+                        },
                       ),
                       const SizedBox(height: 16),
                       // Password
@@ -303,8 +308,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                 setState(() => _showPass = !_showPass),
                           ),
                         ),
-                        validator: (v) => (v == null || v.length < 4)
-                            ? 'Password must be at least 4 characters'
+                        validator: (v) => (v == null || v.length < 6)
+                            ? 'Password must be at least 6 characters'
                             : null,
                       ),
                       const SizedBox(height: 8),

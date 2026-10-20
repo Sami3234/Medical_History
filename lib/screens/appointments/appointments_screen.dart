@@ -7,6 +7,7 @@ import '../../models/appointment_model.dart';
 import '../../providers/member_provider.dart';
 import '../../providers/records_provider.dart';
 import '../../widgets/bottom_nav.dart';
+import '../../services/notification_service.dart';
 
 class AppointmentsScreen extends StatefulWidget {
   const AppointmentsScreen({super.key});
@@ -141,18 +142,23 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
         appointmentTime.hour,
         appointmentTime.minute,
       );
-      await context.read<RecordsProvider>().addAppointment(
-        AppointmentModel(
-          id: 'appointment-${DateTime.now().millisecondsSinceEpoch}',
-          memberId: member.id,
-          memberName: member.name,
-          doctorName: doctorController.text.trim(),
-          specialization: specialtyController.text.trim(),
-          dateTime: dateTime,
-          title: titleController.text.trim().isEmpty
-              ? 'Medical appointment'
-              : titleController.text.trim(),
-        ),
+      final appointment = AppointmentModel(
+        id: 'appointment-${DateTime.now().millisecondsSinceEpoch}',
+        memberId: member.id,
+        memberName: member.name,
+        doctorName: doctorController.text.trim(),
+        specialization: specialtyController.text.trim(),
+        dateTime: dateTime,
+        title: titleController.text.trim().isEmpty
+            ? 'Medical appointment'
+            : titleController.text.trim(),
+      );
+      await context.read<RecordsProvider>().addAppointment(appointment);
+      await NotificationService.scheduleAppointmentReminder(
+        appointmentId: appointment.id,
+        memberName: appointment.memberName,
+        doctorName: appointment.doctorName,
+        appointmentTime: appointment.dateTime,
       );
     }
 

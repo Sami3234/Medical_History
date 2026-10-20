@@ -4,11 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../config/theme.dart';
 import '../../providers/member_provider.dart';
 import '../../providers/records_provider.dart';
 import '../../providers/backup_provider.dart';
 import '../../providers/visit_provider.dart';
+import '../../services/image_cropper_service.dart';
+import '../../services/native_document_service.dart';
 import '../../utils/extensions.dart';
 
 class UploadDocScreen extends StatefulWidget {
@@ -26,6 +29,7 @@ class _UploadDocScreenState extends State<UploadDocScreen> {
   String? _pickedFileName;
   String? _pickedFilePath;
   Uint8List? _pickedFileBytes;
+  String? _ocrText;
   bool _uploading = false;
 
   @override
@@ -65,6 +69,118 @@ class _UploadDocScreenState extends State<UploadDocScreen> {
         );
       }
     }
+  }
+
+  Future<void> _captureDocument() async {
+    try {
+      if (Platform.isAndroid) {
+        final scanned = await NativeDocumentService.scanDocuments();
+        if (scanned.isNotEmpty) {
+          final selected = scanned.firstWhere(
+            (file) => file.mimeType == 'application/pdf',
+            orElse: () => scanned.first,
+          );
+          final bytes = await File(selected.path).readAsBytes();
+          final ocrSource = scanned.firstWhere(
+            (file) => file.mimeType.startsWith('image/'),
+            orElse: () => selected,
+          );
+          var title = 'Scanned medical document';
+          var extractedText = '';
+          if (ocrSource.mimeType.startsWith('image/')) {
+            final text = await NativeDocumentService.recognizeText(
+              ocrSource.path,
+            );
+            extractedText = text;
+            final firstLine = text
+                .split('\n')
+                .map((line) => line.trim())
+                .firstWhere((line) => line.length > 3, orElse: () => title);
+            if (firstLine != title) {
+              title = firstLine.length > 80
+                  ? firstLine.substring(0, 80)
+                  : firstLine;
+            }
+          }
+          if (!mounted) return;
+          setState(() {
+            _pickedFileName = selected.name;
+            _pickedFilePath = null;
+            _pickedFileBytes = bytes;
+            _ocrText = extractedText.isEmpty ? title : extractedText;
+            if (_titleCtrl.text.isEmpty) _titleCtrl.text = title;
+          });
+          return;
+        }
+      }
+      final picked = await ImagePicker().pickImage(
+        source: ImageSource.camera,
+        imageQuality: 92,
+        maxWidth: 2400,
+        maxHeight: 3200,
+      );
+      if (picked == null) return;
+      final bytes = await ImageCropperService.cropAvatar(
+        file: picked,
+        context: context,
+        title: 'Adjust scanned document',
+      );
+      if (bytes == null) return;
+      if (bytes.length > 10 * 1024 * 1024) {
+        if (mounted) {
+          context.showSnack(
+            'Captured image must be 10 MB or smaller',
+            isError: true,
+          );
+        }
+        return;
+      }
+      if (!mounted) return;
+      setState(() {
+        _pickedFileName = picked.name;
+        _pickedFilePath = null;
+        _pickedFileBytes = bytes;
+        if (_titleCtrl.text.isEmpty)
+          _titleCtrl.text = 'Scanned medical document';
+      });
+    } catch (_) {
+      if (mounted) {
+        context.showSnack(
+          'Camera could not be opened. Check camera permission.',
+          isError: true,
+        );
+      }
+    }
+  }
+
+  Future<void> _showFileSourceSheet() async {
+    final source = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.document_scanner_outlined),
+              title: const Text('Scan with camera'),
+              subtitle: const Text('Capture a clear medical document image'),
+              onTap: () => Navigator.pop(context, 'camera'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined),
+              title: const Text('Choose from gallery/files'),
+              subtitle: const Text('Select an existing image or PDF'),
+              onTap: () => Navigator.pop(context, 'file'),
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+    if (!mounted) return;
+    if (source == 'camera') await _captureDocument();
+    if (source == 'file') await _pickFile();
   }
 
   Future<void> _submit() async {
@@ -115,6 +231,7 @@ class _UploadDocScreenState extends State<UploadDocScreen> {
         bytes: bytes,
         mimeType: _mimeTypeFor(_pickedFileName!),
         visitId: _selectedVisitId,
+        ocrText: _ocrText,
       );
 
       if (!mounted) return;
@@ -137,6 +254,34 @@ class _UploadDocScreenState extends State<UploadDocScreen> {
         'Failed to upload document. Please try again.',
         isError: true,
       );
+    } finally {
+      if (mounted) setState(() => _uploading = false);
+    }
+  }
+
+  Future<void> _saveDraft() async {
+    if (_pickedFileName == null) {
+      context.showSnack('Choose a file before saving a draft', isError: true);
+      return;
+    }
+    setState(() => _uploading = true);
+    try {
+      var bytes = _pickedFileBytes;
+      if (bytes == null && _pickedFilePath != null) {
+        bytes = await File(_pickedFilePath!).readAsBytes();
+      }
+      if (bytes == null) throw StateError('File could not be read');
+      await context.read<RecordsProvider>().addDraft(
+        fileName: _pickedFileName!,
+        bytes: bytes,
+        mimeType: _mimeTypeFor(_pickedFileName!),
+      );
+      if (!mounted) return;
+      context.showSnack('Saved to Draft Inbox for later organization');
+      context.pop();
+    } catch (_) {
+      if (mounted)
+        context.showSnack('Could not save this draft', isError: true);
     } finally {
       if (mounted) setState(() => _uploading = false);
     }
@@ -175,7 +320,7 @@ class _UploadDocScreenState extends State<UploadDocScreen> {
             children: [
               // Large File Dropzone
               GestureDetector(
-                onTap: _pickFile,
+                onTap: _showFileSourceSheet,
                 child: Container(
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(
@@ -227,6 +372,26 @@ class _UploadDocScreenState extends State<UploadDocScreen> {
                     ],
                   ),
                 ),
+              ),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: _uploading ? null : _captureDocument,
+                      icon: const Icon(Icons.camera_alt_outlined, size: 18),
+                      label: const Text('Use camera'),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: _uploading ? null : _pickFile,
+                      icon: const Icon(Icons.folder_open_outlined, size: 18),
+                      label: const Text('Browse files'),
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 24),
 
@@ -377,6 +542,16 @@ class _UploadDocScreenState extends State<UploadDocScreen> {
                             Icon(Icons.arrow_forward_rounded, size: 18),
                           ],
                         ),
+                ),
+              ),
+              const SizedBox(height: 10),
+              SizedBox(
+                width: double.infinity,
+                height: 46,
+                child: OutlinedButton.icon(
+                  onPressed: _uploading ? null : _saveDraft,
+                  icon: const Icon(Icons.inbox_outlined),
+                  label: const Text('Save to Draft Inbox'),
                 ),
               ),
               const SizedBox(height: 20),

@@ -3,7 +3,10 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../config/theme.dart';
 import '../../config/routes.dart';
+import '../../config/supabase_config.dart';
 import '../../providers/member_provider.dart';
+import '../../providers/doctor_provider.dart';
+import '../../services/member_doctor_service.dart';
 import '../../providers/visit_provider.dart';
 import '../../utils/extensions.dart';
 
@@ -22,8 +25,11 @@ class _VisitFormScreenState extends State<VisitFormScreen> {
   DateTime _visitDate = DateTime.now();
   final _symptoms = TextEditingController();
   final _diagnosis = TextEditingController();
+  final _notes = TextEditingController();
   final List<Map<String, String>> _addedMedicines = [];
   String? _selectedMemberId;
+  String? _selectedDoctorId;
+  DateTime? _followUpDate;
   bool _saving = false;
 
   @override
@@ -33,6 +39,10 @@ class _VisitFormScreenState extends State<VisitFormScreen> {
       text:
           '${_visitDate.day.toString().padLeft(2, '0')} / ${_visitDate.month.toString().padLeft(2, '0')} / ${_visitDate.year}',
     );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final uid = SupabaseConfig.currentUserId;
+      if (uid != null) context.read<DoctorProvider>().loadDoctors(uid);
+    });
   }
 
   @override
@@ -42,7 +52,18 @@ class _VisitFormScreenState extends State<VisitFormScreen> {
     _dateCtrl.dispose();
     _symptoms.dispose();
     _diagnosis.dispose();
+    _notes.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickFollowUpDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _followUpDate ?? _visitDate.add(const Duration(days: 7)),
+      firstDate: _visitDate,
+      lastDate: DateTime.now().add(const Duration(days: 3650)),
+    );
+    if (picked != null) setState(() => _followUpDate = picked);
   }
 
   Future<void> _pickDate() async {
@@ -164,11 +185,14 @@ class _VisitFormScreenState extends State<VisitFormScreen> {
 
       await context.read<VisitProvider>().addVisit({
         'member_id': mId,
+        'doctor_id': _selectedDoctorId,
         'doctor_name': _doctorName.text.trim(),
         'hospital': _hospital.text.trim(),
         'visit_date': _visitDate.toIso8601String(),
         'symptoms': _symptoms.text.trim(),
         'diagnosis': _diagnosis.text.trim(),
+        'notes': _notes.text.trim(),
+        'follow_up_date': _followUpDate?.toIso8601String(),
         'treatment': _addedMedicines
             .map(
               (medicine) =>
@@ -176,6 +200,16 @@ class _VisitFormScreenState extends State<VisitFormScreen> {
             )
             .join('\n'),
       });
+      if (_selectedDoctorId != null) {
+        try {
+          await MemberDoctorService().addDoctor(
+            memberId: mId,
+            doctorId: _selectedDoctorId!,
+          );
+        } catch (_) {
+          // The visit is already saved; assignment can be retried from profile.
+        }
+      }
 
       if (!mounted) return;
       context.showSnack('Doctor visit saved successfully');
@@ -349,9 +383,9 @@ class _VisitFormScreenState extends State<VisitFormScreen> {
                 ),
                 const SizedBox(height: 24),
 
-                // Doctor name
+                // Linked doctor
                 const Text(
-                  'Doctor name',
+                  'Doctor / clinic specialist',
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
@@ -359,19 +393,65 @@ class _VisitFormScreenState extends State<VisitFormScreen> {
                   ),
                 ),
                 const SizedBox(height: 6),
-                TextFormField(
-                  controller: _doctorName,
-                  decoration: const InputDecoration(
-                    hintText: 'Enter doctor\'s name',
-                    prefixIcon: Icon(
-                      Icons.medical_services_outlined,
-                      color: AppColors.textLight,
-                      size: 20,
-                    ),
+                Consumer<DoctorProvider>(
+                  builder: (context, doctorProvider, _) {
+                    final doctors = doctorProvider.doctors;
+                    if (doctors.isEmpty) {
+                      return TextFormField(
+                        controller: _doctorName,
+                        decoration: const InputDecoration(
+                          hintText: 'Enter doctor name or add a doctor first',
+                          prefixIcon: Icon(Icons.medical_services_outlined),
+                        ),
+                        validator: (v) => (v == null || v.trim().isEmpty)
+                            ? 'Please enter doctor name'
+                            : null,
+                      );
+                    }
+                    return DropdownButtonFormField<String>(
+                      initialValue: _selectedDoctorId,
+                      decoration: const InputDecoration(
+                        hintText: 'Select saved doctor',
+                        prefixIcon: Icon(Icons.medical_services_outlined),
+                      ),
+                      items: doctors
+                          .map(
+                            (doctor) => DropdownMenuItem<String>(
+                              value: doctor.id,
+                              child: Text(
+                                doctor.specialization?.trim().isNotEmpty == true
+                                    ? '${doctor.name} • ${doctor.specialization}'
+                                    : doctor.name,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          )
+                          .toList(),
+                      validator: (value) =>
+                          value == null ? 'Please select a doctor' : null,
+                      onChanged: (value) {
+                        final doctor = doctors
+                            .where((item) => item.id == value)
+                            .firstOrNull;
+                        setState(() {
+                          _selectedDoctorId = value;
+                          _doctorName.text = doctor?.name ?? '';
+                          if (_hospital.text.trim().isEmpty) {
+                            _hospital.text = doctor?.hospital ?? '';
+                          }
+                        });
+                      },
+                    );
+                  },
+                ),
+                const SizedBox(height: 8),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton.icon(
+                    onPressed: () => context.push(AppRoutes.doctors),
+                    icon: const Icon(Icons.manage_accounts_outlined, size: 18),
+                    label: const Text('Manage doctors'),
                   ),
-                  validator: (v) => (v == null || v.isEmpty)
-                      ? 'Please enter doctor name'
-                      : null,
                 ),
                 const SizedBox(height: 18),
 
@@ -468,6 +548,34 @@ class _VisitFormScreenState extends State<VisitFormScreen> {
                       Icons.description_outlined,
                       color: AppColors.textLight,
                       size: 20,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 18),
+
+                TextFormField(
+                  controller: _notes,
+                  maxLines: 3,
+                  decoration: const InputDecoration(
+                    labelText: 'Visit notes',
+                    hintText: 'Doctor advice, observations or next steps',
+                    prefixIcon: Icon(Icons.notes_outlined),
+                    alignLabelWithHint: true,
+                  ),
+                ),
+                const SizedBox(height: 14),
+                InkWell(
+                  onTap: _pickFollowUpDate,
+                  borderRadius: BorderRadius.circular(14),
+                  child: InputDecorator(
+                    decoration: const InputDecoration(
+                      labelText: 'Follow-up date (optional)',
+                      prefixIcon: Icon(Icons.event_repeat_outlined),
+                    ),
+                    child: Text(
+                      _followUpDate == null
+                          ? 'Not scheduled'
+                          : '${_followUpDate!.day.toString().padLeft(2, '0')} / ${_followUpDate!.month.toString().padLeft(2, '0')} / ${_followUpDate!.year}',
                     ),
                   ),
                 ),

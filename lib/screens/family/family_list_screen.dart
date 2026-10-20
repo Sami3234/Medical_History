@@ -26,10 +26,8 @@ class _FamilyListScreenState extends State<FamilyListScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final uid =
-          context.read<AuthProvider>().uid ??
-          SupabaseConfig.currentUserId ??
-          'usr-100';
-      context.read<FamilyProvider>().loadFamilies(uid);
+          context.read<AuthProvider>().uid ?? SupabaseConfig.currentUserId;
+      if (uid != null) context.read<FamilyProvider>().loadFamilies(uid);
     });
   }
 
@@ -153,13 +151,11 @@ class _FamilyListScreenState extends State<FamilyListScreen> {
               ),
               const SizedBox(height: 14),
 
-              // First Family Hero Card (Ahmed Family)
               if (families.isNotEmpty) ...[
                 HeroHealthCard(
                   title: families.first.name,
                   subtitle:
-                      '${families.first.familyId} • ${families.first.address ?? "Lahore"}',
-                  avatarInitials: const ['AH', 'SA', 'AL', 'AY'],
+                      '${families.first.familyId}${families.first.address == null ? "" : " • ${families.first.address}"}',
                   actionText: 'View family',
                   onAction: () =>
                       context.push('/families/${families.first.id}'),
@@ -167,7 +163,6 @@ class _FamilyListScreenState extends State<FamilyListScreen> {
                 const SizedBox(height: 16),
               ],
 
-              // Subsequent Families (Khan Family, etc.)
               if (families.length > 1) ...[
                 ...families.skip(1).map((family) {
                   return Padding(

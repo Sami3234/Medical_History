@@ -1,10 +1,7 @@
 import '../config/supabase_config.dart';
 import '../models/family_model.dart';
-import 'mock_data_service.dart';
 
 class FamilyService {
-  final _mock = MockDataService();
-
   Future<List<FamilyModel>> getAll(String userId) async {
     if (SupabaseConfig.isInitialized && SupabaseConfig.db != null) {
       final data = await SupabaseConfig.db!
@@ -14,7 +11,7 @@ class FamilyService {
           .order('created_at', ascending: false);
       return data.map((e) => FamilyModel.fromMap(e)).toList();
     }
-    return List.from(_mock.families);
+    return [];
   }
 
   Future<FamilyModel> getById(String id) async {
@@ -26,10 +23,7 @@ class FamilyService {
           .single();
       return FamilyModel.fromMap(data);
     }
-    return _mock.families.firstWhere(
-      (f) => f.id == id || f.familyId == id,
-      orElse: () => _mock.families.first,
-    );
+    throw StateError('Supabase is not available. Please try again later.');
   }
 
   Future<void> create(Map<String, dynamic> family) async {
@@ -42,17 +36,7 @@ class FamilyService {
         famData['user_id'] != null) {
       await SupabaseConfig.db!.from('families').insert(famData);
     } else {
-      final newFamily = FamilyModel(
-        id: 'fam-${DateTime.now().millisecondsSinceEpoch}',
-        familyId:
-            famData['family_id'] ?? 'FAM-${1000 + _mock.families.length + 1}',
-        name: famData['name'] ?? 'New Family',
-        contact: famData['contact'],
-        address: famData['address'],
-        userId: famData['user_id'] ?? 'usr-100',
-        createdAt: DateTime.now(),
-      );
-      _mock.families.insert(0, newFamily);
+      throw StateError('Sign in is required before adding a family.');
     }
   }
 
@@ -60,19 +44,7 @@ class FamilyService {
     if (SupabaseConfig.isInitialized && SupabaseConfig.db != null) {
       await SupabaseConfig.db!.from('families').update(updates).eq('id', id);
     } else {
-      final idx = _mock.families.indexWhere((f) => f.id == id);
-      if (idx != -1) {
-        final old = _mock.families[idx];
-        _mock.families[idx] = FamilyModel(
-          id: old.id,
-          familyId: updates['family_id'] ?? old.familyId,
-          name: updates['name'] ?? old.name,
-          contact: updates['contact'] ?? old.contact,
-          address: updates['address'] ?? old.address,
-          userId: old.userId,
-          createdAt: old.createdAt,
-        );
-      }
+      throw StateError('Supabase is not available. Please try again later.');
     }
   }
 
@@ -80,7 +52,7 @@ class FamilyService {
     if (SupabaseConfig.isInitialized && SupabaseConfig.db != null) {
       await SupabaseConfig.db!.from('families').delete().eq('id', id);
     } else {
-      _mock.families.removeWhere((f) => f.id == id);
+      throw StateError('Supabase is not available. Please try again later.');
     }
   }
 
@@ -92,6 +64,6 @@ class FamilyService {
           .eq('user_id', userId);
       return data.length;
     }
-    return _mock.families.length;
+    return 0;
   }
 }

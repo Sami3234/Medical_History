@@ -44,9 +44,7 @@ class _FamilyFormScreenState extends State<FamilyFormScreen> {
         'address':
             '${_city.text.trim().isNotEmpty ? "${_city.text.trim()}, " : ""}${_address.text.trim()}',
         'user_id':
-            context.read<AuthProvider>().uid ??
-            SupabaseConfig.currentUserId ??
-            'usr-100',
+            context.read<AuthProvider>().uid ?? SupabaseConfig.currentUserId,
       });
       if (!mounted) return;
       context.showSnack('Family space created successfully');

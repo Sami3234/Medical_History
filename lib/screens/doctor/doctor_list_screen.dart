@@ -25,10 +25,8 @@ class _DoctorListScreenState extends State<DoctorListScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final uid =
-          context.read<AuthProvider>().uid ??
-          SupabaseConfig.currentUserId ??
-          'usr-100';
-      context.read<DoctorProvider>().loadDoctors(uid);
+          context.read<AuthProvider>().uid ?? SupabaseConfig.currentUserId;
+      if (uid != null) context.read<DoctorProvider>().loadDoctors(uid);
     });
   }
 
@@ -192,122 +190,143 @@ class _DoctorListScreenState extends State<DoctorListScreen> {
               ),
               const SizedBox(height: 14),
 
-              // Green Hero Recently Visited Doctor Card
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  gradient: AppColors.heroGradient,
-                  borderRadius: BorderRadius.circular(24),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.primary.withAlpha(50),
-                      blurRadius: 16,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          width: 80,
-                          height: 80,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFE2F4D7),
-                            borderRadius: BorderRadius.circular(22),
-                          ),
-                          alignment: Alignment.center,
-                          child: const Text(
-                            'SM',
-                            style: TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.w900,
-                              color: Color(0xFF235E1E),
+              if (filteredDoctors.isNotEmpty) ...[
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    gradient: AppColors.heroGradient,
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.primary.withAlpha(50),
+                        blurRadius: 16,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            width: 80,
+                            height: 80,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFE2F4D7),
+                              borderRadius: BorderRadius.circular(22),
+                            ),
+                            alignment: Alignment.center,
+                            child: Text(
+                              _initials(filteredDoctors.first.name),
+                              style: const TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.w900,
+                                color: Color(0xFF235E1E),
+                              ),
                             ),
                           ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                'Dr. Sana Malik',
-                                style: TextStyle(
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.w800,
-                                  color: Colors.white,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                'Pediatrician',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: Colors.white.withAlpha(220),
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Row(
-                                children: [
-                                  const Icon(
-                                    Icons.star_rounded,
-                                    color: Colors.amber,
-                                    size: 18,
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  filteredDoctors.first.name,
+                                  style: const TextStyle(
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.w800,
+                                    color: Colors.white,
                                   ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    '4.9 • 8 visits',
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w700,
-                                      color: Colors.white.withAlpha(230),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  filteredDoctors.first.specialization ??
+                                      'Specialization not provided',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: Colors.white.withAlpha(220),
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.star_rounded,
+                                      color: Colors.amber,
+                                      size: 18,
                                     ),
-                                  ),
-                                ],
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      filteredDoctors.first.hospital ??
+                                          'Hospital not provided',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w700,
+                                        color: Colors.white.withAlpha(230),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                          IconButton(
+                            tooltip: filteredDoctors.first.isFavorite
+                                ? 'Remove favorite'
+                                : 'Add favorite',
+                            onPressed: () => context
+                                .read<DoctorProvider>()
+                                .toggleFavorite(filteredDoctors.first),
+                            icon: Icon(
+                              filteredDoctors.first.isFavorite
+                                  ? Icons.star_rounded
+                                  : Icons.star_border_rounded,
+                              color: filteredDoctors.first.isFavorite
+                                  ? AppColors.warning
+                                  : AppColors.textLight,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: () => context.push(
+                            '/doctors/${filteredDoctors.first.id}',
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            foregroundColor: const Color(0xFF2E7D32),
+                            elevation: 0,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                          ),
+                          child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                'View details',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                ),
                               ),
+                              SizedBox(width: 6),
+                              Icon(Icons.arrow_forward_rounded, size: 16),
                             ],
                           ),
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: () => context.push('/doctors/doc-1'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: const Color(0xFF2E7D32),
-                          elevation: 0,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                        ),
-                        child: const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              'View details',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            SizedBox(width: 6),
-                            Icon(Icons.arrow_forward_rounded, size: 16),
-                          ],
-                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(height: 28),
+                const SizedBox(height: 28),
+              ],
 
               // Section: All doctors
               Row(
@@ -396,30 +415,11 @@ class _DoctorListScreenState extends State<DoctorListScreen> {
                                 ),
                                 const SizedBox(height: 3),
                                 Text(
-                                  '${doc.specialization ?? "General"} • ${doc.hospital ?? "Lahore"}',
+                                  '${doc.specialization ?? "General"}${doc.hospital == null ? "" : " • ${doc.hospital}"}',
                                   style: const TextStyle(
                                     fontSize: 12,
                                     color: AppColors.textLight,
                                   ),
-                                ),
-                                const SizedBox(height: 4),
-                                const Row(
-                                  children: [
-                                    Icon(
-                                      Icons.star_rounded,
-                                      color: Colors.amber,
-                                      size: 16,
-                                    ),
-                                    SizedBox(width: 4),
-                                    Text(
-                                      '4.9 • Excellent',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w600,
-                                        color: Color(0xFF2E7D32),
-                                      ),
-                                    ),
-                                  ],
                                 ),
                               ],
                             ),
@@ -438,6 +438,14 @@ class _DoctorListScreenState extends State<DoctorListScreen> {
       bottomNavigationBar: const BottomNav(currentIndex: 3),
     );
   }
+
+  String _initials(String name) => name
+      .trim()
+      .split(RegExp(r'\s+'))
+      .where((part) => part.isNotEmpty)
+      .take(2)
+      .map((part) => part[0].toUpperCase())
+      .join();
 
   Widget _buildFilterTab(String label) {
     final isSelected = _selectedFilter == label;

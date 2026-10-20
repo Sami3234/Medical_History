@@ -10,6 +10,8 @@ import '../../providers/family_provider.dart';
 import '../../providers/visit_provider.dart';
 import '../../providers/doctor_provider.dart';
 import '../../providers/member_provider.dart';
+import '../../providers/health_provider.dart';
+import '../../providers/records_provider.dart';
 import '../../widgets/bottom_nav.dart';
 import '../../widgets/hero_health_card.dart';
 import '../../widgets/info_banner.dart';
@@ -24,16 +26,21 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
+  DateTime? _lastSync;
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       final auth = context.read<AuthProvider>();
-      final uid = auth.uid ?? SupabaseConfig.currentUserId ?? 'usr-100';
-      context.read<FamilyProvider>().loadFamilies(uid);
-      context.read<VisitProvider>().loadRecent(uid);
-      context.read<DoctorProvider>().loadDoctors(uid);
-      context.read<MemberProvider>().loadAll(uid);
+      final uid = auth.uid ?? SupabaseConfig.currentUserId;
+      if (uid == null) return;
+      await Future.wait([
+        context.read<FamilyProvider>().loadFamilies(uid),
+        context.read<VisitProvider>().loadRecent(uid),
+        context.read<DoctorProvider>().loadDoctors(uid),
+        context.read<MemberProvider>().loadAll(uid),
+      ]);
+      if (mounted) setState(() => _lastSync = DateTime.now());
     });
   }
 
@@ -43,14 +50,35 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final familyProv = context.watch<FamilyProvider>();
     final visitProv = context.watch<VisitProvider>();
     final memberProv = context.watch<MemberProvider>();
+    final healthProv = context.watch<HealthProvider>();
+    final recordsProv = context.watch<RecordsProvider>();
 
     final user = auth.user;
-    final userName = user?.fullName ?? 'Ahmed';
+    final userName = user?.fullName ?? 'User';
     final userFirstName = userName.split(' ').first;
     final primaryFamily = familyProv.families.isNotEmpty
         ? familyProv.families.first
         : null;
     final visits = visitProv.visits;
+    final primaryMember = memberProv.members.isEmpty
+        ? null
+        : memberProv.members.first;
+    final activeMedicationCount = primaryMember == null
+        ? 0
+        : healthProv
+              .getMedicationsByMember(primaryMember.id)
+              .where((item) => item.isActive)
+              .length;
+    final vitalCount = primaryMember == null
+        ? 0
+        : healthProv.getVitalsByMember(primaryMember.id).length;
+    final upcomingAppointments = recordsProv.appointments
+        .where(
+          (item) =>
+              item.dateTime.isAfter(DateTime.now()) &&
+              item.status != 'cancelled',
+        )
+        .length;
 
     // Dynamic greeting
     final hour = DateTime.now().hour;
@@ -67,12 +95,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
         child: RefreshIndicator(
           color: AppColors.primary,
           onRefresh: () async {
-            final uid = auth.uid ?? SupabaseConfig.currentUserId ?? 'usr-100';
+            final uid = auth.uid ?? SupabaseConfig.currentUserId;
+            if (uid == null) return;
             await Future.wait([
               familyProv.loadFamilies(uid),
               visitProv.loadRecent(uid),
               memberProv.loadAll(uid),
             ]);
+            if (mounted) setState(() => _lastSync = DateTime.now());
           },
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
@@ -80,6 +110,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                if (SupabaseConfig.db == null)
+                  _buildStatusBanner(
+                    'Offline mode: showing locally saved records',
+                    Icons.cloud_off_outlined,
+                  ),
+                if (_lastSync != null)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: Text(
+                      'Last synced ${DateFormat('h:mm a').format(_lastSync!.toLocal())}',
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: AppColors.textLight,
+                      ),
+                    ),
+                  ),
                 // ── Top Header ──────────────────────────────────────────
                 Row(
                   children: [
@@ -226,16 +272,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   tag: 'FAMILY HEALTH SPACE',
                   title: primaryFamily?.name ?? '$userFirstName Family',
                   subtitle: '${memberProv.count} family members registered',
-                  memberAvatars: memberProv.members.take(6).map((m) {
-                    return HeroHealthCardAvatar(
-                      name: m.name,
-                      avatarUrl: m.avatarUrl,
-                    );
-                  }).toList(),
                   actionText: 'View members',
                   onAction: () => context.push(AppRoutes.members),
                 ),
                 const SizedBox(height: 28),
+
+                _buildHealthSummary(
+                  member: primaryMember,
+                  activeMedicationCount: activeMedicationCount,
+                  vitalCount: vitalCount,
+                  upcomingAppointments: upcomingAppointments,
+                ),
+                const SizedBox(height: 20),
 
                 // ── Section: Family Tree ─────────────────────────────────
                 Row(
@@ -355,9 +403,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 // Error banner for visit loading
                 if (visitProv.error != null)
                   _buildErrorBanner(visitProv.error!, () {
-                    final uid =
-                        auth.uid ?? SupabaseConfig.currentUserId ?? 'usr-100';
-                    visitProv.loadRecent(uid);
+                    final uid = auth.uid ?? SupabaseConfig.currentUserId;
+                    if (uid != null) visitProv.loadRecent(uid);
                   }),
 
                 // Visits list
@@ -452,6 +499,114 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 color: AppColors.primary,
                 fontWeight: FontWeight.w600,
               ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHealthSummary({
+    required dynamic member,
+    required int activeMedicationCount,
+    required int vitalCount,
+    required int upcomingAppointments,
+  }) {
+    final hasEmergency =
+        member?.bloodGroup != null ||
+        (member?.emergencyContact as String?)?.trim().isNotEmpty == true;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Health at a glance',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+            color: AppColors.textDark,
+          ),
+        ),
+        const SizedBox(height: 10),
+        if (hasEmergency)
+          _buildStatusBanner(
+            'Emergency: ${member.bloodGroup ?? 'Blood group not set'}${member.emergencyContact == null ? '' : ' • ${member.emergencyContact}'}',
+            Icons.emergency_outlined,
+          ),
+        if (!hasEmergency)
+          _buildStatusBanner(
+            'Add blood group and emergency contact to protect your family.',
+            Icons.health_and_safety_outlined,
+          ),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            _summaryTile(
+              'Medicines',
+              '$activeMedicationCount',
+              Icons.medication_outlined,
+            ),
+            const SizedBox(width: 8),
+            _summaryTile('Vitals', '$vitalCount', Icons.monitor_heart_outlined),
+            const SizedBox(width: 8),
+            _summaryTile(
+              'Upcoming',
+              '$upcomingAppointments',
+              Icons.event_available_outlined,
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _summaryTile(String label, String value, IconData icon) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+        decoration: BoxDecoration(
+          color: Theme.of(context).cardColor,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color: AppColors.primary, size: 20),
+            const SizedBox(height: 5),
+            Text(
+              value,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: AppColors.textDark,
+              ),
+            ),
+            Text(
+              label,
+              style: const TextStyle(fontSize: 10, color: AppColors.textLight),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatusBanner(String message, IconData icon) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: AppColors.primary, size: 18),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              message,
+              style: const TextStyle(fontSize: 12, color: AppColors.textMid),
             ),
           ),
         ],

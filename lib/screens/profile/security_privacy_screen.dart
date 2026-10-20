@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../config/theme.dart';
 import '../../config/supabase_config.dart';
+import '../../config/routes.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/biometric_service.dart';
+import '../../services/account_export_service.dart';
 import '../../utils/extensions.dart';
 
 class SecurityPrivacyScreen extends StatefulWidget {
@@ -17,7 +18,7 @@ class SecurityPrivacyScreen extends StatefulWidget {
 }
 
 class _SecurityPrivacyScreenState extends State<SecurityPrivacyScreen> {
-  bool _biometricsEnabled = true;
+  bool _biometricsEnabled = false;
   bool _hardwareSupported = false;
   bool _loading = false;
 
@@ -39,19 +40,32 @@ class _SecurityPrivacyScreenState extends State<SecurityPrivacyScreen> {
   }
 
   Future<void> _loadSettings() async {
-    final prefs = await SharedPreferences.getInstance();
     final supported = await BiometricAuthService.isAvailable();
+    final enabled = await BiometricAuthService.isEnabled();
     if (mounted) {
       setState(() {
         _hardwareSupported = supported;
-        _biometricsEnabled = prefs.getBool('biometrics_enabled') ?? true;
+        _biometricsEnabled = enabled;
       });
     }
   }
 
   Future<void> _toggleBiometrics(bool val) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('biometrics_enabled', val);
+    if (val) {
+      final verified = await BiometricAuthService.authenticate(
+        reason: 'Verify your identity to enable biometric login',
+      );
+      if (!verified) {
+        if (mounted) {
+          context.showSnack(
+            'Biometric verification was not completed.',
+            isError: true,
+          );
+        }
+        return;
+      }
+    }
+    await BiometricAuthService.setEnabled(val);
     setState(() => _biometricsEnabled = val);
     if (mounted) {
       context.showSnack(
@@ -275,6 +289,75 @@ class _SecurityPrivacyScreenState extends State<SecurityPrivacyScreen> {
                 ),
               ),
               const SizedBox(height: 24),
+              OutlinedButton.icon(
+                onPressed: _confirmSignOutEverywhere,
+                icon: const Icon(Icons.devices_other_outlined),
+                label: const Text('Sign out all other devices'),
+              ),
+              const SizedBox(height: 24),
+              _buildSectionHeader('DANGER ZONE'),
+              const SizedBox(height: 10),
+              Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.errorContainer.withAlpha(90),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: Theme.of(context).colorScheme.error.withAlpha(100),
+                  ),
+                ),
+                child: ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Icon(
+                    Icons.delete_forever_outlined,
+                    color: Theme.of(context).colorScheme.error,
+                  ),
+                  title: const Text('Delete account'),
+                  subtitle: const Text(
+                    'Permanently delete your account and cloud records.',
+                  ),
+                  onTap: _confirmDeleteAccount,
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              _buildSectionHeader('YOUR DATA'),
+              const SizedBox(height: 10),
+              Container(
+                padding: const EdgeInsets.all(18),
+                decoration: _cardDecoration(),
+                child: ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(
+                    Icons.file_download_outlined,
+                    color: AppColors.primary,
+                  ),
+                  title: const Text('Export account data'),
+                  subtitle: const Text(
+                    'Save profiles, visits, health records and local document metadata as JSON.',
+                  ),
+                  trailing: const Icon(Icons.chevron_right_rounded),
+                  onTap: () async {
+                    try {
+                      final opened = await AccountExportService.exportAndOpen();
+                      if (mounted && !opened)
+                        context.showSnack(
+                          'Export saved locally.',
+                          isError: false,
+                        );
+                    } catch (e) {
+                      if (mounted)
+                        context.showSnack(
+                          'Could not export account data.',
+                          isError: true,
+                        );
+                    }
+                  },
+                ),
+              ),
+              const SizedBox(height: 24),
 
               // Data Security & HIPAA Info
               _buildSectionHeader('DATA ENCRYPTION & PRIVACY'),
@@ -286,9 +369,9 @@ class _SecurityPrivacyScreenState extends State<SecurityPrivacyScreen> {
                   children: [
                     _buildSecurityFeatureRow(
                       icon: Icons.shield_outlined,
-                      title: 'End-to-End Database Encryption',
+                      title: 'Encrypted transport and storage',
                       subtitle:
-                          'Health records and family files are encrypted at rest and in transit.',
+                          'Supabase protects transport and managed storage. This app does not yet provide end-to-end client-side encryption.',
                     ),
                     const Divider(height: 24),
                     _buildSecurityFeatureRow(
@@ -325,6 +408,69 @@ class _SecurityPrivacyScreenState extends State<SecurityPrivacyScreen> {
         color: AppColors.primary,
       ),
     );
+  }
+
+  Future<void> _confirmDeleteAccount() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Delete account permanently?'),
+        content: const Text(
+          'This cannot be undone. Export your data and create a backup before continuing.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: AppColors.error),
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Delete account'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    final deleted = await context.read<AuthProvider>().deleteAccount();
+    if (!mounted) return;
+    if (deleted)
+      context.go(AppRoutes.login);
+    else
+      context.showSnack(
+        'Account deletion failed. Please try again.',
+        isError: true,
+      );
+  }
+
+  Future<void> _confirmSignOutEverywhere() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Sign out all devices?'),
+        content: const Text(
+          'Every active session will be revoked, including this device.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Revoke sessions'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    final revoked = await context.read<AuthProvider>().signOutEverywhere();
+    if (!mounted) return;
+    if (revoked) {
+      context.go(AppRoutes.login);
+    } else {
+      context.showSnack('Could not revoke sessions.', isError: true);
+    }
   }
 
   BoxDecoration _cardDecoration() {

@@ -500,7 +500,7 @@ class BackupScreen extends StatelessWidget {
                 title: 'Back Up Now',
                 subtitle: backupProv.isBackingUp
                     ? 'Exporting & uploading to Google Drive...'
-                    : 'Create fresh encrypted backup copy',
+                    : 'Create a fresh private backup copy',
                 isLoading: backupProv.isBackingUp,
                 onTap: () async {
                   final success = await backupProv.triggerBackup();
@@ -601,9 +601,9 @@ class BackupScreen extends StatelessWidget {
               // Info Banner: Privacy & Encryption
               const InfoBanner(
                 icon: Icons.shield_rounded,
-                title: 'Private & End-to-End Encrypted',
+                title: 'Private Google Drive backup',
                 subtitle:
-                    'Backups reside in your personal Google Drive hidden app container. Nobody else has access.',
+                    'Backups use your personal Google Drive hidden app container. Client-side encryption will be added before production release.',
               ),
               const SizedBox(height: 24),
             ],

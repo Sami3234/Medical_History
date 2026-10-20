@@ -125,7 +125,7 @@ class BackupService {
     final userId = SupabaseConfig.auth?.currentUser?.id ?? 'local_user';
 
     // 1. Gather all data from Supabase
-    final backupData = await _gatherBackupData(userId);
+    final backupData = await gatherBackupData(userId);
     final jsonString = jsonEncode(backupData);
     final bytes = utf8.encode(jsonString);
 
@@ -150,7 +150,7 @@ class BackupService {
         ..name = _backupFileName
         ..parents = ['appDataFolder']
         ..mimeType = 'application/json'
-        ..description = 'Medical History AppData Encrypted Backup';
+        ..description = 'Medical History private AppData backup';
 
       uploadedFile = await driveApi.files.create(newFile, uploadMedia: media);
     }
@@ -207,7 +207,7 @@ class BackupService {
   }
 
   /// Collects all tables from Supabase into structured Map
-  Future<Map<String, dynamic>> _gatherBackupData(String userId) async {
+  Future<Map<String, dynamic>> gatherBackupData(String userId) async {
     final Map<String, dynamic> data = {
       'app': 'Medical History',
       'version': '1.0.0',
@@ -235,17 +235,29 @@ class BackupService {
           .select()
           .eq('user_id', userId);
       final visits = await client.from('visits').select();
+      final medications = await client.from('medications').select();
+      final vitals = await client.from('vitals').select();
+      final vaccines = await client.from('vaccines').select();
+      final appointments = await client.from('appointments').select();
 
       data['families'] = families;
       data['members'] = members;
       data['doctors'] = doctors;
       data['visits'] = visits;
+      data['medications'] = medications;
+      data['vitals'] = vitals;
+      data['vaccines'] = vaccines;
+      data['appointments'] = appointments;
     } catch (_) {
       // Fallback empty if tables don't exist yet
       data['families'] = [];
       data['members'] = [];
       data['doctors'] = [];
       data['visits'] = [];
+      data['medications'] = [];
+      data['vitals'] = [];
+      data['vaccines'] = [];
+      data['appointments'] = [];
     }
 
     return data;
@@ -273,6 +285,22 @@ class BackupService {
       if (backupMap['visits'] is List &&
           (backupMap['visits'] as List).isNotEmpty) {
         await client.from('visits').upsert(backupMap['visits']);
+      }
+      if (backupMap['medications'] is List &&
+          (backupMap['medications'] as List).isNotEmpty) {
+        await client.from('medications').upsert(backupMap['medications']);
+      }
+      if (backupMap['vitals'] is List &&
+          (backupMap['vitals'] as List).isNotEmpty) {
+        await client.from('vitals').upsert(backupMap['vitals']);
+      }
+      if (backupMap['vaccines'] is List &&
+          (backupMap['vaccines'] as List).isNotEmpty) {
+        await client.from('vaccines').upsert(backupMap['vaccines']);
+      }
+      if (backupMap['appointments'] is List &&
+          (backupMap['appointments'] as List).isNotEmpty) {
+        await client.from('appointments').upsert(backupMap['appointments']);
       }
     } catch (e) {
       throw Exception('Data restoration failed: $e');
