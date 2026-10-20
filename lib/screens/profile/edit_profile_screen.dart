@@ -5,6 +5,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../../config/theme.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/family_provider.dart';
+import '../../providers/member_provider.dart';
 import '../../services/avatar_cache_service.dart';
 import '../../services/cloudinary_service.dart';
 import '../../services/image_cropper_service.dart';
@@ -144,6 +146,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             : null,
         if (_avatarUrl != null) 'avatar_url': _avatarUrl,
       });
+      final userId = auth.uid;
+      if (userId != null && mounted) {
+        await Future.wait([
+          context.read<MemberProvider>().loadAll(userId),
+          context.read<FamilyProvider>().loadFamilies(userId),
+        ]);
+      }
 
       if (!mounted) return;
       context.showSnack('Profile updated successfully!', isError: false);

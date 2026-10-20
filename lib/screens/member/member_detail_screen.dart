@@ -7,6 +7,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../config/theme.dart';
+import '../../config/routes.dart';
 import '../../config/supabase_config.dart';
 import '../../models/member_model.dart';
 import '../../models/vital_model.dart';
@@ -16,7 +17,6 @@ import '../../models/visit_model.dart';
 import '../../models/med_file_model.dart';
 import '../../models/doctor_model.dart';
 import '../../providers/member_provider.dart';
-import '../../providers/doctor_provider.dart';
 import '../../providers/visit_provider.dart';
 import '../../providers/records_provider.dart';
 import '../../providers/health_provider.dart';
@@ -26,7 +26,6 @@ import '../../services/image_cropper_service.dart';
 import '../../services/member_share_service.dart';
 import '../../services/member_doctor_service.dart';
 import '../../utils/extensions.dart';
-import '../../widgets/bottom_nav.dart';
 import '../../widgets/app_avatar.dart';
 import '../../widgets/health_dialogs.dart';
 import '../../widgets/medical_summary_sheet.dart';
@@ -68,8 +67,6 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<VisitProvider>().loadByMember(widget.id);
-      final uid = SupabaseConfig.currentUserId;
-      if (uid != null) context.read<DoctorProvider>().loadDoctors(uid);
       _loadMemberDoctors();
     });
   }
@@ -81,71 +78,281 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
     } catch (_) {}
   }
 
-  Future<void> _manageMemberDoctors(MemberModel member) async {
-    final allDoctors = context.read<DoctorProvider>().doctors;
-    if (allDoctors.isEmpty) {
-      if (mounted)
-        context.showSnack('Add a doctor profile first.', isError: true);
-      return;
-    }
-    final selected = _memberDoctors.map((doctor) => doctor.id).toSet();
-    await showDialog<void>(
+  void _showDoctorRecords(MemberModel member, DoctorModel doctor) {
+    final visits = context
+        .read<VisitProvider>()
+        .visits
+        .where(
+          (visit) =>
+              visit.memberId == member.id &&
+              (visit.doctorId == doctor.id ||
+                  (visit.doctorId == null &&
+                      visit.doctorName?.trim().toLowerCase() ==
+                          doctor.name.trim().toLowerCase())),
+        )
+        .toList()
+      ..sort((a, b) => b.visitDate.compareTo(a.visitDate));
+    final recordsProvider = context.read<RecordsProvider>();
+
+    showModalBottomSheet<void>(
       context: context,
-      builder: (dialogContext) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          title: Text('${member.name} doctors'),
-          content: SizedBox(
-            width: double.maxFinite,
-            child: ListView(
-              shrinkWrap: true,
-              children: allDoctors.map((doctor) {
-                final checked = selected.contains(doctor.id);
-                return CheckboxListTile(
-                  value: checked,
-                  title: Text(doctor.name),
-                  subtitle: Text(doctor.specialization ?? 'General physician'),
-                  onChanged: (value) async {
-                    try {
-                      if (value == true) {
-                        await _memberDoctorService.addDoctor(
-                          memberId: member.id,
-                          doctorId: doctor.id,
-                        );
-                        selected.add(doctor.id);
-                      } else {
-                        await _memberDoctorService.removeDoctor(
-                          memberId: member.id,
-                          doctorId: doctor.id,
-                        );
-                        selected.remove(doctor.id);
-                      }
-                      setDialogState(() {});
-                    } catch (e) {
-                      if (dialogContext.mounted) {
-                        ScaffoldMessenger.of(dialogContext).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                              'Could not update doctor assignment.',
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) => DraggableScrollableSheet(
+        initialChildSize: 0.78,
+        minChildSize: 0.5,
+        maxChildSize: 0.95,
+        expand: false,
+        builder: (context, scrollController) => Container(
+          decoration: const BoxDecoration(
+            color: AppColors.bg,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          child: ListView(
+            controller: scrollController,
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
+            children: [
+              Center(
+                child: Container(
+                  width: 42,
+                  height: 5,
+                  decoration: BoxDecoration(
+                    color: AppColors.border,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 18),
+              Row(
+                children: [
+                  CircleAvatar(
+                    radius: 26,
+                    backgroundColor: const Color(0xFFDEF2D7),
+                    child: Text(
+                      _doctorInitials(doctor.name),
+                      style: const TextStyle(
+                        color: AppColors.primaryDark,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          doctor.name,
+                          style: const TextStyle(
+                            fontSize: 19,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        Text(
+                          '${doctor.specialization ?? "General physician"} • ${visits.length} visit${visits.length == 1 ? "" : "s"}',
+                          style: const TextStyle(color: AppColors.textLight),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: 'Close',
+                    onPressed: () => Navigator.pop(sheetContext),
+                    icon: const Icon(Icons.close_rounded),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              Text(
+                '${member.name} visit records',
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 10),
+              if (visits.isEmpty)
+                _buildEmptyState(
+                  'No visit with ${doctor.name} has been recorded yet.',
+                )
+              else
+                ...visits.map((visit) {
+                  final documents = recordsProvider.files
+                      .where((document) => document.visitId == visit.id)
+                      .toList();
+                  return Card(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    elevation: 0,
+                    color: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(18),
+                      side: const BorderSide(color: AppColors.border),
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: ExpansionTile(
+                      tilePadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 4,
+                      ),
+                      childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+                      leading: Container(
+                        width: 42,
+                        height: 42,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEAF7E5),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          Icons.medical_information_outlined,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                      title: Text(
+                        visit.diagnosis?.trim().isNotEmpty == true
+                            ? visit.diagnosis!
+                            : 'General consultation',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                      subtitle: Text(
+                        '${DateFormat('dd MMM yyyy').format(visit.visitDate)} • ${documents.length} document${documents.length == 1 ? "" : "s"}',
+                      ),
+                      children: [
+                        if (visit.symptoms?.trim().isNotEmpty == true)
+                          _doctorRecordField('Symptoms', visit.symptoms!),
+                        if (visit.treatment?.trim().isNotEmpty == true)
+                          _doctorRecordField('Treatment', visit.treatment!),
+                        if (visit.notes?.trim().isNotEmpty == true)
+                          _doctorRecordField('Notes', visit.notes!),
+                        const SizedBox(height: 6),
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: TextButton.icon(
+                            onPressed: () {
+                              Navigator.pop(sheetContext);
+                              context.push('/visits/${visit.id}');
+                            },
+                            icon: const Icon(Icons.open_in_new_rounded, size: 17),
+                            label: const Text('Open complete visit'),
+                          ),
+                        ),
+                        if (documents.isNotEmpty) ...[
+                          const Divider(),
+                          const Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              'Prescription, tests & documents',
+                              style: TextStyle(fontWeight: FontWeight.w700),
                             ),
                           ),
-                        );
-                      }
-                    }
-                  },
-                );
-              }).toList(),
-            ),
+                          const SizedBox(height: 4),
+                          ...documents.map(
+                            (document) => ListTile(
+                              dense: true,
+                              contentPadding: EdgeInsets.zero,
+                              leading: Icon(
+                                _documentIcon(document.fileType),
+                                color: AppColors.primary,
+                              ),
+                              title: Text(
+                                document.description ??
+                                    document.fileName ??
+                                    _documentLabel(document.fileType),
+                              ),
+                              subtitle: Text(
+                                _documentLabel(document.fileType),
+                              ),
+                              trailing: const Icon(
+                                Icons.open_in_new_rounded,
+                                size: 18,
+                              ),
+                              onTap: () async {
+                                final opened = await recordsProvider
+                                    .openDocument(document);
+                                if (!opened && sheetContext.mounted) {
+                                  ScaffoldMessenger.of(sheetContext)
+                                      .showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        'No compatible app could open this file.',
+                                      ),
+                                    ),
+                                  );
+                                }
+                              },
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  );
+                }),
+            ],
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('Done'),
-            ),
-          ],
         ),
       ),
     );
-    await _loadMemberDoctors();
+  }
+
+  Widget _doctorRecordField(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Text.rich(
+          TextSpan(
+            text: '$label: ',
+            style: const TextStyle(fontWeight: FontWeight.w700),
+            children: [
+              TextSpan(
+                text: value,
+                style: const TextStyle(fontWeight: FontWeight.w400),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _doctorInitials(String name) => name
+      .replaceFirst(RegExp(r'^Dr\.\s*', caseSensitive: false), '')
+      .split(RegExp(r'\s+'))
+      .where((part) => part.isNotEmpty)
+      .take(2)
+      .map((part) => part[0].toUpperCase())
+      .join();
+
+  String _documentLabel(String type) {
+    switch (type.toLowerCase()) {
+      case 'prescription':
+        return 'Doctor prescription';
+      case 'labreport':
+      case 'lab_report':
+        return 'Lab test report';
+      case 'xray':
+        return 'X-Ray';
+      case 'scan':
+        return 'Medical scan';
+      default:
+        return 'Medical document';
+    }
+  }
+
+  IconData _documentIcon(String type) {
+    switch (type.toLowerCase()) {
+      case 'prescription':
+        return Icons.receipt_long_outlined;
+      case 'labreport':
+      case 'lab_report':
+        return Icons.science_outlined;
+      case 'xray':
+      case 'scan':
+        return Icons.image_outlined;
+      default:
+        return Icons.description_outlined;
+    }
   }
 
   @override
@@ -378,6 +585,92 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
     );
   }
 
+  Future<void> _showMemberSettings(MemberModel member) async {
+    final isOwner = member.relation.toLowerCase().trim() == 'self';
+    final action = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.edit_outlined),
+              title: const Text('Edit member'),
+              onTap: () => Navigator.pop(sheetContext, 'edit'),
+            ),
+            if (!isOwner)
+              ListTile(
+                leading: Icon(
+                  Icons.delete_outline_rounded,
+                  color: Theme.of(sheetContext).colorScheme.error,
+                ),
+                title: Text(
+                  'Delete member',
+                  style: TextStyle(
+                    color: Theme.of(sheetContext).colorScheme.error,
+                  ),
+                ),
+                subtitle: const Text('Remove this member and linked records'),
+                onTap: () => Navigator.pop(sheetContext, 'delete'),
+              )
+            else
+              const ListTile(
+                leading: Icon(Icons.lock_outline_rounded),
+                title: Text('Permanent owner profile'),
+                subtitle: Text('Self can be edited but cannot be deleted'),
+              ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+
+    if (!mounted || action == null) return;
+    if (action == 'edit') {
+      await context.push('/members/${member.id}/edit');
+      if (mounted) setState(() {});
+      return;
+    }
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Delete member?'),
+        content: Text(
+          'This will remove ${member.name} and linked records. Export or back up first because this cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(dialogContext).colorScheme.error,
+            ),
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Delete member'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    final provider = context.read<MemberProvider>();
+    final deleted = await provider.deleteMember(member.id);
+    if (!mounted) return;
+    if (deleted) {
+      context.go(AppRoutes.members);
+      context.showSnack('Member deleted successfully.');
+    } else {
+      context.showSnack(
+        provider.error ?? 'Could not delete member.',
+        isError: true,
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final memberProv = context.watch<MemberProvider>();
@@ -495,7 +788,18 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
           IconButton(
             tooltip: 'Edit Profile',
             icon: const Icon(Icons.edit_outlined, color: AppColors.textDark),
-            onPressed: () => context.push('/members/${member.id}/edit'),
+            onPressed: () =>
+                context.push('/members/${member.id}/edit').then((_) {
+                  if (mounted) setState(() {});
+                }),
+          ),
+          IconButton(
+            tooltip: 'Member settings',
+            icon: const Icon(
+              Icons.settings_outlined,
+              color: AppColors.textDark,
+            ),
+            onPressed: () => _showMemberSettings(member),
           ),
           const SizedBox(width: 4),
         ],
@@ -551,7 +855,6 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
           ),
         ),
       ),
-      bottomNavigationBar: const BottomNav(currentIndex: 1),
     );
   }
 
@@ -656,12 +959,12 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
             children: [
               _buildHeroBadge(
                 Icons.cake_outlined,
-                member.age == 'N/A' ? '12 years' : member.age,
+                member.age == 'N/A' ? 'Not recorded' : member.age,
               ),
               const SizedBox(width: 8),
               _buildHeroBadge(
                 Icons.bloodtype_outlined,
-                member.bloodGroup ?? 'O+',
+                member.bloodGroup ?? 'Not recorded',
               ),
               const SizedBox(width: 8),
               _buildHeroBadge(Icons.verified_rounded, 'Active'),
@@ -772,10 +1075,13 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
           ),
         ),
         const SizedBox(width: 10),
-        // Full Timeline
+        // This member's visits tab
         Expanded(
           child: InkWell(
-            onTap: () => context.push('/visits'),
+            onTap: () {
+              _tabController.animateTo(3);
+              setState(() => _selectedTab = 3);
+            },
             borderRadius: BorderRadius.circular(16),
             child: Container(
               padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
@@ -835,10 +1141,9 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
                 ),
               ),
-              TextButton.icon(
-                onPressed: () => _manageMemberDoctors(member),
-                icon: const Icon(Icons.edit_outlined, size: 16),
-                label: const Text('Manage'),
+              const Text(
+                'Tap doctor for records',
+                style: TextStyle(fontSize: 11, color: AppColors.textLight),
               ),
             ],
           ),
@@ -847,18 +1152,79 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
               'No doctors assigned yet. Add the doctors this member visits.',
             )
           else
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: _memberDoctors
-                  .map(
-                    (doctor) => Chip(
-                      avatar: const Icon(Icons.person_outline, size: 17),
-                      label: Text(doctor.name),
-                    ),
+            ..._memberDoctors.map((doctor) {
+              final visits = context
+                  .watch<VisitProvider>()
+                  .visits
+                  .where(
+                    (visit) =>
+                        visit.memberId == member.id &&
+                        (visit.doctorId == doctor.id ||
+                            (visit.doctorId == null &&
+                                visit.doctorName?.trim().toLowerCase() ==
+                                    doctor.name.trim().toLowerCase())),
                   )
-                  .toList(),
-            ),
+                  .length;
+              return Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: InkWell(
+                  onTap: () => _showDoctorRecords(member, doctor),
+                  borderRadius: BorderRadius.circular(14),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF7FBF5),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: const Color(0xFFD9EBD4)),
+                    ),
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 19,
+                          backgroundColor: const Color(0xFFDEF2D7),
+                          child: Text(
+                            _doctorInitials(doctor.name),
+                            style: const TextStyle(
+                              color: AppColors.primaryDark,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                doctor.name,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              Text(
+                                '${doctor.specialization ?? "General physician"} • $visits visit${visits == 1 ? "" : "s"}',
+                                style: const TextStyle(
+                                  fontSize: 11.5,
+                                  color: AppColors.textLight,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Icon(
+                          Icons.chevron_right_rounded,
+                          color: AppColors.textLight,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }),
         ],
       ),
     );
@@ -995,7 +1361,7 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
     final temp = healthProv.getLatestVital(member.id, 'Temperature');
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 112),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1293,7 +1659,7 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
     HealthProvider healthProv,
   ) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 112),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1462,7 +1828,7 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
     HealthProvider healthProv,
   ) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 112),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1596,7 +1962,7 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
   // ── Tab 4: Visits View ────────────────────────────────────────────────
   Widget _buildVisitsTab(MemberModel member, List<VisitModel> visits) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 112),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1612,7 +1978,8 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
                 ),
               ),
               TextButton.icon(
-                onPressed: () => context.push('/visits/add'),
+                onPressed: () =>
+                    context.push('/visits/add?memberId=${member.id}'),
                 icon: const Icon(Icons.add_circle_outline_rounded, size: 18),
                 label: const Text(
                   'New Visit',
@@ -1738,7 +2105,7 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
   // ── Tab 5: Lab & Files View ───────────────────────────────────────────
   Widget _buildFilesTab(MemberModel member, List<MedFileModel> files) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 112),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

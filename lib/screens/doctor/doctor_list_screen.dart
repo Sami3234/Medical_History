@@ -435,7 +435,7 @@ class _DoctorListScreenState extends State<DoctorListScreen> {
           ),
         ),
       ),
-      bottomNavigationBar: const BottomNav(currentIndex: 3),
+      bottomNavigationBar: const BottomNav(currentIndex: 1),
     );
   }
 

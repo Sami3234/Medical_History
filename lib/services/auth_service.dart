@@ -108,7 +108,53 @@ class AuthService {
     if (SupabaseConfig.isInitialized && SupabaseConfig.db != null) {
       final uid = currentUser?.id;
       if (uid == null) return;
-      await SupabaseConfig.db!.from('profiles').update(updates).eq('id', uid);
+      final currentProfile = await SupabaseConfig.db!
+          .from('profiles')
+          .select('full_name')
+          .eq('id', uid)
+          .maybeSingle();
+      final previousName = (currentProfile?['full_name'] as String?)?.trim();
+      final profileUpdates = Map<String, dynamic>.from(updates)
+        ..['updated_at'] = DateTime.now().toIso8601String();
+      await SupabaseConfig.db!
+          .from('profiles')
+          .update(profileUpdates)
+          .eq('id', uid);
+
+      final ownerUpdates = <String, dynamic>{};
+      if (updates.containsKey('full_name')) {
+        ownerUpdates['name'] = updates['full_name'];
+      }
+      if (updates.containsKey('avatar_url')) {
+        ownerUpdates['avatar_url'] = updates['avatar_url'];
+      }
+      if (ownerUpdates.isNotEmpty) {
+        await SupabaseConfig.db!
+            .from('members')
+            .update(ownerUpdates)
+            .ilike('relation', 'self');
+      }
+      final updatedName = (updates['full_name'] as String?)?.trim();
+      if (updatedName != null &&
+          updatedName.isNotEmpty &&
+          previousName != null &&
+          previousName.isNotEmpty &&
+          updatedName != previousName) {
+        final families = await SupabaseConfig.db!
+            .from('families')
+            .select('id, name')
+            .eq('user_id', uid);
+        for (final family in families) {
+          final familyName = (family['name'] as String?)?.trim().toLowerCase();
+          final oldName = previousName.toLowerCase();
+          if (familyName == oldName || familyName == '$oldName family') {
+            await SupabaseConfig.db!
+                .from('families')
+                .update({'name': '$updatedName Family'})
+                .eq('id', family['id'] as String);
+          }
+        }
+      }
     } else {
       throw StateError('Supabase is not available. Please try again later.');
     }

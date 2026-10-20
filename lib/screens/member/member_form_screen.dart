@@ -5,7 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
+import '../../config/supabase_config.dart';
 import '../../config/theme.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/family_provider.dart';
 import '../../providers/member_provider.dart';
 import '../../services/avatar_cache_service.dart';
@@ -15,7 +17,9 @@ import '../../utils/extensions.dart';
 import '../../widgets/app_avatar.dart';
 
 class MemberFormScreen extends StatefulWidget {
-  const MemberFormScreen({super.key});
+  final String? memberId;
+
+  const MemberFormScreen({super.key, this.memberId});
 
   @override
   State<MemberFormScreen> createState() => _MemberFormScreenState();
@@ -37,6 +41,10 @@ class _MemberFormScreenState extends State<MemberFormScreen> {
   Uint8List? _pickedPhotoBytes;
   bool _uploadingAvatar = false;
   bool _saving = false;
+  bool _loadingMember = false;
+  bool _editingOwner = false;
+
+  bool get _isEdit => widget.memberId != null;
 
   final List<String> _relations = [
     'Self',
@@ -62,6 +70,120 @@ class _MemberFormScreenState extends State<MemberFormScreen> {
     'O-',
   ];
 
+  String? _relationLimitError({
+    required String relation,
+    required String familyId,
+    required List<dynamic> members,
+  }) {
+    final normalized = relation.toLowerCase().trim();
+    late final int limit;
+    late final String label;
+    late final bool Function(String relation) matches;
+
+    if (normalized == 'father') {
+      limit = 1;
+      label = 'father';
+      matches = (value) => value == 'father';
+    } else if (normalized == 'mother') {
+      limit = 3;
+      label = 'mothers';
+      matches = (value) => value == 'mother';
+    } else if (normalized == 'grandfather') {
+      limit = 1;
+      label = 'grandfather';
+      matches = (value) => value == 'grandfather';
+    } else if (normalized == 'grandmother') {
+      limit = 1;
+      label = 'grandmother';
+      matches = (value) => value == 'grandmother';
+    } else if (normalized == 'brother' || normalized == 'sister') {
+      limit = 10;
+      label = 'brothers and sisters';
+      matches = (value) => value == 'brother' || value == 'sister';
+    } else if (normalized == 'son' || normalized == 'daughter') {
+      limit = 10;
+      label = 'sons and daughters';
+      matches = (value) => value == 'son' || value == 'daughter';
+    } else {
+      return null;
+    }
+
+    final currentCount = members.where((member) {
+      if (member.familyId != familyId || member.id == widget.memberId) {
+        return false;
+      }
+      return matches(member.relation.toLowerCase().trim());
+    }).length;
+
+    if (currentCount >= limit) {
+      return 'Maximum $limit $label can be added to one family.';
+    }
+    return null;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    if (_isEdit) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _loadExisting());
+    }
+  }
+
+  Future<void> _loadExisting() async {
+    final id = widget.memberId;
+    if (id == null) return;
+
+    setState(() => _loadingMember = true);
+    try {
+      final memberProv = context.read<MemberProvider>();
+      var member = memberProv.members.where((m) => m.id == id).firstOrNull;
+
+      if (member == null) {
+        final uid =
+            context.read<AuthProvider>().uid ?? SupabaseConfig.currentUserId;
+        if (uid != null) await memberProv.loadAll(uid);
+        member = memberProv.members.where((m) => m.id == id).firstOrNull;
+      }
+
+      if (member == null || !mounted) {
+        if (mounted) {
+          context.showSnack('Member not found.', isError: true);
+          context.pop();
+        }
+        return;
+      }
+
+      _name.text = member.name;
+      if (!_relations.contains(member.relation) && member.relation.isNotEmpty) {
+        _relations.add(member.relation);
+      }
+      _selectedRelation = member.relation;
+      _editingOwner = member.relation.toLowerCase().trim() == 'self';
+      _selectedBloodGroup = member.bloodGroup;
+      _notes.text = member.allergies ?? member.notes ?? '';
+      _emergencyContact.text = member.emergencyContact ?? '';
+      _avatarUrl = member.avatarUrl;
+      _selectedFamilyId = member.familyId;
+      _selectedParentId = member.parentId;
+      _selectedDob = member.dob;
+      if (member.dob != null) {
+        final dob = member.dob!;
+        _dob.text =
+            '${dob.day.toString().padLeft(2, '0')} / ${dob.month.toString().padLeft(2, '0')} / ${dob.year}';
+        final now = DateTime.now();
+        var age = now.year - dob.year;
+        if (now.month < dob.month ||
+            (now.month == dob.month && now.day < dob.day)) {
+          age--;
+        }
+        _age.text = age.clamp(0, 125).toString();
+      }
+      if (mounted) setState(() {});
+    } finally {
+      if (mounted) setState(() => _loadingMember = false);
+    }
+  }
+
   Future<void> _pickAndUploadAvatar() async {
     try {
       final picker = ImagePicker();
@@ -71,18 +193,13 @@ class _MemberFormScreenState extends State<MemberFormScreen> {
       );
       if (picked == null || !mounted) return;
 
-      // Crop image with modern circular aperture cropper
       final croppedBytes = await ImageCropperService.cropAvatar(
         file: picked,
         context: context,
       );
-      if (croppedBytes == null || !mounted) {
-        // User cancelled crop
-        return;
-      }
+      if (croppedBytes == null || !mounted) return;
 
       _pickedPhotoBytes = croppedBytes;
-      // Convert to self-contained Base64 data URI to guarantee instant, 100% reliable display
       final dataUri = 'data:image/png;base64,${base64Encode(croppedBytes)}';
 
       AvatarMemoryCache.set(dataUri, croppedBytes);
@@ -92,7 +209,6 @@ class _MemberFormScreenState extends State<MemberFormScreen> {
       }
       setState(() => _avatarUrl = dataUri);
 
-      // Attempt background cloud upload for persistent CDN backup
       setState(() => _uploadingAvatar = true);
       final res = await CloudinaryService.uploadImage(
         bytes: croppedBytes,
@@ -106,9 +222,8 @@ class _MemberFormScreenState extends State<MemberFormScreen> {
           setState(() => _avatarUrl = res.secureUrl);
           context.showSnack('Member photo saved successfully!');
         }
-      } else {
-        // Fallback: Photo is already safely saved locally as Base64 Data URI
-        if (mounted) context.showSnack('Member photo saved successfully!');
+      } else if (mounted) {
+        context.showSnack('Member photo saved successfully!');
       }
     } catch (e) {
       if (mounted) {
@@ -192,7 +307,6 @@ class _MemberFormScreenState extends State<MemberFormScreen> {
   Future<void> _submit() async {
     if (!_form.currentState!.validate()) return;
 
-    // Ensure _selectedDob is set from age if user only entered age
     if (_selectedDob == null && _age.text.trim().isNotEmpty) {
       final ageNum = int.tryParse(_age.text.trim());
       if (ageNum != null) {
@@ -203,33 +317,63 @@ class _MemberFormScreenState extends State<MemberFormScreen> {
     setState(() => _saving = true);
     try {
       final famProv = context.read<FamilyProvider>();
+      final memberProv = context.read<MemberProvider>();
+      final memberName = _name.text.trim();
+      final authName = context
+          .read<AuthProvider>()
+          .user
+          ?.fullName
+          .trim()
+          .toLowerCase();
+      String? ownerMemberId;
+      for (final member in memberProv.members) {
+        final isOwner =
+            member.relation.toLowerCase().trim() == 'self' ||
+            (authName != null &&
+                authName.isNotEmpty &&
+                member.name.trim().toLowerCase() == authName);
+        if (isOwner) {
+          ownerMemberId = member.id;
+          break;
+        }
+      }
+      final isChild =
+          _selectedRelation == 'Son' || _selectedRelation == 'Daughter';
 
-      // Determine or create a valid family
       String famId;
       if (_selectedFamilyId != null && _selectedFamilyId!.isNotEmpty) {
         famId = _selectedFamilyId!;
       } else if (famProv.families.isNotEmpty) {
         famId = famProv.families.first.id;
       } else {
-        // Automatically create a default family for this user if none exists
         await famProv.addFamily({'family_id': 'FAM-1001', 'name': 'My Family'});
         famId = famProv.families.first.id;
       }
 
-      if (!mounted) return;
-      final memberName = _name.text.trim();
+      final relationLimitError = _relationLimitError(
+        relation: _selectedRelation ?? 'Other',
+        familyId: famId,
+        members: memberProv.members,
+      );
+      if (relationLimitError != null) {
+        if (mounted) context.showSnack(relationLimitError, isError: true);
+        return;
+      }
+
       if (_pickedPhotoBytes != null) {
         AvatarMemoryCache.set(memberName, _pickedPhotoBytes!);
         AvatarMemoryCache.set(memberName.toLowerCase(), _pickedPhotoBytes!);
         if (_avatarUrl != null) {
           AvatarMemoryCache.set(_avatarUrl!, _pickedPhotoBytes!);
         }
+        if (_isEdit) {
+          AvatarMemoryCache.set(widget.memberId!, _pickedPhotoBytes!);
+        }
       }
 
-      await context.read<MemberProvider>().addMember({
-        'family_id': famId,
+      final payload = <String, dynamic>{
         'name': memberName,
-        'relation': _selectedRelation ?? 'Other',
+        'relation': _editingOwner ? 'Self' : (_selectedRelation ?? 'Other'),
         'dob': _selectedDob?.toIso8601String(),
         'blood_group': _selectedBloodGroup,
         'allergies': _notes.text.trim().isNotEmpty ? _notes.text.trim() : null,
@@ -238,10 +382,42 @@ class _MemberFormScreenState extends State<MemberFormScreen> {
         'emergency_contact': _emergencyContact.text.trim().isNotEmpty
             ? _emergencyContact.text.trim()
             : null,
-        'parent_id': _selectedParentId,
-      });
+        'parent_id': isChild ? ownerMemberId : _selectedParentId,
+      };
 
+      if (_isEdit) {
+        final ok = await memberProv.updateMember(widget.memberId!, payload);
+        if (!mounted) return;
+        if (!ok) {
+          context.showSnack(
+            memberProv.error ?? 'Failed to update member',
+            isError: true,
+          );
+          return;
+        }
+        if (_editingOwner) {
+          final authProvider = context.read<AuthProvider>();
+          await authProvider.updateProfile({
+            'full_name': memberName,
+            if (_avatarUrl != null) 'avatar_url': _avatarUrl,
+          });
+          if (!mounted) return;
+        }
+        context.showSnack('Family member updated');
+        context.pop();
+        return;
+      }
+
+      payload['family_id'] = famId;
+      final ok = await memberProv.addMember(payload);
       if (!mounted) return;
+      if (!ok) {
+        context.showSnack(
+          memberProv.error ?? 'Failed to save member',
+          isError: true,
+        );
+        return;
+      }
       context.showSnack('Family member profile created');
       context.pop();
     } catch (e) {
@@ -259,455 +435,515 @@ class _MemberFormScreenState extends State<MemberFormScreen> {
     final familyId =
         _selectedFamilyId ??
         (familyProv.families.isNotEmpty ? familyProv.families.first.id : null);
+    final authName = context
+        .watch<AuthProvider>()
+        .user
+        ?.fullName
+        .trim()
+        .toLowerCase();
     final possibleParents = memberProv.members
-        .where((member) => member.familyId == familyId)
+        .where(
+          (member) =>
+              member.familyId == familyId &&
+              member.id != widget.memberId &&
+              (member.relation.toLowerCase().trim() == 'self' ||
+                  (authName != null &&
+                      authName.isNotEmpty &&
+                      member.name.trim().toLowerCase() == authName)),
+        )
         .toList();
 
     return Scaffold(
       backgroundColor: AppColors.bg,
       appBar: AppBar(
-        title: const Text('Add family member'),
+        title: Text(_isEdit ? 'Edit family member' : 'Add family member'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
           onPressed: () => context.pop(),
         ),
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-          child: Form(
-            key: _form,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Top Card: Create patient profile with Cloudinary Avatar
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(22),
-                    border: Border.all(color: AppColors.border, width: 1.2),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: AppColors.shadow,
-                        blurRadius: 8,
-                        offset: Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Row(
+      body: _loadingMember
+          ? const Center(
+              child: CircularProgressIndicator(color: AppColors.primary),
+            )
+          : SafeArea(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
+                child: Form(
+                  key: _form,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      GestureDetector(
-                        onTap: _uploadingAvatar ? null : _pickAndUploadAvatar,
-                        child: Stack(
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(22),
+                          border: Border.all(
+                            color: AppColors.border,
+                            width: 1.2,
+                          ),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: AppColors.shadow,
+                              blurRadius: 8,
+                              offset: Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Row(
                           children: [
-                            if (_avatarUrl != null)
-                              AppAvatar(
-                                name: _name.text.isNotEmpty ? _name.text : 'M',
-                                avatarUrl: _avatarUrl,
-                                size: 68,
-                                border: Border.all(
-                                  color: AppColors.primary,
-                                  width: 2,
-                                ),
-                              )
-                            else
-                              Container(
-                                width: 68,
-                                height: 68,
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFDEF2D7),
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: AppColors.primary,
-                                    width: 1.5,
-                                  ),
-                                ),
-                                child: _uploadingAvatar
-                                    ? const Center(
-                                        child: SizedBox(
-                                          width: 24,
-                                          height: 24,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2.5,
-                                          ),
-                                        ),
-                                      )
-                                    : const Icon(
-                                        Icons.camera_alt_rounded,
-                                        color: Color(0xFF235E1E),
-                                        size: 28,
+                            GestureDetector(
+                              onTap: _uploadingAvatar
+                                  ? null
+                                  : _pickAndUploadAvatar,
+                              child: Stack(
+                                children: [
+                                  if (_avatarUrl != null)
+                                    AppAvatar(
+                                      name: _name.text.isNotEmpty
+                                          ? _name.text
+                                          : 'M',
+                                      avatarUrl: _avatarUrl,
+                                      size: 68,
+                                      border: Border.all(
+                                        color: AppColors.primary,
+                                        width: 2,
                                       ),
+                                    )
+                                  else
+                                    Container(
+                                      width: 68,
+                                      height: 68,
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFDEF2D7),
+                                        shape: BoxShape.circle,
+                                        border: Border.all(
+                                          color: AppColors.primary,
+                                          width: 1.5,
+                                        ),
+                                      ),
+                                      child: _uploadingAvatar
+                                          ? const Center(
+                                              child: SizedBox(
+                                                width: 24,
+                                                height: 24,
+                                                child:
+                                                    CircularProgressIndicator(
+                                                      strokeWidth: 2.5,
+                                                    ),
+                                              ),
+                                            )
+                                          : const Icon(
+                                              Icons.camera_alt_rounded,
+                                              color: Color(0xFF235E1E),
+                                              size: 28,
+                                            ),
+                                    ),
+                                  Positioned(
+                                    bottom: 0,
+                                    right: 0,
+                                    child: Container(
+                                      padding: const EdgeInsets.all(4),
+                                      decoration: const BoxDecoration(
+                                        color: AppColors.primary,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: const Icon(
+                                        Icons.edit_rounded,
+                                        size: 12,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
-                            Positioned(
-                              bottom: 0,
-                              right: 0,
-                              child: Container(
-                                padding: const EdgeInsets.all(4),
-                                decoration: const BoxDecoration(
-                                  color: AppColors.primary,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(
-                                  Icons.edit_rounded,
-                                  size: 12,
-                                  color: Colors.white,
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: _uploadingAvatar
+                                    ? null
+                                    : _pickAndUploadAvatar,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'Member Photo',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w700,
+                                        color: AppColors.textDark,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      _uploadingAvatar
+                                          ? 'Uploading photo...'
+                                          : _avatarUrl != null
+                                          ? 'Photo set for this member ✓'
+                                          : 'Tap circle to add photo for this member',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: _avatarUrl != null
+                                            ? FontWeight.w600
+                                            : FontWeight.w400,
+                                        color: _avatarUrl != null
+                                            ? AppColors.primary
+                                            : AppColors.textLight,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ),
                           ],
                         ),
                       ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: _uploadingAvatar ? null : _pickAndUploadAvatar,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                'Member Photo',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.textDark,
-                                ),
+                      const SizedBox(height: 18),
+
+                      const Text(
+                        'Full name',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textDark,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      TextFormField(
+                        controller: _name,
+                        decoration: const InputDecoration(
+                          hintText: 'Enter member name',
+                          prefixIcon: Icon(
+                            Icons.person_outline_rounded,
+                            color: AppColors.textLight,
+                            size: 20,
+                          ),
+                        ),
+                        validator: (v) => (v == null || v.isEmpty)
+                            ? 'Please enter member name'
+                            : null,
+                      ),
+                      const SizedBox(height: 18),
+
+                      const Text(
+                        'Relationship',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textDark,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      DropdownButtonFormField<String>(
+                        key: ValueKey('relation-$_selectedRelation'),
+                        initialValue: _selectedRelation,
+                        decoration: const InputDecoration(
+                          hintText: 'Select relationship',
+                          prefixIcon: Icon(
+                            Icons.groups_outlined,
+                            color: AppColors.textLight,
+                            size: 20,
+                          ),
+                        ),
+                        items: _relations
+                            .where((rel) => _isEdit || rel != 'Self')
+                            .map((rel) {
+                              return DropdownMenuItem<String>(
+                                value: rel,
+                                child: Text(rel),
+                              );
+                            })
+                            .toList(),
+                        validator: (v) => (v == null || v.isEmpty)
+                            ? 'Please select relationship'
+                            : null,
+                        onChanged: _editingOwner
+                            ? null
+                            : (val) => setState(() => _selectedRelation = val),
+                      ),
+                      if (_editingOwner) ...[
+                        const SizedBox(height: 6),
+                        const Text(
+                          'Self is your permanent owner profile and its relationship cannot be changed.',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: AppColors.textLight,
+                          ),
+                        ),
+                      ],
+                      if (_selectedRelation == 'Son' ||
+                          _selectedRelation == 'Daughter') ...[
+                        const SizedBox(height: 18),
+                        const Text(
+                          'Parent / linked adult',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textDark,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        DropdownButtonFormField<String>(
+                          key: ValueKey('parent-$_selectedParentId'),
+                          initialValue:
+                              possibleParents.any(
+                                (parent) => parent.id == _selectedParentId,
+                              )
+                              ? _selectedParentId
+                              : possibleParents.firstOrNull?.id,
+                          decoration: const InputDecoration(
+                            hintText: 'Owner profile is the parent',
+                            prefixIcon: Icon(
+                              Icons.account_tree_outlined,
+                              color: AppColors.textLight,
+                              size: 20,
+                            ),
+                          ),
+                          items: possibleParents.map((parent) {
+                            return DropdownMenuItem<String>(
+                              value: parent.id,
+                              child: Text(
+                                '${parent.name} • ${parent.relation}',
                               ),
-                              const SizedBox(height: 4),
-                              Text(
-                                _uploadingAvatar
-                                    ? 'Uploading photo...'
-                                    : _avatarUrl != null
-                                    ? 'Photo set for this member ✓'
-                                    : 'Tap circle to add photo for this member',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: _avatarUrl != null
-                                      ? FontWeight.w600
-                                      : FontWeight.w400,
-                                  color: _avatarUrl != null
-                                      ? AppColors.primary
-                                      : AppColors.textLight,
+                            );
+                          }).toList(),
+                          onChanged: (value) =>
+                              setState(() => _selectedParentId = value),
+                        ),
+                      ],
+                      const SizedBox(height: 18),
+
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            flex: 5,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: const [
+                                    Text(
+                                      'Age (years)',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                        color: AppColors.textDark,
+                                      ),
+                                    ),
+                                    SizedBox(width: 4),
+                                    Text(
+                                      '*',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w700,
+                                        color: Color(0xFFE53935),
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              ),
-                            ],
+                                const SizedBox(height: 6),
+                                TextFormField(
+                                  controller: _age,
+                                  keyboardType: TextInputType.number,
+                                  decoration: const InputDecoration(
+                                    hintText: 'e.g. 35',
+                                    prefixIcon: Icon(
+                                      Icons.cake_outlined,
+                                      color: AppColors.textLight,
+                                      size: 20,
+                                    ),
+                                  ),
+                                  onChanged: _onAgeChanged,
+                                  validator: (v) {
+                                    if (v == null || v.trim().isEmpty) {
+                                      return 'Age is required';
+                                    }
+                                    final num = int.tryParse(v.trim());
+                                    if (num == null || num < 0 || num > 125) {
+                                      return 'Enter 0 - 125';
+                                    }
+                                    return null;
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            flex: 6,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Date of birth',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.textDark,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                TextFormField(
+                                  controller: _dob,
+                                  readOnly: true,
+                                  onTap: _pickDate,
+                                  decoration: const InputDecoration(
+                                    hintText: 'DD / MM / YYYY',
+                                    prefixIcon: Icon(
+                                      Icons.calendar_today_outlined,
+                                      color: AppColors.textLight,
+                                      size: 20,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 18),
+
+                      const Text(
+                        'Blood group',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textDark,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      DropdownButtonFormField<String>(
+                        key: ValueKey('blood-$_selectedBloodGroup'),
+                        initialValue: _selectedBloodGroup,
+                        decoration: const InputDecoration(
+                          hintText: 'Select blood group',
+                          prefixIcon: Icon(
+                            Icons.favorite_outline_rounded,
+                            color: AppColors.textLight,
+                            size: 20,
+                          ),
+                        ),
+                        items: _bloodGroups.map((bg) {
+                          return DropdownMenuItem<String>(
+                            value: bg,
+                            child: Text(bg),
+                          );
+                        }).toList(),
+                        onChanged: (val) =>
+                            setState(() => _selectedBloodGroup = val),
+                      ),
+                      const SizedBox(height: 18),
+
+                      const Text(
+                        'Allergies / conditions',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textDark,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      TextFormField(
+                        controller: _notes,
+                        maxLines: 2,
+                        decoration: const InputDecoration(
+                          hintText: 'Optional medical notes',
+                          prefixIcon: Icon(
+                            Icons.description_outlined,
+                            color: AppColors.textLight,
+                            size: 20,
                           ),
                         ),
                       ),
+                      const SizedBox(height: 18),
+                      const Text(
+                        'Emergency contact',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textDark,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      TextFormField(
+                        controller: _emergencyContact,
+                        keyboardType: TextInputType.phone,
+                        decoration: const InputDecoration(
+                          hintText: 'Name and phone number',
+                          prefixIcon: Icon(
+                            Icons.emergency_outlined,
+                            color: AppColors.textLight,
+                            size: 20,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 32),
+
+                      SizedBox(
+                        width: double.infinity,
+                        height: 52,
+                        child: ElevatedButton(
+                          onPressed: _saving ? null : _submit,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                          ),
+                          child: _saving
+                              ? const SizedBox(
+                                  width: 22,
+                                  height: 22,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      _isEdit
+                                          ? 'Save changes'
+                                          : 'Save family member',
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    const Icon(
+                                      Icons.arrow_forward_rounded,
+                                      size: 18,
+                                    ),
+                                  ],
+                                ),
+                        ),
+                      ),
+                      const SizedBox(height: 18),
+                      if (!_isEdit)
+                        Center(
+                          child: Text(
+                            'Each person gets a unique Patient ID.',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.textLight,
+                            ),
+                          ),
+                        ),
+                      const SizedBox(height: 24),
                     ],
                   ),
                 ),
-                const SizedBox(height: 18),
-
-                // Full name
-                const Text(
-                  'Full name',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textDark,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                TextFormField(
-                  controller: _name,
-                  decoration: const InputDecoration(
-                    hintText: 'Enter member name',
-                    prefixIcon: Icon(
-                      Icons.person_outline_rounded,
-                      color: AppColors.textLight,
-                      size: 20,
-                    ),
-                  ),
-                  validator: (v) => (v == null || v.isEmpty)
-                      ? 'Please enter member name'
-                      : null,
-                ),
-                const SizedBox(height: 18),
-
-                // Relationship
-                const Text(
-                  'Relationship',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textDark,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                DropdownButtonFormField<String>(
-                  initialValue: _selectedRelation,
-                  decoration: const InputDecoration(
-                    hintText: 'Select relationship',
-                    prefixIcon: Icon(
-                      Icons.groups_outlined,
-                      color: AppColors.textLight,
-                      size: 20,
-                    ),
-                  ),
-                  items: _relations.map((rel) {
-                    return DropdownMenuItem<String>(
-                      value: rel,
-                      child: Text(rel),
-                    );
-                  }).toList(),
-                  validator: (v) => (v == null || v.isEmpty)
-                      ? 'Please select relationship'
-                      : null,
-                  onChanged: (val) => setState(() => _selectedRelation = val),
-                ),
-                if (_selectedRelation == 'Son' ||
-                    _selectedRelation == 'Daughter') ...[
-                  const SizedBox(height: 18),
-                  const Text(
-                    'Parent / linked adult',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textDark,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  DropdownButtonFormField<String>(
-                    initialValue: _selectedParentId,
-                    decoration: const InputDecoration(
-                      hintText: 'Select parent or guardian',
-                      prefixIcon: Icon(
-                        Icons.account_tree_outlined,
-                        color: AppColors.textLight,
-                        size: 20,
-                      ),
-                    ),
-                    items: possibleParents.map((parent) {
-                      return DropdownMenuItem<String>(
-                        value: parent.id,
-                        child: Text('${parent.name} • ${parent.relation}'),
-                      );
-                    }).toList(),
-                    onChanged: (value) =>
-                        setState(() => _selectedParentId = value),
-                  ),
-                ],
-                const SizedBox(height: 18),
-
-                // Age (Mandatory) & Date of Birth
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Age in years (REQUIRED)
-                    Expanded(
-                      flex: 5,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: const [
-                              Text(
-                                'Age (years)',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.textDark,
-                                ),
-                              ),
-                              SizedBox(width: 4),
-                              Text(
-                                '*',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w700,
-                                  color: Color(0xFFE53935),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 6),
-                          TextFormField(
-                            controller: _age,
-                            keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(
-                              hintText: 'e.g. 35',
-                              prefixIcon: Icon(
-                                Icons.cake_outlined,
-                                color: AppColors.textLight,
-                                size: 20,
-                              ),
-                            ),
-                            onChanged: _onAgeChanged,
-                            validator: (v) {
-                              if (v == null || v.trim().isEmpty) {
-                                return 'Age is required';
-                              }
-                              final num = int.tryParse(v.trim());
-                              if (num == null || num < 0 || num > 125) {
-                                return 'Enter 0 - 125';
-                              }
-                              return null;
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 14),
-                    // Date of birth (Optional exact picker)
-                    Expanded(
-                      flex: 6,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Date of birth',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.textDark,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          TextFormField(
-                            controller: _dob,
-                            readOnly: true,
-                            onTap: _pickDate,
-                            decoration: const InputDecoration(
-                              hintText: 'DD / MM / YYYY',
-                              prefixIcon: Icon(
-                                Icons.calendar_today_outlined,
-                                color: AppColors.textLight,
-                                size: 20,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 18),
-
-                // Blood group
-                const Text(
-                  'Blood group',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textDark,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                DropdownButtonFormField<String>(
-                  initialValue: _selectedBloodGroup,
-                  decoration: const InputDecoration(
-                    hintText: 'Select blood group',
-                    prefixIcon: Icon(
-                      Icons.favorite_outline_rounded,
-                      color: AppColors.textLight,
-                      size: 20,
-                    ),
-                  ),
-                  items: _bloodGroups.map((bg) {
-                    return DropdownMenuItem<String>(value: bg, child: Text(bg));
-                  }).toList(),
-                  onChanged: (val) => setState(() => _selectedBloodGroup = val),
-                ),
-                const SizedBox(height: 18),
-
-                // Allergies / conditions
-                const Text(
-                  'Allergies / conditions',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textDark,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                TextFormField(
-                  controller: _notes,
-                  maxLines: 2,
-                  decoration: const InputDecoration(
-                    hintText: 'Optional medical notes',
-                    prefixIcon: Icon(
-                      Icons.description_outlined,
-                      color: AppColors.textLight,
-                      size: 20,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 18),
-                const Text(
-                  'Emergency contact',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textDark,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                TextFormField(
-                  controller: _emergencyContact,
-                  keyboardType: TextInputType.phone,
-                  decoration: const InputDecoration(
-                    hintText: 'Name and phone number',
-                    prefixIcon: Icon(
-                      Icons.emergency_outlined,
-                      color: AppColors.textLight,
-                      size: 20,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 32),
-
-                // Save family member button
-                SizedBox(
-                  width: double.infinity,
-                  height: 52,
-                  child: ElevatedButton(
-                    onPressed: _saving ? null : _submit,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                    ),
-                    child: _saving
-                        ? const SizedBox(
-                            width: 22,
-                            height: 22,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2,
-                            ),
-                          )
-                        : const Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                'Save family member',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                              SizedBox(width: 8),
-                              Icon(Icons.arrow_forward_rounded, size: 18),
-                            ],
-                          ),
-                  ),
-                ),
-                const SizedBox(height: 18),
-                Center(
-                  child: Text(
-                    'Each person gets a unique Patient ID.',
-                    style: TextStyle(fontSize: 12, color: AppColors.textLight),
-                  ),
-                ),
-                const SizedBox(height: 24),
-              ],
+              ),
             ),
-          ),
-        ),
-      ),
     );
   }
 }

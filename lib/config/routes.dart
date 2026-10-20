@@ -6,6 +6,7 @@ import '../screens/auth/login_screen.dart';
 import '../screens/auth/register_screen.dart';
 import '../screens/auth/forgot_screen.dart';
 import '../screens/auth/email_verification_screen.dart';
+import '../screens/auth/owner_setup_screen.dart';
 import '../screens/home/dashboard_screen.dart';
 import '../screens/family/family_list_screen.dart';
 import '../screens/family/family_form_screen.dart';
@@ -38,12 +39,14 @@ class AppRoutes {
   static const register = '/register';
   static const forgot = '/forgot';
   static const verifyEmail = '/verify-email';
+  static const ownerSetup = '/owner-setup';
   static const dashboard = '/dashboard';
   static const families = '/families';
   static const familyAdd = '/families/add';
   static const familyDetail = '/families/:id';
   static const members = '/members';
   static const memberAdd = '/members/add';
+  static const memberEdit = '/members/:id/edit';
   static const memberDetail = '/members/:id';
   static const doctors = '/doctors';
   static const doctorAdd = '/doctors/add';
@@ -80,7 +83,7 @@ class AppRoutes {
 
       if (!loggedIn && !publicRoute) return login;
       if (loggedIn && (location == register || location == onboarding)) {
-        return dashboard;
+        return ownerSetup;
       }
       return null;
     },
@@ -96,6 +99,7 @@ class AppRoutes {
           email: state.uri.queryParameters['email'] ?? '',
         ),
       ),
+      GoRoute(path: ownerSetup, builder: (_, _) => const OwnerSetupScreen()),
       GoRoute(
         path: sharedMember,
         builder: (_, state) =>
@@ -112,6 +116,11 @@ class AppRoutes {
       GoRoute(path: members, builder: (_, _) => const MemberListScreen()),
       GoRoute(path: memberAdd, builder: (_, _) => const MemberFormScreen()),
       GoRoute(
+        path: memberEdit,
+        builder: (_, state) =>
+            MemberFormScreen(memberId: state.pathParameters['id']),
+      ),
+      GoRoute(
         path: memberDetail,
         builder: (_, state) =>
             MemberDetailScreen(id: state.pathParameters['id']!),
@@ -124,14 +133,22 @@ class AppRoutes {
             DoctorDetailScreen(id: state.pathParameters['id']!),
       ),
       GoRoute(path: visits, builder: (_, _) => const VisitListScreen()),
-      GoRoute(path: visitAdd, builder: (_, _) => const VisitFormScreen()),
+      GoRoute(
+        path: visitAdd,
+        builder: (_, state) =>
+            VisitFormScreen(memberId: state.uri.queryParameters['memberId']),
+      ),
       GoRoute(
         path: visitDetail,
         builder: (_, state) =>
             VisitDetailScreen(id: state.pathParameters['id']!),
       ),
       GoRoute(path: documents, builder: (_, _) => const DocsScreen()),
-      GoRoute(path: uploadDoc, builder: (_, _) => const UploadDocScreen()),
+      GoRoute(
+        path: uploadDoc,
+        builder: (_, state) =>
+            UploadDocScreen(memberId: state.uri.queryParameters['memberId']),
+      ),
       GoRoute(
         path: appointments,
         builder: (_, _) => const AppointmentsScreen(),

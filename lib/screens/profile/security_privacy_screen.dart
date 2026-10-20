@@ -134,7 +134,7 @@ class _SecurityPrivacyScreenState extends State<SecurityPrivacyScreen> {
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 112),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

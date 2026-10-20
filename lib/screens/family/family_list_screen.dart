@@ -6,7 +6,6 @@ import '../../config/routes.dart';
 import '../../config/supabase_config.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/family_provider.dart';
-import '../../widgets/bottom_nav.dart';
 import '../../widgets/hero_health_card.dart';
 import '../../widgets/info_banner.dart';
 
@@ -255,7 +254,6 @@ class _FamilyListScreenState extends State<FamilyListScreen> {
           ),
         ),
       ),
-      bottomNavigationBar: const BottomNav(currentIndex: 1),
     );
   }
 

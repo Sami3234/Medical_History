@@ -44,7 +44,7 @@ class _LoginScreenState extends State<LoginScreen> {
     );
     if (!mounted) return;
     if (ok) {
-      context.go(AppRoutes.dashboard);
+      context.go(AppRoutes.ownerSetup);
     } else {
       context.showSnack(auth.error ?? 'Login failed', isError: true);
     }
@@ -55,7 +55,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final ok = await auth.signInWithGoogle();
     if (!mounted) return;
     if (ok) {
-      context.go(AppRoutes.dashboard);
+      context.go(AppRoutes.ownerSetup);
     } else if (auth.error != null) {
       context.showSnack(auth.error!, isError: true);
     }
@@ -73,7 +73,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final ok = await auth.authenticateWithBiometrics();
     if (!mounted) return;
     if (ok) {
-      context.go(AppRoutes.dashboard);
+      context.go(AppRoutes.ownerSetup);
     } else if (auth.error != null) {
       context.showSnack(auth.error!, isError: true);
     }

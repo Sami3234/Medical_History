@@ -50,6 +50,17 @@ class FamilyService {
 
   Future<void> delete(String id) async {
     if (SupabaseConfig.isInitialized && SupabaseConfig.db != null) {
+      final ownerMembers = await SupabaseConfig.db!
+          .from('members')
+          .select('id')
+          .eq('family_id', id)
+          .ilike('relation', 'self')
+          .limit(1);
+      if (ownerMembers.isNotEmpty) {
+        throw StateError(
+          'The family containing your permanent Self profile cannot be deleted.',
+        );
+      }
       await SupabaseConfig.db!.from('families').delete().eq('id', id);
     } else {
       throw StateError('Supabase is not available. Please try again later.');

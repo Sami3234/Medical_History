@@ -6,7 +6,6 @@ import '../../config/routes.dart';
 import '../../config/supabase_config.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/member_provider.dart';
-import '../../widgets/bottom_nav.dart';
 import '../../widgets/app_avatar.dart';
 
 class MemberListScreen extends StatefulWidget {
@@ -48,7 +47,7 @@ class _MemberListScreenState extends State<MemberListScreen> {
     return Scaffold(
       backgroundColor: AppColors.bg,
       appBar: AppBar(
-        title: const Text('All Family Members'),
+        title: const Text('Family members'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
           onPressed: () => context.canPop()
@@ -101,6 +100,16 @@ class _MemberListScreenState extends State<MemberListScreen> {
                     focusedBorder: InputBorder.none,
                     contentPadding: EdgeInsets.symmetric(vertical: 14),
                   ),
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: () => context.push(AppRoutes.memberAdd),
+                  icon: const Icon(Icons.person_add_alt_1_rounded),
+                  label: const Text('Add family member'),
                 ),
               ),
               const SizedBox(height: 20),
@@ -189,7 +198,6 @@ class _MemberListScreenState extends State<MemberListScreen> {
           ),
         ),
       ),
-      bottomNavigationBar: const BottomNav(currentIndex: 1),
     );
   }
 }

@@ -197,7 +197,7 @@ class MedicalSummarySheet extends StatelessWidget {
                             border: Border.all(color: const Color(0xFFCBD5E1)),
                           ),
                           child: Text(
-                            member.bloodGroup ?? 'O+',
+                            member.bloodGroup ?? 'Not recorded',
                             style: const TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w900,
@@ -377,7 +377,7 @@ class MedicalSummarySheet extends StatelessWidget {
           else
             ...visits.map(
               (v) => pw.Text(
-                '${DateFormat('dd MMM yyyy').format(v.visitDate)} — ${v.doctorName ?? 'Doctor'} — ${v.diagnosis ?? v.notes ?? 'Visit'}',
+                '${DateFormat('dd MMM yyyy').format(v.visitDate)} — ${v.doctorName ?? 'Doctor not recorded'} — ${v.diagnosis ?? v.notes ?? 'Visit details not recorded'}',
               ),
             ),
           pw.Header(level: 1, child: pw.Text('Vaccines')),
@@ -438,7 +438,7 @@ class MedicalSummarySheet extends StatelessWidget {
           Row(
             children: [
               _dataCell('Relationship', member.relation),
-              _dataCell('Blood Group', member.bloodGroup ?? 'O+'),
+              _dataCell('Blood Group', member.bloodGroup ?? 'Not recorded'),
             ],
           ),
           if (member.emergencyContact != null &&
@@ -559,25 +559,25 @@ class MedicalSummarySheet extends StatelessWidget {
       children: [
         _vitalMiniCard(
           'BP',
-          bp != null ? '${bp.value} ${bp.unit}' : '120/80 mmHg',
+          bp != null ? '${bp.value} ${bp.unit}' : 'Not recorded',
           Icons.speed_rounded,
         ),
         const SizedBox(width: 8),
         _vitalMiniCard(
           'Sugar',
-          sugar != null ? '${sugar.value} ${sugar.unit}' : '105 mg/dL',
+          sugar != null ? '${sugar.value} ${sugar.unit}' : 'Not recorded',
           Icons.bloodtype_rounded,
         ),
         const SizedBox(width: 8),
         _vitalMiniCard(
           'Pulse',
-          hr != null ? '${hr.value} ${hr.unit}' : '72 bpm',
+          hr != null ? '${hr.value} ${hr.unit}' : 'Not recorded',
           Icons.favorite_rounded,
         ),
         const SizedBox(width: 8),
         _vitalMiniCard(
           'Weight',
-          weight != null ? '${weight.value} ${weight.unit}' : '68 kg',
+          weight != null ? '${weight.value} ${weight.unit}' : 'Not recorded',
           Icons.monitor_weight_rounded,
         ),
       ],
@@ -702,7 +702,7 @@ class MedicalSummarySheet extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '${vac.name} (${vac.dose ?? "Dose"})',
+                  '${vac.name} (${vac.dose ?? "Dose not recorded"})',
                   style: const TextStyle(
                     fontSize: 12.5,
                     fontWeight: FontWeight.w700,
@@ -710,7 +710,7 @@ class MedicalSummarySheet extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  '${DateFormat('dd MMM yyyy').format(vac.administeredDate)} • ${vac.administeredBy ?? "Health Center"}',
+                  '${DateFormat('dd MMM yyyy').format(vac.administeredDate)} • ${vac.administeredBy ?? "Provider not recorded"}',
                   style: const TextStyle(
                     fontSize: 11,
                     color: AppColors.textLight,
@@ -761,7 +761,7 @@ class MedicalSummarySheet extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  visit.diagnosis ?? 'General Consultation',
+                  visit.diagnosis ?? 'Diagnosis not recorded',
                   style: const TextStyle(
                     fontSize: 12.5,
                     fontWeight: FontWeight.w700,
@@ -769,7 +769,7 @@ class MedicalSummarySheet extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  '${DateFormat('dd MMM yyyy').format(visit.visitDate)} • ${visit.doctorName ?? "Consulting Physician"}',
+                  '${DateFormat('dd MMM yyyy').format(visit.visitDate)} • ${visit.doctorName ?? "Doctor not recorded"}',
                   style: const TextStyle(
                     fontSize: 11,
                     color: AppColors.textLight,

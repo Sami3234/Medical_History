@@ -1,5 +1,9 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../config/theme.dart';
+import '../models/doctor_model.dart';
 import '../models/member_model.dart';
 import 'app_avatar.dart';
 
@@ -137,6 +141,9 @@ Color getRelationBadgeColor(String? relation) {
   if (rel == 'spouse' || rel == 'wife' || rel == 'husband') {
     return const Color(0xFFE11D48);
   }
+  if (rel == 'brother' || rel == 'sister') {
+    return const Color(0xFF7C3AED);
+  }
   if (rel.contains('father') || rel.contains('mother')) {
     return const Color(0xFF0D9488);
   }
@@ -151,59 +158,162 @@ Color getRelationBadgeColor(String? relation) {
   return const Color(0xFF64748B);
 }
 
-/// Custom painter for authentic continuous tree branch lines
-class TreeBranchLinePainter extends CustomPainter {
-  final bool isLast;
-  final Color lineColor;
-  final double strokeWidth;
-  final double? trunkX;
+class GenerationConnectorPainter extends CustomPainter {
+  final int memberCount;
+  final double cardWidth;
+  final double spacing;
+  final Color color;
 
-  TreeBranchLinePainter({
-    required this.isLast,
-    this.lineColor = const Color(0xFF94A3B8),
-    this.strokeWidth = 2.0,
-    this.trunkX,
+  const GenerationConnectorPainter({
+    required this.memberCount,
+    required this.cardWidth,
+    required this.spacing,
+    required this.color,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (memberCount == 0) return;
+    final paint = Paint()
+      ..color = color.withAlpha(145)
+      ..strokeWidth = 1.8
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+    final cardsWidth =
+        memberCount * cardWidth + math.max(0, memberCount - 1) * spacing;
+    final firstCenter = (size.width - cardsWidth) / 2 + cardWidth / 2;
+    final lastCenter = firstCenter + (memberCount - 1) * (cardWidth + spacing);
+    final centerX = size.width / 2;
+    const junctionY = 13.0;
+
+    canvas.drawLine(Offset(centerX, 0), Offset(centerX, junctionY), paint);
+    canvas.drawLine(
+      Offset(firstCenter, junctionY),
+      Offset(lastCenter, junctionY),
+      paint,
+    );
+    for (var index = 0; index < memberCount; index++) {
+      final x = firstCenter + index * (cardWidth + spacing);
+      canvas.drawLine(Offset(x, junctionY), Offset(x, size.height), paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant GenerationConnectorPainter oldDelegate) =>
+      oldDelegate.memberCount != memberCount ||
+      oldDelegate.cardWidth != cardWidth ||
+      oldDelegate.spacing != spacing ||
+      oldDelegate.color != color;
+}
+
+class CoupleContinuationPainter extends CustomPainter {
+  final double ownerX;
+  final double? spouseX;
+  final double targetX;
+  final Color color;
+
+  const CoupleContinuationPainter({
+    required this.ownerX,
+    required this.targetX,
+    required this.color,
+    this.spouseX,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = lineColor
-      ..strokeWidth = strokeWidth
+      ..color = color.withAlpha(145)
+      ..strokeWidth = 1.8
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
+    const junctionY = 7.0;
+    const routeY = 12.0;
+    final partnerX = spouseX;
 
-    final startX = trunkX ?? size.width / 2;
-    final midY = size.height / 2;
+    if (partnerX == null) {
+      final path = Path()
+        ..moveTo(ownerX, 0)
+        ..lineTo(ownerX, routeY)
+        ..lineTo(targetX, routeY)
+        ..lineTo(targetX, size.height);
+      canvas.drawPath(path, paint);
+      return;
+    }
 
-    // Continuous vertical trunk line:
-    // If not last, draw full height from 0 to size.height
-    // If last, draw from 0 down to midY
+    final coupleCenter = (ownerX + partnerX) / 2;
+    canvas.drawLine(Offset(ownerX, 0), Offset(ownerX, junctionY), paint);
+    canvas.drawLine(Offset(partnerX, 0), Offset(partnerX, junctionY), paint);
     canvas.drawLine(
-      Offset(startX, 0),
-      Offset(startX, isLast ? midY : size.height),
+      Offset(ownerX, junctionY),
+      Offset(partnerX, junctionY),
       paint,
     );
-
-    // Curved branch arm turning into the child node
-    final path = Path();
-    path.moveTo(startX, midY);
-    path.quadraticBezierTo(startX + 4, midY, size.width, midY);
+    final path = Path()
+      ..moveTo(coupleCenter, junctionY)
+      ..lineTo(coupleCenter, routeY)
+      ..lineTo(targetX, routeY)
+      ..lineTo(targetX, size.height);
     canvas.drawPath(path, paint);
-
-    // Branch node connection dot
-    final dotPaint = Paint()
-      ..color = lineColor
-      ..style = PaintingStyle.fill;
-    canvas.drawCircle(Offset(startX, midY), 3.2, dotPaint);
   }
 
   @override
-  bool shouldRepaint(covariant TreeBranchLinePainter oldDelegate) =>
-      oldDelegate.isLast != isLast ||
-      oldDelegate.lineColor != lineColor ||
-      oldDelegate.strokeWidth != strokeWidth ||
-      oldDelegate.trunkX != trunkX;
+  bool shouldRepaint(covariant CoupleContinuationPainter oldDelegate) =>
+      oldDelegate.ownerX != ownerX ||
+      oldDelegate.spouseX != spouseX ||
+      oldDelegate.targetX != targetX ||
+      oldDelegate.color != color;
+}
+
+class DoctorConnectorPainter extends CustomPainter {
+  final int doctorCount;
+  final double avatarSize;
+  final double spacing;
+  final Color color;
+
+  const DoctorConnectorPainter({
+    required this.doctorCount,
+    required this.avatarSize,
+    required this.spacing,
+    required this.color,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (doctorCount == 0) return;
+    final paint = Paint()
+      ..color = color.withAlpha(145)
+      ..strokeWidth = 1.8
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+    final firstCenter = avatarSize / 2;
+    final lastCenter = firstCenter + (doctorCount - 1) * (avatarSize + spacing);
+    final centerX = size.width / 2;
+    final junctionY = doctorCount == 1 ? size.height : size.height * 0.55;
+
+    canvas.drawLine(Offset(centerX, 0), Offset(centerX, junctionY), paint);
+    if (doctorCount > 1) {
+      canvas.drawLine(
+        Offset(firstCenter, junctionY),
+        Offset(lastCenter, junctionY),
+        paint,
+      );
+      for (var index = 0; index < doctorCount; index++) {
+        final doctorX = firstCenter + index * (avatarSize + spacing);
+        canvas.drawLine(
+          Offset(doctorX, junctionY),
+          Offset(doctorX, size.height),
+          paint,
+        );
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant DoctorConnectorPainter oldDelegate) =>
+      oldDelegate.doctorCount != doctorCount ||
+      oldDelegate.avatarSize != avatarSize ||
+      oldDelegate.spacing != spacing ||
+      oldDelegate.color != color;
 }
 
 /// Modern interactive family tree with genuine tree branch connectors,
@@ -211,17 +321,25 @@ class TreeBranchLinePainter extends CustomPainter {
 class InteractiveTreeView extends StatefulWidget {
   final List<TreeNode>? nodes;
   final List<MemberModel>? members;
+  final Map<String, List<DoctorModel>> memberDoctors;
+  final String? currentUserName;
   final String? familyName;
   final void Function(MemberModel member)? onMemberTap;
   final VoidCallback? onAddMember;
+  final bool showToolbar;
+  final bool showRootNode;
 
   const InteractiveTreeView({
     super.key,
     this.nodes,
     this.members,
+    this.memberDoctors = const {},
+    this.currentUserName,
     this.familyName,
     this.onMemberTap,
     this.onAddMember,
+    this.showToolbar = true,
+    this.showRootNode = true,
   });
 
   @override
@@ -231,9 +349,21 @@ class InteractiveTreeView extends StatefulWidget {
 enum TreeDisplayMode { hierarchical, generational }
 
 class _InteractiveTreeViewState extends State<InteractiveTreeView> {
-  bool _rootExpanded = true;
-  final Set<String> _expandedBranches = {'gen-1', 'gen-2', 'gen-3', 'gen-4'};
+  Set<String>? _collapsedBranches;
   TreeDisplayMode _displayMode = TreeDisplayMode.hierarchical;
+  final TransformationController _treeController = TransformationController();
+  final GlobalKey _treeContentKey = GlobalKey();
+  bool _treeWasMoved = false;
+  double _fitScale = 1;
+  double _treeScale = 1;
+  double _treeContentHeight = 0;
+  double _lastCanvasWidth = 0;
+
+  @override
+  void dispose() {
+    _treeController.dispose();
+    super.dispose();
+  }
 
   List<MemberModel> _getSortedMembers() {
     final list = List<MemberModel>.from(widget.members ?? []);
@@ -248,10 +378,11 @@ class _InteractiveTreeViewState extends State<InteractiveTreeView> {
 
   void _toggleBranch(String branchId) {
     setState(() {
-      if (_expandedBranches.contains(branchId)) {
-        _expandedBranches.remove(branchId);
+      final collapsedBranches = _collapsedBranches ??= <String>{};
+      if (collapsedBranches.contains(branchId)) {
+        collapsedBranches.remove(branchId);
       } else {
-        _expandedBranches.add(branchId);
+        collapsedBranches.add(branchId);
       }
     });
   }
@@ -277,133 +408,356 @@ class _InteractiveTreeViewState extends State<InteractiveTreeView> {
         .map((m) => FamilyGeneration.fromRelation(m.relation))
         .toSet();
 
-    final familyTitle = widget.familyName ?? 'Family Tree';
+    MemberModel? ownerMember;
+    for (final member in members) {
+      if (_isCurrentUserMember(member)) {
+        ownerMember = member;
+        break;
+      }
+    }
+    final familyTitle = ownerMember?.name ?? widget.familyName ?? 'Family Tree';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // ── Top Bar: Hierarchy Stats & Mode Switcher ───────────────────
-        LayoutBuilder(
-          builder: (context, constraints) {
-            final stats = Wrap(
-              spacing: 8,
-              runSpacing: 6,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 9,
-                    vertical: 3.5,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withAlpha(20),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: AppColors.primary.withAlpha(50)),
-                  ),
-                  child: Text(
-                    '${activeGenerations.length} Generations',
-                    style: const TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.primary,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  '${members.length} Members',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textLight,
-                  ),
-                ),
-              ],
-            );
-            final modeToggle = Container(
-              padding: const EdgeInsets.all(2.5),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF1F5F9),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: AppColors.border),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
+        if (widget.showToolbar)
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final stats = Wrap(
+                spacing: 8,
+                runSpacing: 6,
+                crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
-                  _buildModeToggleBtn(
-                    label: 'Tree',
-                    icon: Icons.account_tree_rounded,
-                    isSelected: _displayMode == TreeDisplayMode.hierarchical,
-                    onTap: () => setState(
-                      () => _displayMode = TreeDisplayMode.hierarchical,
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 9,
+                      vertical: 3.5,
                     ),
-                  ),
-                  _buildModeToggleBtn(
-                    label: 'Generations',
-                    icon: Icons.alt_route_rounded,
-                    isSelected: _displayMode == TreeDisplayMode.generational,
-                    onTap: () => setState(
-                      () => _displayMode = TreeDisplayMode.generational,
-                    ),
-                  ),
-                ],
-              ),
-            );
-
-            if (constraints.maxWidth < 420) {
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  stats,
-                  const SizedBox(height: 8),
-                  Align(alignment: Alignment.centerRight, child: modeToggle),
-                ],
-              );
-            }
-
-            return Row(
-              children: [
-                Expanded(child: stats),
-                const SizedBox(width: 10),
-                modeToggle,
-              ],
-            );
-          },
-        ),
-        const SizedBox(height: 12),
-
-        // ── Root Family Node (Tree Trunk Header) ───────────────────────
-        _buildRootFamilyNode(familyTitle, members.length),
-
-        // ── Tree Branches & Leaves ─────────────────────────────────────
-        AnimatedSize(
-          duration: const Duration(milliseconds: 250),
-          curve: Curves.easeInOut,
-          child: _rootExpanded
-              ? Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Trunk top stem connector - centered at 24.0 to match branches
-                    Padding(
-                      padding: const EdgeInsets.only(left: 23),
-                      child: Container(
-                        width: 2,
-                        height: 14,
-                        color: const Color(0xFF94A3B8),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withAlpha(20),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: AppColors.primary.withAlpha(50),
                       ),
                     ),
-                    if (_displayMode == TreeDisplayMode.hierarchical)
-                      // Direct relational tree
-                      ..._buildDirectTreeMembers(members)
-                    else
-                      // Generational branched tree
-                      ..._buildGenerationalTreeBranches(members),
+                    child: Text(
+                      '${activeGenerations.length} Generations',
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    '${members.length} Members',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textLight,
+                    ),
+                  ),
+                ],
+              );
+              final modeToggle = Container(
+                padding: const EdgeInsets.all(2.5),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _buildModeToggleBtn(
+                      label: 'Tree',
+                      icon: Icons.account_tree_rounded,
+                      isSelected: _displayMode == TreeDisplayMode.hierarchical,
+                      onTap: () => setState(
+                        () => _displayMode = TreeDisplayMode.hierarchical,
+                      ),
+                    ),
+                    _buildModeToggleBtn(
+                      label: 'Generations',
+                      icon: Icons.alt_route_rounded,
+                      isSelected: _displayMode == TreeDisplayMode.generational,
+                      onTap: () => setState(
+                        () => _displayMode = TreeDisplayMode.generational,
+                      ),
+                    ),
                   ],
-                )
-              : const SizedBox.shrink(),
-        ),
+                ),
+              );
+
+              if (constraints.maxWidth < 420) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    stats,
+                    const SizedBox(height: 8),
+                    Align(alignment: Alignment.centerRight, child: modeToggle),
+                  ],
+                );
+              }
+
+              return Row(
+                children: [
+                  Expanded(child: stats),
+                  const SizedBox(width: 10),
+                  modeToggle,
+                ],
+              );
+            },
+          ),
+        if (widget.showToolbar) const SizedBox(height: 12),
+
+        if (widget.showRootNode)
+          _buildRootFamilyNode(familyTitle, members.length),
+        if (widget.showRootNode)
+          Align(
+            alignment: Alignment.center,
+            child: Container(
+              width: 2,
+              height: 14,
+              color: const Color(0xFF94A3B8),
+            ),
+          ),
+        _buildZoomableTreeCanvas(members),
       ],
     );
+  }
+
+  Widget _buildZoomableTreeCanvas(List<MemberModel> members) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final viewportWidth = constraints.maxWidth;
+        final canvasWidth = _calculateTreeCanvasWidth(members, viewportWidth);
+        final nextFitScale = (viewportWidth / canvasWidth).clamp(0.72, 1.0);
+
+        if (!_treeWasMoved && (_lastCanvasWidth - canvasWidth).abs() > 0.5) {
+          _lastCanvasWidth = canvasWidth;
+          _fitScale = nextFitScale;
+          _treeScale = nextFitScale;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted || _treeWasMoved) return;
+            _treeController.value = Matrix4.diagonal3Values(
+              _fitScale,
+              _fitScale,
+              1,
+            );
+          });
+        }
+        _scheduleTreeContentMeasurement();
+        final fallbackHeight = _calculateTreeCanvasHeight(members);
+        final viewportHeight = math.max(
+          70.0,
+          (_treeContentHeight > 0 ? _treeContentHeight : fallbackHeight) *
+                  _treeScale +
+              4,
+        );
+
+        return SizedBox(
+          width: viewportWidth,
+          height: viewportHeight,
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: InteractiveViewer(
+                  transformationController: _treeController,
+                  alignment: Alignment.topCenter,
+                  constrained: false,
+                  minScale: 0.35,
+                  maxScale: 2.4,
+                  boundaryMargin: const EdgeInsets.all(180),
+                  panAxis: PanAxis.horizontal,
+                  trackpadScrollCausesScale: true,
+                  onInteractionStart: (_) => _treeWasMoved = true,
+                  onInteractionEnd: (_) {
+                    final nextScale = _treeController.value.getMaxScaleOnAxis();
+                    if ((_treeScale - nextScale).abs() > 0.01 && mounted) {
+                      setState(() => _treeScale = nextScale);
+                    }
+                  },
+                  child: SizedBox(
+                    key: _treeContentKey,
+                    width: canvasWidth,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (_displayMode == TreeDisplayMode.hierarchical)
+                          ..._buildDirectTreeMembers(members)
+                        else
+                          ..._buildGenerationalTreeBranches(members),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              Positioned(
+                top: 8,
+                right: 8,
+                child: Tooltip(
+                  message: 'Reset tree view',
+                  child: Material(
+                    color: Colors.white.withAlpha(225),
+                    shape: const CircleBorder(),
+                    elevation: 2,
+                    child: InkWell(
+                      customBorder: const CircleBorder(),
+                      onTap: () {
+                        setState(() {
+                          _treeWasMoved = false;
+                          _treeScale = _fitScale;
+                        });
+                        _treeController.value = Matrix4.diagonal3Values(
+                          _fitScale,
+                          _fitScale,
+                          1,
+                        );
+                      },
+                      child: const Padding(
+                        padding: EdgeInsets.all(8),
+                        child: Icon(
+                          Icons.fit_screen_rounded,
+                          size: 18,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _scheduleTreeContentMeasurement() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final renderBox =
+          _treeContentKey.currentContext?.findRenderObject() as RenderBox?;
+      final measuredHeight = renderBox?.size.height ?? 0;
+      if (measuredHeight > 0 &&
+          (_treeContentHeight - measuredHeight).abs() > 0.5) {
+        setState(() => _treeContentHeight = measuredHeight);
+      }
+    });
+  }
+
+  double _calculateTreeCanvasWidth(
+    List<MemberModel> members,
+    double viewportWidth,
+  ) {
+    final groups = <({int count, double cardWidth})>[
+      (
+        count: members
+            .where(
+              (member) =>
+                  FamilyGeneration.fromRelation(member.relation) ==
+                  FamilyGeneration.grandparents,
+            )
+            .length,
+        cardWidth: 214,
+      ),
+      (
+        count: members.where((member) {
+          final relation = member.relation.toLowerCase().trim();
+          return relation == 'father' || relation == 'mother';
+        }).length,
+        cardWidth: 214,
+      ),
+      (
+        count: members.where((member) {
+          final relation = member.relation.toLowerCase().trim();
+          return _isCurrentUserMember(member) ||
+              relation == 'spouse' ||
+              relation == 'wife' ||
+              relation == 'husband' ||
+              relation == 'brother' ||
+              relation == 'sister';
+        }).length,
+        cardWidth: 214,
+      ),
+      (
+        count: members
+            .where(
+              (member) =>
+                  !_isCurrentUserMember(member) &&
+                  FamilyGeneration.fromRelation(member.relation) ==
+                      FamilyGeneration.children,
+            )
+            .length,
+        cardWidth: 176,
+      ),
+      (
+        count: members
+            .where(
+              (member) =>
+                  FamilyGeneration.fromRelation(member.relation) ==
+                  FamilyGeneration.other,
+            )
+            .length,
+        cardWidth: 214,
+      ),
+    ];
+    var requiredWidth = viewportWidth;
+    for (final group in groups) {
+      if (group.count == 0) continue;
+      final groupWidth =
+          group.count * group.cardWidth + math.max(0, group.count - 1) * 14;
+      requiredWidth = math.max(requiredWidth, groupWidth + 24);
+    }
+    return requiredWidth;
+  }
+
+  double _calculateTreeCanvasHeight(List<MemberModel> members) {
+    var groupCount = 0;
+    if (members.any(
+      (member) =>
+          FamilyGeneration.fromRelation(member.relation) ==
+          FamilyGeneration.grandparents,
+    )) {
+      groupCount++;
+    }
+    if (members.any((member) {
+      final relation = member.relation.toLowerCase().trim();
+      return relation == 'father' || relation == 'mother';
+    })) {
+      groupCount++;
+    }
+    if (members.any((member) {
+      final relation = member.relation.toLowerCase().trim();
+      return _isCurrentUserMember(member) ||
+          relation == 'spouse' ||
+          relation == 'wife' ||
+          relation == 'husband' ||
+          relation == 'brother' ||
+          relation == 'sister';
+    })) {
+      groupCount++;
+    }
+    if (members.any(
+      (member) =>
+          !_isCurrentUserMember(member) &&
+          FamilyGeneration.fromRelation(member.relation) ==
+              FamilyGeneration.children,
+    )) {
+      groupCount++;
+    }
+    if (members.any(
+      (member) =>
+          FamilyGeneration.fromRelation(member.relation) ==
+          FamilyGeneration.other,
+    )) {
+      groupCount++;
+    }
+    return math.max(1, groupCount) * 180 + 24;
   }
 
   Widget _buildModeToggleBtn({
@@ -454,90 +808,67 @@ class _InteractiveTreeViewState extends State<InteractiveTreeView> {
 
   // ── Root Node: Family Trunk ──────────────────────────────────────────
   Widget _buildRootFamilyNode(String familyTitle, int count) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () => setState(() => _rootExpanded = !_rootExpanded),
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF235E1E), Color(0xFF2E7D25)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
         borderRadius: BorderRadius.circular(16),
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF235E1E), Color(0xFF2E7D25)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF235E1E).withAlpha(45),
-                blurRadius: 8,
-                offset: const Offset(0, 3),
-              ),
-            ],
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF235E1E).withAlpha(45),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
           ),
-          child: Row(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: Colors.white.withAlpha(45),
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white70, width: 1.2),
-                ),
-                child: const Icon(
-                  Icons.family_restroom_rounded,
-                  color: Colors.white,
-                  size: 22,
-                ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      familyTitle,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w800,
-                        color: Colors.white,
-                        letterSpacing: 0.2,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      '$count family members registered',
-                      style: TextStyle(
-                        fontSize: 11.5,
-                        color: Colors.white.withAlpha(210),
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: Colors.white.withAlpha(35),
-                  shape: BoxShape.circle,
-                ),
-                child: AnimatedRotation(
-                  turns: _rootExpanded ? 0.5 : 0.0,
-                  duration: const Duration(milliseconds: 200),
-                  child: const Icon(
-                    Icons.keyboard_arrow_down_rounded,
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: Colors.white.withAlpha(45),
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.white70, width: 1.2),
+            ),
+            child: const Icon(
+              Icons.family_restroom_rounded,
+              color: Colors.white,
+              size: 22,
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  familyTitle,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
                     color: Colors.white,
-                    size: 20,
+                    letterSpacing: 0.2,
                   ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 2),
+                Text(
+                  '$count family members registered',
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    color: Colors.white.withAlpha(210),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -549,66 +880,12 @@ class _InteractiveTreeViewState extends State<InteractiveTreeView> {
     return _buildGenerationalTreeBranches(members);
   }
 
-  String _childrenParentLabel(
-    List<MemberModel> members, {
-    List<MemberModel>? children,
-  }) {
-    final parentIds = children
-        ?.map((child) => child.parentId)
-        .whereType<String>()
-        .toSet();
-    if (parentIds != null && parentIds.isNotEmpty) {
-      final parentNames = members
-          .where((member) => parentIds.contains(member.id))
-          .map((member) => member.name)
-          .toList();
-      if (parentNames.isNotEmpty) return parentNames.join(' & ');
-    }
-
-    String? selfName;
-    String? spouseName;
-
-    for (final member in members) {
-      final relation = member.relation.toLowerCase().trim();
-      if (relation == 'self') selfName = member.name;
-      if (relation == 'spouse' || relation == 'wife' || relation == 'husband') {
-        spouseName = member.name;
-      }
-    }
-
-    if (selfName != null && spouseName != null) {
-      return '$selfName & $spouseName';
-    }
-    return selfName ?? spouseName ?? widget.familyName ?? 'Core Family';
-  }
-
-  List<Widget> _buildLocalBranchMembers(
-    List<MemberModel> members,
-    FamilyGeneration generation, {
-    bool compact = false,
-  }) {
-    return List.generate(members.length, (index) {
-      return Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          CustomPaint(
-            painter: TreeBranchLinePainter(
-              isLast: index == members.length - 1,
-              lineColor: generation.color.withAlpha(145),
-              strokeWidth: 1.8,
-              trunkX: 10,
-            ),
-            size: Size(30, compact ? 62 : 74),
-          ),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.only(bottom: 6),
-              child: _buildMemberCard(members[index], compact: compact),
-            ),
-          ),
-        ],
-      );
-    });
+  bool _isCurrentUserMember(MemberModel member) {
+    final normalizedUserName = widget.currentUserName?.trim().toLowerCase();
+    return member.relation.toLowerCase().trim() == 'self' ||
+        (normalizedUserName != null &&
+            normalizedUserName.isNotEmpty &&
+            member.name.trim().toLowerCase() == normalizedUserName);
   }
 
   // ── Mode 2: Generational Branches (Grandparents -> Parents -> Children) ─
@@ -620,18 +897,28 @@ class _InteractiveTreeViewState extends State<InteractiveTreeView> {
               FamilyGeneration.grandparents,
         )
         .toList();
-    final parents = members
-        .where(
-          (m) =>
-              FamilyGeneration.fromRelation(m.relation) ==
-              FamilyGeneration.parents,
-        )
-        .toList();
+    final parents = members.where((member) {
+      final relation = member.relation.toLowerCase().trim();
+      return relation == 'father' || relation == 'mother';
+    }).toList();
+    final ownerMembers = members.where(_isCurrentUserMember).toList();
+    final spouseMembers = members.where((member) {
+      final relation = member.relation.toLowerCase().trim();
+      return relation == 'spouse' ||
+          relation == 'wife' ||
+          relation == 'husband';
+    }).toList();
+    final siblingMembers = members.where((member) {
+      final relation = member.relation.toLowerCase().trim();
+      return relation == 'brother' || relation == 'sister';
+    }).toList();
+    final coreMembers = [...ownerMembers, ...spouseMembers, ...siblingMembers];
     final children = members
         .where(
           (m) =>
+              !_isCurrentUserMember(m) &&
               FamilyGeneration.fromRelation(m.relation) ==
-              FamilyGeneration.children,
+                  FamilyGeneration.children,
         )
         .toList();
     final others = members
@@ -642,124 +929,300 @@ class _InteractiveTreeViewState extends State<InteractiveTreeView> {
         )
         .toList();
 
-    final activeGroups = <MapEntry<FamilyGeneration, List<MemberModel>>>[];
+    final sections = <Widget>[];
     if (grandparents.isNotEmpty) {
-      activeGroups.add(MapEntry(FamilyGeneration.grandparents, grandparents));
-    }
-    if (parents.isNotEmpty) {
-      activeGroups.add(MapEntry(FamilyGeneration.parents, parents));
-    }
-    if (children.isNotEmpty) {
-      activeGroups.add(MapEntry(FamilyGeneration.children, children));
-    }
-    if (others.isNotEmpty) {
-      activeGroups.add(MapEntry(FamilyGeneration.other, others));
-    }
-
-    return List.generate(activeGroups.length, (gIndex) {
-      final gen = activeGroups[gIndex].key;
-      final groupMembers = activeGroups[gIndex].value;
-      final branchId = 'gen-${gen.level}';
-      final isExpanded = _expandedBranches.contains(branchId);
-      final isChildrenGroup = gen == FamilyGeneration.children;
-      final headerTitle = isChildrenGroup
-          ? 'Children of ${_childrenParentLabel(members, children: groupMembers)}'
-          : gen.title;
-
-      return Container(
-        margin: EdgeInsets.only(top: gIndex == 0 ? 10 : 4, bottom: 10),
-        padding: const EdgeInsets.fromLTRB(10, 8, 10, 4),
-        decoration: BoxDecoration(
-          color: gen.bgColor.withAlpha(125),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: gen.borderColor),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            GestureDetector(
-              onTap: () => _toggleBranch(branchId),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 7),
-                decoration: BoxDecoration(
-                  color: gen.bgColor,
-                  borderRadius: BorderRadius.circular(11),
-                  border: Border.all(color: gen.borderColor, width: 1.1),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      isChildrenGroup
-                          ? Icons.family_restroom_rounded
-                          : Icons.hub_rounded,
-                      size: 15,
-                      color: gen.color,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        headerTitle,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: gen.color,
-                        ),
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: gen.borderColor),
-                      ),
-                      child: Text(
-                        '${groupMembers.length}',
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
-                          color: gen.color,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 5),
-                    AnimatedRotation(
-                      turns: isExpanded ? 0.5 : 0,
-                      duration: const Duration(milliseconds: 200),
-                      child: Icon(
-                        Icons.keyboard_arrow_down_rounded,
-                        size: 16,
-                        color: gen.color,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            if (isExpanded)
-              ..._buildLocalBranchMembers(
-                groupMembers,
-                gen,
-                compact: isChildrenGroup,
-              ),
-          ],
+      sections.add(
+        _buildGenerationSection(
+          generation: FamilyGeneration.grandparents,
+          members: grandparents,
+          branchId: 'gen-1',
         ),
       );
-    });
+    }
+    if (parents.isNotEmpty) {
+      sections.add(
+        _buildGenerationSection(
+          generation: FamilyGeneration.parents,
+          members: parents,
+          branchId: 'gen-2',
+          title: '2nd Gen • Parents',
+        ),
+      );
+    }
+    if (coreMembers.isNotEmpty) {
+      sections.add(
+        _buildGenerationSection(
+          generation: FamilyGeneration.parents,
+          members: coreMembers,
+          branchId: 'gen-core',
+          title: 'You, Spouse & Siblings',
+          connectCoupleCount: math.min(
+            2,
+            ownerMembers.length + spouseMembers.length,
+          ),
+        ),
+      );
+    }
+    if (children.isNotEmpty) {
+      MemberModel? owner;
+      for (final member in members) {
+        if (_isCurrentUserMember(member)) {
+          owner = member;
+          break;
+        }
+      }
+      sections.add(
+        _buildGenerationSection(
+          generation: FamilyGeneration.children,
+          members: children,
+          branchId: 'gen-3',
+          title: owner == null
+              ? '3rd Gen • Children'
+              : 'Children of ${owner.name}',
+          compact: true,
+          topPadding: 0,
+        ),
+      );
+    }
+    if (others.isNotEmpty) {
+      sections.add(
+        _buildGenerationSection(
+          generation: FamilyGeneration.other,
+          members: others,
+          branchId: 'gen-4',
+        ),
+      );
+    }
+    return sections;
+  }
+
+  Widget _buildGenerationSection({
+    required FamilyGeneration generation,
+    required List<MemberModel> members,
+    required String branchId,
+    String? title,
+    bool compact = false,
+    int connectCoupleCount = 0,
+    double topPadding = 18,
+  }) {
+    final isExpanded = !(_collapsedBranches?.contains(branchId) ?? false);
+    return Padding(
+      padding: EdgeInsets.only(top: topPadding),
+      child: Column(
+        children: [
+          GestureDetector(
+            onTap: () => _toggleBranch(branchId),
+            child: Container(
+              constraints: const BoxConstraints(maxWidth: 310),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+              decoration: BoxDecoration(
+                color: generation.bgColor,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    generation == FamilyGeneration.children
+                        ? Icons.family_restroom_rounded
+                        : Icons.hub_rounded,
+                    size: 16,
+                    color: generation.color,
+                  ),
+                  const SizedBox(width: 7),
+                  Flexible(
+                    child: Text(
+                      title ?? generation.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: generation.color,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    '${members.length}',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      color: generation.color,
+                    ),
+                  ),
+                  const SizedBox(width: 2),
+                  AnimatedRotation(
+                    turns: isExpanded ? 0.5 : 0,
+                    duration: const Duration(milliseconds: 200),
+                    child: Icon(
+                      Icons.keyboard_arrow_down_rounded,
+                      size: 17,
+                      color: generation.color,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          AnimatedSize(
+            duration: const Duration(milliseconds: 220),
+            child: !isExpanded
+                ? const SizedBox.shrink()
+                : LayoutBuilder(
+                    builder: (context, constraints) {
+                      final cardWidth = compact ? 176.0 : 214.0;
+                      const spacing = 14.0;
+                      final contentWidth = math.max(
+                        constraints.maxWidth,
+                        members.length * cardWidth +
+                            math.max(0, members.length - 1) * spacing,
+                      );
+                      final cardsWidth =
+                          members.length * cardWidth +
+                          math.max(0, members.length - 1) * spacing;
+                      final firstCenter =
+                          (contentWidth - cardsWidth) / 2 + cardWidth / 2;
+                      return SizedBox(
+                        width: contentWidth,
+                        child: Column(
+                          children: [
+                            CustomPaint(
+                              painter: GenerationConnectorPainter(
+                                memberCount: members.length,
+                                cardWidth: cardWidth,
+                                spacing: spacing,
+                                color: generation.color,
+                              ),
+                              size: Size(contentWidth, 28),
+                            ),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                for (
+                                  var index = 0;
+                                  index < members.length;
+                                  index++
+                                ) ...[
+                                  SizedBox(
+                                    width: cardWidth,
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        _buildMemberCard(
+                                          members[index],
+                                          compact: compact,
+                                        ),
+                                        _buildDoctorAvatars(members[index]),
+                                      ],
+                                    ),
+                                  ),
+                                  if (index != members.length - 1)
+                                    const SizedBox(width: spacing),
+                                ],
+                              ],
+                            ),
+                            if (connectCoupleCount > 0)
+                              CustomPaint(
+                                painter: CoupleContinuationPainter(
+                                  ownerX: firstCenter,
+                                  spouseX: connectCoupleCount > 1
+                                      ? firstCenter + cardWidth + spacing
+                                      : null,
+                                  targetX: contentWidth / 2,
+                                  color: generation.color,
+                                ),
+                                size: Size(contentWidth, 18),
+                              ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
+    );
   }
 
   // ── Modern Member Node Card ──────────────────────────────────────────
+  Widget _buildDoctorAvatars(MemberModel member) {
+    final doctors = widget.memberDoctors[member.id] ?? const <DoctorModel>[];
+    if (doctors.isEmpty) return const SizedBox.shrink();
+    final visibleDoctors = doctors.take(6).toList();
+    const avatarSize = 22.0;
+    const avatarSpacing = 3.0;
+    final connectorWidth =
+        visibleDoctors.length * avatarSize +
+        math.max(0, visibleDoctors.length - 1) * avatarSpacing;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        CustomPaint(
+          painter: DoctorConnectorPainter(
+            doctorCount: visibleDoctors.length,
+            avatarSize: avatarSize,
+            spacing: avatarSpacing,
+            color: AppColors.primary,
+          ),
+          size: Size(connectorWidth, 10),
+        ),
+        Transform.translate(
+          offset: const Offset(0, -1),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: List.generate(visibleDoctors.length, (index) {
+              final doctor = visibleDoctors[index];
+              return Padding(
+                padding: EdgeInsets.only(
+                  right: index == visibleDoctors.length - 1 ? 0 : avatarSpacing,
+                ),
+                child: AppAvatar(
+                  name: doctor.name,
+                  size: avatarSize,
+                  fontSize: 7,
+                  backgroundColor: const Color(0xFFEAF8EE),
+                  textColor: AppColors.primary,
+                  border: Border.all(color: AppColors.primary, width: 1.3),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: AppColors.shadow,
+                      blurRadius: 3,
+                      offset: Offset(0, 1),
+                    ),
+                  ],
+                  onTap: () => context.push('/doctors/${doctor.id}'),
+                ),
+              );
+            }),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildMemberCard(MemberModel member, {bool compact = false}) {
     final relation = member.relation;
-    final isSelf = relation.toLowerCase().trim() == 'self';
-    final relIcon = getRelationIcon(relation);
-    final badgeColor = getRelationBadgeColor(relation);
-    final gen = FamilyGeneration.fromRelation(relation);
+    final isSelf = _isCurrentUserMember(member);
+    final normalizedRelation = relation.toLowerCase().trim();
+    final isSpouse =
+        normalizedRelation == 'spouse' ||
+        normalizedRelation == 'wife' ||
+        normalizedRelation == 'husband';
+    final isSibling =
+        normalizedRelation == 'brother' || normalizedRelation == 'sister';
+    final outlineColor = isSelf
+        ? AppColors.primary
+        : isSpouse
+        ? const Color(0xFFE11D48)
+        : isSibling
+        ? const Color(0xFF7C3AED)
+        : AppColors.border;
+    final displayRelation = isSelf ? 'You' : relation;
+    final relIcon = getRelationIcon(isSelf ? 'self' : relation);
+    final badgeColor = getRelationBadgeColor(isSelf ? 'self' : relation);
 
     return Material(
       color: Colors.transparent,
@@ -769,15 +1232,15 @@ class _InteractiveTreeViewState extends State<InteractiveTreeView> {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 180),
           padding: EdgeInsets.symmetric(
-            horizontal: compact ? 10 : 14,
-            vertical: compact ? 7 : 10,
+            horizontal: compact ? 8 : 14,
+            vertical: compact ? 5 : 10,
           ),
           decoration: BoxDecoration(
             color: isSelf ? const Color(0xFFF0FDF4) : Colors.white,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: isSelf ? AppColors.primary : AppColors.border,
-              width: isSelf ? 1.6 : 1.1,
+              color: outlineColor,
+              width: isSelf || isSpouse || isSibling ? 1.6 : 1.1,
             ),
             boxShadow: const [
               BoxShadow(
@@ -798,9 +1261,11 @@ class _InteractiveTreeViewState extends State<InteractiveTreeView> {
                     name: member.name,
                     avatarUrl: member.avatarUrl,
                     memberId: member.id,
-                    size: compact ? 33 : 40,
+                    size: compact ? 28 : 40,
                     border: Border.all(
-                      color: isSelf ? AppColors.primary : gen.color,
+                      color: isSelf || isSpouse || isSibling
+                          ? outlineColor
+                          : badgeColor,
                       width: 1.8,
                     ),
                   ),
@@ -825,217 +1290,47 @@ class _InteractiveTreeViewState extends State<InteractiveTreeView> {
               ),
               SizedBox(width: compact ? 9 : 12),
 
-              // Name, Relation, Age & Blood Group
+              // Name and relationship only
               Expanded(
                 child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Name & Relation Badge Row
-                    Row(
-                      children: [
-                        Flexible(
-                          child: Text(
-                            member.name,
-                            style: TextStyle(
-                              fontSize: compact ? 12.5 : 14,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.textDark,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: badgeColor.withAlpha(20),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(relIcon, size: 10, color: badgeColor),
-                              const SizedBox(width: 3),
-                              Text(
-                                relation,
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w700,
-                                  color: badgeColor,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
+                    Text(
+                      member.name,
+                      style: TextStyle(
+                        fontSize: compact ? 12.5 : 14,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textDark,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    SizedBox(height: compact ? 3 : 5),
-
-                    // Badges Wrap: Age (Prominent), Blood Group, Generation
-                    Wrap(
-                      spacing: 6,
-                      runSpacing: 4,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      children: [
-                        // Age Badge (Required & clearly visible)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF1F5F9),
-                            borderRadius: BorderRadius.circular(5),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(
-                                Icons.cake_outlined,
-                                size: 10,
-                                color: AppColors.textLight,
-                              ),
-                              const SizedBox(width: 3),
-                              Text(
-                                member.age,
-                                style: TextStyle(
-                                  fontSize: compact ? 9.5 : 10.5,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.textDark,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-
-                        // Blood Group Badge
-                        if (member.bloodGroup != null &&
-                            member.bloodGroup!.isNotEmpty)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 5,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFFFECEC),
-                              borderRadius: BorderRadius.circular(5),
-                            ),
-                            child: Text(
-                              member.bloodGroup!,
-                              style: const TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w700,
-                                color: Color(0xFFDC2626),
-                              ),
-                            ),
-                          ),
-
-                        // Generation Tag
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 5,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: gen.bgColor,
-                            borderRadius: BorderRadius.circular(5),
-                            border: Border.all(
-                              color: gen.borderColor,
-                              width: 0.8,
-                            ),
-                          ),
-                          child: Text(
-                            'Gen ${gen.level}',
+                    const SizedBox(height: 2),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 5,
+                        vertical: 1,
+                      ),
+                      decoration: BoxDecoration(
+                        color: badgeColor.withAlpha(20),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(relIcon, size: 9, color: badgeColor),
+                          const SizedBox(width: 3),
+                          Text(
+                            displayRelation,
                             style: TextStyle(
-                              fontSize: 9.5,
+                              fontSize: 9,
                               fontWeight: FontWeight.w700,
-                              color: gen.color,
+                              color: badgeColor,
                             ),
                           ),
-                        ),
-
-                        // Hereditary / Chronic Condition Badge
-                        if (member.notes != null &&
-                            member.notes!.trim().isNotEmpty)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 5,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFFEF3C7),
-                              borderRadius: BorderRadius.circular(5),
-                              border: Border.all(
-                                color: const Color(0xFFFDE68A),
-                                width: 0.8,
-                              ),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(
-                                  Icons.favorite_rounded,
-                                  size: 9,
-                                  color: Color(0xFFD97706),
-                                ),
-                                const SizedBox(width: 3),
-                                Text(
-                                  member.notes!.length > 12
-                                      ? '${member.notes!.substring(0, 10)}..'
-                                      : member.notes!,
-                                  style: const TextStyle(
-                                    fontSize: 9.5,
-                                    fontWeight: FontWeight.w700,
-                                    color: Color(0xFFB45309),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-
-                        // Allergy Alert Badge
-                        if (member.allergies != null &&
-                            member.allergies!.trim().isNotEmpty)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 5,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFFEE2E2),
-                              borderRadius: BorderRadius.circular(5),
-                              border: Border.all(
-                                color: const Color(0xFFFECACA),
-                                width: 0.8,
-                              ),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(
-                                  Icons.warning_amber_rounded,
-                                  size: 9,
-                                  color: Color(0xFFDC2626),
-                                ),
-                                const SizedBox(width: 3),
-                                Text(
-                                  member.allergies!.length > 10
-                                      ? '${member.allergies!.substring(0, 8)}..'
-                                      : member.allergies!,
-                                  style: const TextStyle(
-                                    fontSize: 9.5,
-                                    fontWeight: FontWeight.w700,
-                                    color: Color(0xFFB91C1C),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                      ],
+                        ],
+                      ),
                     ),
                   ],
                 ),

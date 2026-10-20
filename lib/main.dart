@@ -23,7 +23,9 @@ void main() async {
   await SupabaseConfig.init();
   await AvatarMemoryCache.initPersisted();
   await NotificationService.initialize();
-  await NativeDocumentService.importSharedFilesToDrafts();
+  try {
+    await NativeDocumentService.importSharedFilesToDrafts();
+  } catch (_) {}
   final themeController = AppThemeController();
   await themeController.load();
   runApp(

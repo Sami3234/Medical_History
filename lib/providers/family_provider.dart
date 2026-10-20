@@ -99,6 +99,9 @@ class FamilyProvider extends ChangeNotifier {
     if (msg.contains('duplicate') || msg.contains('23505')) {
       return 'This family already exists.';
     }
+    if (msg.contains('permanent Self profile')) {
+      return 'Your main family contains the permanent Self profile and cannot be deleted.';
+    }
     return 'Something went wrong. Please try again.';
   }
 }

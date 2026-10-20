@@ -6,7 +6,6 @@ import '../../config/routes.dart';
 import '../../providers/family_provider.dart';
 import '../../providers/member_provider.dart';
 import '../../providers/visit_provider.dart';
-import '../../widgets/bottom_nav.dart';
 import '../../widgets/hero_health_card.dart';
 import '../../utils/extensions.dart';
 
@@ -123,7 +122,8 @@ class _FamilyDetailScreenState extends State<FamilyDetailScreen> {
               // Hero Green Card
               HeroHealthCard(
                 title: family.name,
-                subtitle: '${family.familyId} • ${family.address ?? "Lahore"}',
+                subtitle:
+                    '${family.familyId} • ${family.address ?? "No address added"}',
                 actionText: 'Edit family',
                 onAction: () => _showEditDialog(context, family),
               ),
@@ -355,7 +355,6 @@ class _FamilyDetailScreenState extends State<FamilyDetailScreen> {
           ),
         ),
       ),
-      bottomNavigationBar: const BottomNav(currentIndex: 1),
     );
   }
 

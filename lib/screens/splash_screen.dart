@@ -50,7 +50,7 @@ class _SplashScreenState extends State<SplashScreen>
     if (isLoggedIn) {
       final biometricEnabled = await BiometricAuthService.isEnabled();
       if (!mounted) return;
-      context.go(biometricEnabled ? AppRoutes.login : AppRoutes.dashboard);
+      context.go(biometricEnabled ? AppRoutes.login : AppRoutes.ownerSetup);
       return;
     }
 

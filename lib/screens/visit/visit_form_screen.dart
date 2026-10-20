@@ -11,7 +11,9 @@ import '../../providers/visit_provider.dart';
 import '../../utils/extensions.dart';
 
 class VisitFormScreen extends StatefulWidget {
-  const VisitFormScreen({super.key});
+  final String? memberId;
+
+  const VisitFormScreen({super.key, this.memberId});
 
   @override
   State<VisitFormScreen> createState() => _VisitFormScreenState();
@@ -35,6 +37,7 @@ class _VisitFormScreenState extends State<VisitFormScreen> {
   @override
   void initState() {
     super.initState();
+    _selectedMemberId = widget.memberId;
     _dateCtrl = TextEditingController(
       text:
           '${_visitDate.day.toString().padLeft(2, '0')} / ${_visitDate.month.toString().padLeft(2, '0')} / ${_visitDate.year}',

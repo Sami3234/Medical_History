@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'local_document_service.dart';
@@ -19,13 +20,13 @@ class NativeDocumentService {
   static const _channel = MethodChannel('medical_history/native_documents');
 
   static Future<List<NativeDocumentFile>> scanDocuments() async {
-    if (!Platform.isAndroid) return [];
+    if (kIsWeb || !Platform.isAndroid) return [];
     final raw = await _channel.invokeMethod<List<dynamic>>('scanDocuments');
     return _parse(raw);
   }
 
   static Future<String> recognizeText(String path) async {
-    if (!Platform.isAndroid) return '';
+    if (kIsWeb || !Platform.isAndroid) return '';
     return await _channel.invokeMethod<String>('recognizeText', {
           'path': path,
         }) ??
@@ -33,7 +34,7 @@ class NativeDocumentService {
   }
 
   static Future<List<NativeDocumentFile>> consumeSharedFiles() async {
-    if (!Platform.isAndroid) return [];
+    if (kIsWeb || !Platform.isAndroid) return [];
     final raw = await _channel.invokeMethod<List<dynamic>>(
       'consumeSharedFiles',
     );

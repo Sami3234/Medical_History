@@ -16,7 +16,7 @@ class BottomNav extends StatelessWidget {
         context.go(AppRoutes.dashboard);
         break;
       case 1:
-        context.go(AppRoutes.members);
+        context.go(AppRoutes.doctors);
         break;
       case 2:
         _showQuickActions(context);
@@ -72,14 +72,13 @@ class BottomNav extends StatelessWidget {
             const SizedBox(height: 20),
             _buildActionItem(
               context: ctx,
-              icon: Icons.person_add_alt_1_rounded,
-              color: const Color(0xFF2E7D32),
-              title: 'Add Family Member',
-              subtitle:
-                  'Add Self, Father, Mother, Spouse, Son, Daughter or Sibling',
+              icon: Icons.medical_services_outlined,
+              color: const Color(0xFF0284C7),
+              title: 'Add Doctor',
+              subtitle: 'Create a doctor profile and assign family members',
               onTap: () {
                 Navigator.pop(ctx);
-                context.push(AppRoutes.memberAdd);
+                context.push(AppRoutes.doctorAdd);
               },
             ),
             const SizedBox(height: 12),
@@ -222,9 +221,9 @@ class BottomNav extends StatelessWidget {
                 child: _buildNavItem(
                   context,
                   1,
-                  Icons.group_outlined,
-                  Icons.group_rounded,
-                  'Family',
+                  Icons.medical_services_outlined,
+                  Icons.medical_services_rounded,
+                  'Doctors',
                 ),
               ),
               Expanded(child: _buildCenterAddButton(context)),

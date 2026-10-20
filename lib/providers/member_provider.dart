@@ -88,12 +88,24 @@ class MemberProvider extends ChangeNotifier {
           familyId: data['family_id'] ?? old.familyId,
           name: data['name'] ?? old.name,
           relation: data['relation'] ?? old.relation,
-          dob: data['dob'] != null ? DateTime.tryParse(data['dob']) : old.dob,
+          dob: data['dob'] != null
+              ? DateTime.tryParse(data['dob'] as String)
+              : old.dob,
           gender: data['gender'] ?? old.gender,
           bloodGroup: data['blood_group'] ?? old.bloodGroup,
-          allergies: data['allergies'] ?? old.allergies,
-          notes: data['notes'] ?? old.notes,
+          allergies: data.containsKey('allergies')
+              ? data['allergies'] as String?
+              : old.allergies,
+          notes: data.containsKey('notes')
+              ? data['notes'] as String?
+              : old.notes,
           avatarUrl: data['avatar_url'] ?? old.avatarUrl,
+          emergencyContact: data.containsKey('emergency_contact')
+              ? data['emergency_contact'] as String?
+              : old.emergencyContact,
+          parentId: data.containsKey('parent_id')
+              ? data['parent_id'] as String?
+              : old.parentId,
           createdAt: old.createdAt,
         );
       }
@@ -110,6 +122,13 @@ class MemberProvider extends ChangeNotifier {
   Future<bool> deleteMember(String id) async {
     _error = null;
     try {
+      final memberIndex = _members.indexWhere((item) => item.id == id);
+      final member = memberIndex == -1 ? null : _members[memberIndex];
+      if (member?.relation.toLowerCase().trim() == 'self') {
+        _error = 'The Self owner profile cannot be deleted.';
+        notifyListeners();
+        return false;
+      }
       await _service.delete(id);
       _members.removeWhere((m) => m.id == id);
       notifyListeners();
@@ -131,6 +150,9 @@ class MemberProvider extends ChangeNotifier {
     }
     if (msg.contains('duplicate') || msg.contains('23505')) {
       return 'A member with this data already exists.';
+    }
+    if (msg.contains('member_relation_limit') || msg.contains('23514')) {
+      return 'This family relationship has reached its maximum allowed limit.';
     }
     return 'Something went wrong. Please try again.';
   }

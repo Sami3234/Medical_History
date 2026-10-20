@@ -71,7 +71,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           );
         }
       } else {
-        context.go(AppRoutes.dashboard);
+        context.go(AppRoutes.ownerSetup);
       }
     } else {
       context.showSnack(auth.error ?? 'Registration failed', isError: true);

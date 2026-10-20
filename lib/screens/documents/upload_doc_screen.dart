@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -15,7 +15,9 @@ import '../../services/native_document_service.dart';
 import '../../utils/extensions.dart';
 
 class UploadDocScreen extends StatefulWidget {
-  const UploadDocScreen({super.key});
+  final String? memberId;
+
+  const UploadDocScreen({super.key, this.memberId});
 
   @override
   State<UploadDocScreen> createState() => _UploadDocScreenState();
@@ -31,6 +33,12 @@ class _UploadDocScreenState extends State<UploadDocScreen> {
   Uint8List? _pickedFileBytes;
   String? _ocrText;
   bool _uploading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedMemberId = widget.memberId;
+  }
 
   @override
   void dispose() {
@@ -73,7 +81,7 @@ class _UploadDocScreenState extends State<UploadDocScreen> {
 
   Future<void> _captureDocument() async {
     try {
-      if (Platform.isAndroid) {
+      if (!kIsWeb && Platform.isAndroid) {
         final scanned = await NativeDocumentService.scanDocuments();
         if (scanned.isNotEmpty) {
           final selected = scanned.firstWhere(

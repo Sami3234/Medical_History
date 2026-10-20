@@ -60,6 +60,14 @@ class MemberService {
 
   Future<void> delete(String id) async {
     if (SupabaseConfig.isInitialized && SupabaseConfig.db != null) {
+      final member = await SupabaseConfig.db!
+          .from('members')
+          .select('relation')
+          .eq('id', id)
+          .single();
+      if ((member['relation'] as String).toLowerCase().trim() == 'self') {
+        throw StateError('The Self owner profile cannot be deleted.');
+      }
       await SupabaseConfig.db!.from('members').delete().eq('id', id);
     } else {
       throw StateError('Supabase is not available. Please try again later.');
