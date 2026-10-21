@@ -117,7 +117,17 @@ CREATE TABLE IF NOT EXISTS public.doctors (
   specialization TEXT,
   hospital TEXT,
   phone TEXT,
+  email TEXT,
   address TEXT,
+  avatar_url TEXT,
+  qualification TEXT,
+  license_number TEXT,
+  experience_years INTEGER CHECK (
+    experience_years IS NULL OR
+    (experience_years >= 0 AND experience_years <= 80)
+  ),
+  availability TEXT,
+  is_favorite BOOLEAN DEFAULT false NOT NULL,
   notes TEXT,
   created_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL
 );
@@ -146,6 +156,11 @@ ALTER TABLE public.members ADD COLUMN IF NOT EXISTS emergency_contact TEXT;
 ALTER TABLE public.members ADD COLUMN IF NOT EXISTS parent_id UUID REFERENCES public.members(id) ON DELETE SET NULL;
 ALTER TABLE public.doctors ADD COLUMN IF NOT EXISTS availability TEXT;
 ALTER TABLE public.doctors ADD COLUMN IF NOT EXISTS is_favorite BOOLEAN DEFAULT false NOT NULL;
+ALTER TABLE public.doctors ADD COLUMN IF NOT EXISTS avatar_url TEXT;
+ALTER TABLE public.doctors ADD COLUMN IF NOT EXISTS email TEXT;
+ALTER TABLE public.doctors ADD COLUMN IF NOT EXISTS qualification TEXT;
+ALTER TABLE public.doctors ADD COLUMN IF NOT EXISTS license_number TEXT;
+ALTER TABLE public.doctors ADD COLUMN IF NOT EXISTS experience_years INTEGER;
 
 -- Doctors assigned to a member independently of a visit.
 CREATE TABLE IF NOT EXISTS public.member_doctors (

@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../config/theme.dart';
 import '../../config/routes.dart';
 import '../../providers/doctor_provider.dart';
+import '../../widgets/app_avatar.dart';
 import '../../widgets/bottom_nav.dart';
 
 class DoctorDetailScreen extends StatelessWidget {
@@ -66,14 +67,6 @@ class DoctorDetailScreen extends StatelessWidget {
       );
     }
 
-    final initials = doc.name
-        .replaceAll('Dr. ', '')
-        .split(' ')
-        .map((s) => s.isNotEmpty ? s[0] : '')
-        .take(2)
-        .join()
-        .toUpperCase();
-
     return Scaffold(
       backgroundColor: AppColors.bg,
       appBar: AppBar(
@@ -82,6 +75,14 @@ class DoctorDetailScreen extends StatelessWidget {
           icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
           onPressed: () => context.pop(),
         ),
+        actions: [
+          IconButton(
+            tooltip: 'Edit doctor profile',
+            onPressed: () => context.push('/doctors/${doc.id}/edit'),
+            icon: const Icon(Icons.edit_outlined),
+          ),
+          const SizedBox(width: 6),
+        ],
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -106,22 +107,13 @@ class DoctorDetailScreen extends StatelessWidget {
                 ),
                 child: Column(
                   children: [
-                    Container(
-                      width: 90,
-                      height: 90,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFE2F4D7),
-                        borderRadius: BorderRadius.circular(24),
-                      ),
-                      alignment: Alignment.center,
-                      child: Text(
-                        initials,
-                        style: const TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.w900,
-                          color: Color(0xFF235E1E),
-                        ),
-                      ),
+                    AppAvatar(
+                      memberId: doc.id,
+                      name: doc.name,
+                      avatarUrl: doc.avatarUrl,
+                      size: 94,
+                      fontSize: 28,
+                      border: Border.all(color: Colors.white, width: 3),
                     ),
                     const SizedBox(height: 16),
                     Text(
@@ -141,10 +133,59 @@ class DoctorDetailScreen extends StatelessWidget {
                         fontWeight: FontWeight.w500,
                       ),
                     ),
+                    if (doc.qualification?.trim().isNotEmpty == true) ...[
+                      const SizedBox(height: 7),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 11,
+                          vertical: 5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withAlpha(35),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          doc.qualification!,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
               const SizedBox(height: 20),
+
+              if (doc.experienceYears != null ||
+                  doc.licenseNumber?.trim().isNotEmpty == true) ...[
+                Row(
+                  children: [
+                    if (doc.experienceYears != null)
+                      Expanded(
+                        child: _profileStat(
+                          Icons.workspace_premium_outlined,
+                          '${doc.experienceYears} years',
+                          'Experience',
+                        ),
+                      ),
+                    if (doc.experienceYears != null &&
+                        doc.licenseNumber?.trim().isNotEmpty == true)
+                      const SizedBox(width: 10),
+                    if (doc.licenseNumber?.trim().isNotEmpty == true)
+                      Expanded(
+                        child: _profileStat(
+                          Icons.badge_outlined,
+                          doc.licenseNumber!,
+                          'License / PMDC',
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 22),
+              ],
 
               // Section: Clinic details
               const Text(
@@ -263,23 +304,28 @@ class DoctorDetailScreen extends StatelessWidget {
                   ],
                 ),
               ),
+              if (doc.email?.trim().isNotEmpty == true) ...[
+                const SizedBox(height: 12),
+                _detailTile(
+                  icon: Icons.email_outlined,
+                  title: 'Email',
+                  subtitle: doc.email!,
+                ),
+              ],
               if (doc.availability?.trim().isNotEmpty == true) ...[
                 const SizedBox(height: 12),
-                ListTile(
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 18,
-                    vertical: 4,
-                  ),
-                  tileColor: Theme.of(context).cardColor,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(18),
-                  ),
-                  leading: const Icon(
-                    Icons.schedule_outlined,
-                    color: AppColors.primary,
-                  ),
-                  title: const Text('Clinic timings'),
-                  subtitle: Text(doc.availability!),
+                _detailTile(
+                  icon: Icons.schedule_outlined,
+                  title: 'Clinic timings',
+                  subtitle: doc.availability!,
+                ),
+              ],
+              if (doc.notes?.trim().isNotEmpty == true) ...[
+                const SizedBox(height: 12),
+                _detailTile(
+                  icon: Icons.notes_rounded,
+                  title: 'Notes',
+                  subtitle: doc.notes!,
                 ),
               ],
               const SizedBox(height: 12),
@@ -346,6 +392,76 @@ class DoctorDetailScreen extends StatelessWidget {
         ),
       ),
       bottomNavigationBar: const BottomNav(currentIndex: 1),
+    );
+  }
+
+  Widget _profileStat(IconData icon, String value, String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        children: [
+          Icon(icon, color: AppColors.primary, size: 21),
+          const SizedBox(height: 6),
+          Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: const TextStyle(fontSize: 10.5, color: AppColors.textLight),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _detailTile({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: AppColors.primary, size: 22),
+          const SizedBox(width: 13),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  subtitle,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    height: 1.45,
+                    color: AppColors.textLight,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

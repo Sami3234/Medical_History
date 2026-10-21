@@ -28,10 +28,12 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
+  static String? _verifiedOwnerUserId;
+
   final _memberDoctorService = MemberDoctorService();
   final _ownerProfileService = OwnerProfileService();
   Map<String, List<DoctorModel>> _memberDoctors = {};
-  bool _checkingOwner = true;
+  late bool _checkingOwner;
 
   Future<void> _loadMemberDoctors(List<MemberModel> members) async {
     final mapping = await _memberDoctorService.getDoctorsForMembers(
@@ -43,21 +45,42 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void initState() {
     super.initState();
+    final uid =
+        context.read<AuthProvider>().uid ?? SupabaseConfig.currentUserId;
+    final hasCachedMembers = context.read<MemberProvider>().members.isNotEmpty;
+    _checkingOwner = !hasCachedMembers && _verifiedOwnerUserId != uid;
     WidgetsBinding.instance.addPostFrameCallback((_) => _initializeDashboard());
   }
 
   Future<void> _initializeDashboard() async {
     final auth = context.read<AuthProvider>();
     final uid = auth.uid ?? SupabaseConfig.currentUserId;
-    if (uid == null) return;
-    final owner = await _ownerProfileService.getOwnerMember(uid);
-    if (!mounted) return;
-    if (!_ownerProfileService.isComplete(owner)) {
-      context.go(AppRoutes.ownerSetup);
+    if (uid == null) {
+      if (mounted) setState(() => _checkingOwner = false);
       return;
     }
 
     final memberProvider = context.read<MemberProvider>();
+    final hasCachedMembers = memberProvider.members.isNotEmpty;
+    if (hasCachedMembers && _checkingOwner && mounted) {
+      setState(() => _checkingOwner = false);
+    }
+
+    if (_verifiedOwnerUserId != uid) {
+      final owner = await _ownerProfileService.getOwnerMember(uid);
+      if (!mounted) return;
+      if (!_ownerProfileService.isComplete(owner)) {
+        context.go(AppRoutes.ownerSetup);
+        return;
+      }
+      _verifiedOwnerUserId = uid;
+    }
+
+    if (hasCachedMembers) {
+      await _loadMemberDoctors(memberProvider.members);
+      return;
+    }
+
     await Future.wait([
       context.read<FamilyProvider>().loadFamilies(uid),
       context.read<DoctorProvider>().loadDoctors(uid),
@@ -470,13 +493,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
             if (uid == null) return;
             await Future.wait([
               familyProv.loadFamilies(uid),
+              context.read<DoctorProvider>().loadDoctors(uid),
               memberProv.loadAll(uid),
             ]);
             await _loadMemberDoctors(memberProv.members);
           },
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 112),
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 112),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -485,13 +509,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     'Offline mode: showing locally saved records',
                     Icons.cloud_off_outlined,
                   ),
-                _buildGlassDashboardHeader(
-                  userName: userName,
-                  avatarUrl: user?.avatarUrl,
-                  greeting: greeting,
-                  firstName: userFirstName,
-                  date: dateStr,
-                  upcomingAppointments: upcomingAppointments,
+                OverflowBox(
+                  minWidth: MediaQuery.sizeOf(context).width,
+                  maxWidth: MediaQuery.sizeOf(context).width,
+                  alignment: Alignment.topCenter,
+                  child: _buildGlassDashboardHeader(
+                    userName: userName,
+                    avatarUrl: user?.avatarUrl,
+                    greeting: greeting,
+                    firstName: userFirstName,
+                    date: dateStr,
+                    upcomingAppointments: upcomingAppointments,
+                  ),
                 ),
                 const SizedBox(height: 22),
 
@@ -645,11 +674,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF168C45),
-              Color(0xFF2AAF35),
-              Color(0xFF65C93A),
-            ],
+            colors: [Color(0xFF168C45), Color(0xFF2AAF35), Color(0xFF65C93A)],
           ),
         ),
         child: Stack(

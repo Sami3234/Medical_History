@@ -79,19 +79,20 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
   }
 
   void _showDoctorRecords(MemberModel member, DoctorModel doctor) {
-    final visits = context
-        .read<VisitProvider>()
-        .visits
-        .where(
-          (visit) =>
-              visit.memberId == member.id &&
-              (visit.doctorId == doctor.id ||
-                  (visit.doctorId == null &&
-                      visit.doctorName?.trim().toLowerCase() ==
-                          doctor.name.trim().toLowerCase())),
-        )
-        .toList()
-      ..sort((a, b) => b.visitDate.compareTo(a.visitDate));
+    final visits =
+        context
+            .read<VisitProvider>()
+            .visits
+            .where(
+              (visit) =>
+                  visit.memberId == member.id &&
+                  (visit.doctorId == doctor.id ||
+                      (visit.doctorId == null &&
+                          visit.doctorName?.trim().toLowerCase() ==
+                              doctor.name.trim().toLowerCase())),
+            )
+            .toList()
+          ..sort((a, b) => b.visitDate.compareTo(a.visitDate));
     final recordsProvider = context.read<RecordsProvider>();
 
     showModalBottomSheet<void>(
@@ -233,7 +234,10 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
                               Navigator.pop(sheetContext);
                               context.push('/visits/${visit.id}');
                             },
-                            icon: const Icon(Icons.open_in_new_rounded, size: 17),
+                            icon: const Icon(
+                              Icons.open_in_new_rounded,
+                              size: 17,
+                            ),
                             label: const Text('Open complete visit'),
                           ),
                         ),
@@ -260,9 +264,7 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
                                     document.fileName ??
                                     _documentLabel(document.fileType),
                               ),
-                              subtitle: Text(
-                                _documentLabel(document.fileType),
-                              ),
+                              subtitle: Text(_documentLabel(document.fileType)),
                               trailing: const Icon(
                                 Icons.open_in_new_rounded,
                                 size: 18,
@@ -271,8 +273,9 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
                                 final opened = await recordsProvider
                                     .openDocument(document);
                                 if (!opened && sheetContext.mounted) {
-                                  ScaffoldMessenger.of(sheetContext)
-                                      .showSnackBar(
+                                  ScaffoldMessenger.of(
+                                    sheetContext,
+                                  ).showSnackBar(
                                     const SnackBar(
                                       content: Text(
                                         'No compatible app could open this file.',

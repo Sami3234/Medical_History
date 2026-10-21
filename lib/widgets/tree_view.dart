@@ -358,6 +358,7 @@ class _InteractiveTreeViewState extends State<InteractiveTreeView> {
   double _treeScale = 1;
   double _treeContentHeight = 0;
   double _lastCanvasWidth = 0;
+  double _lastViewportWidth = 0;
 
   @override
   void dispose() {
@@ -534,18 +535,21 @@ class _InteractiveTreeViewState extends State<InteractiveTreeView> {
       builder: (context, constraints) {
         final viewportWidth = constraints.maxWidth;
         final canvasWidth = _calculateTreeCanvasWidth(members, viewportWidth);
-        final nextFitScale = (viewportWidth / canvasWidth).clamp(0.72, 1.0);
+        final nextFitScale = (viewportWidth / canvasWidth).clamp(0.5, 1.0);
 
-        if (!_treeWasMoved && (_lastCanvasWidth - canvasWidth).abs() > 0.5) {
+        if (!_treeWasMoved &&
+            ((_lastCanvasWidth - canvasWidth).abs() > 0.5 ||
+                (_lastViewportWidth - viewportWidth).abs() > 0.5)) {
           _lastCanvasWidth = canvasWidth;
+          _lastViewportWidth = viewportWidth;
           _fitScale = nextFitScale;
           _treeScale = nextFitScale;
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (!mounted || _treeWasMoved) return;
-            _treeController.value = Matrix4.diagonal3Values(
+            _treeController.value = _centeredTreeMatrix(
+              viewportWidth,
+              canvasWidth,
               _fitScale,
-              _fitScale,
-              1,
             );
           });
         }
@@ -612,10 +616,10 @@ class _InteractiveTreeViewState extends State<InteractiveTreeView> {
                           _treeWasMoved = false;
                           _treeScale = _fitScale;
                         });
-                        _treeController.value = Matrix4.diagonal3Values(
+                        _treeController.value = _centeredTreeMatrix(
+                          viewportWidth,
+                          canvasWidth,
                           _fitScale,
-                          _fitScale,
-                          1,
                         );
                       },
                       child: const Padding(
@@ -635,6 +639,21 @@ class _InteractiveTreeViewState extends State<InteractiveTreeView> {
         );
       },
     );
+  }
+
+  Matrix4 _centeredTreeMatrix(
+    double viewportWidth,
+    double canvasWidth,
+    double scale,
+  ) {
+    final horizontalOffset = math.max(
+      0.0,
+      (viewportWidth - (canvasWidth * scale)) / 2,
+    );
+    return Matrix4.identity()
+      ..setEntry(0, 0, scale)
+      ..setEntry(1, 1, scale)
+      ..setTranslationRaw(horizontalOffset, 0, 0);
   }
 
   void _scheduleTreeContentMeasurement() {

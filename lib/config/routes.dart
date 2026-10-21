@@ -50,6 +50,7 @@ class AppRoutes {
   static const memberDetail = '/members/:id';
   static const doctors = '/doctors';
   static const doctorAdd = '/doctors/add';
+  static const doctorEdit = '/doctors/:id/edit';
   static const doctorDetail = '/doctors/:id';
   static const visits = '/visits';
   static const visitAdd = '/visits/add';
@@ -127,6 +128,11 @@ class AppRoutes {
       ),
       GoRoute(path: doctors, builder: (_, _) => const DoctorListScreen()),
       GoRoute(path: doctorAdd, builder: (_, _) => const DoctorFormScreen()),
+      GoRoute(
+        path: doctorEdit,
+        builder: (_, state) =>
+            DoctorFormScreen(doctorId: state.pathParameters['id']),
+      ),
       GoRoute(
         path: doctorDetail,
         builder: (_, state) =>
