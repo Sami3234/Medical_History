@@ -20,6 +20,7 @@ import '../../providers/member_provider.dart';
 import '../../providers/visit_provider.dart';
 import '../../providers/records_provider.dart';
 import '../../providers/health_provider.dart';
+import '../../providers/doctor_provider.dart';
 import '../../services/avatar_cache_service.dart';
 import '../../services/cloudinary_service.dart';
 import '../../services/image_cropper_service.dart';
@@ -78,6 +79,196 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
     } catch (_) {}
   }
 
+  Future<void> _manageAssignedDoctors(MemberModel member) async {
+    final doctorProvider = context.read<DoctorProvider>();
+    if (doctorProvider.doctors.isEmpty) {
+      final userId = SupabaseConfig.currentUserId;
+      if (userId != null) await doctorProvider.loadDoctors(userId);
+    }
+    if (!mounted) return;
+
+    final doctors = doctorProvider.doctors;
+    if (doctors.isEmpty) {
+      final openDoctors = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('No doctors available'),
+          content: const Text(
+            'Add a doctor first, then assign that doctor to this member.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: const Text('Add doctor'),
+            ),
+          ],
+        ),
+      );
+      if (openDoctors == true && mounted) context.push(AppRoutes.doctorAdd);
+      return;
+    }
+
+    final selectedIds = _memberDoctors.map((doctor) => doctor.id).toSet();
+    final updatedIds = await showModalBottomSheet<Set<String>>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        final draftIds = Set<String>.from(selectedIds);
+        return StatefulBuilder(
+          builder: (context, setSheetState) => Container(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.sizeOf(context).height * 0.82,
+            ),
+            decoration: const BoxDecoration(
+              color: AppColors.bg,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+            ),
+            child: SafeArea(
+              top: false,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const SizedBox(height: 10),
+                  Container(
+                    width: 42,
+                    height: 5,
+                    decoration: BoxDecoration(
+                      color: AppColors.border,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 16, 12, 10),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Assign doctors',
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                              Text(
+                                'Choose doctors who care for ${member.name}',
+                                style: const TextStyle(
+                                  color: AppColors.textLight,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: () => Navigator.pop(sheetContext),
+                          icon: const Icon(Icons.close_rounded),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Divider(height: 1),
+                  Flexible(
+                    child: ListView.separated(
+                      shrinkWrap: true,
+                      padding: const EdgeInsets.all(16),
+                      itemCount: doctors.length,
+                      separatorBuilder: (_, _) => const SizedBox(height: 8),
+                      itemBuilder: (context, index) {
+                        final doctor = doctors[index];
+                        final selected = draftIds.contains(doctor.id);
+                        return CheckboxListTile(
+                          value: selected,
+                          onChanged: (value) => setSheetState(() {
+                            if (value == true) {
+                              draftIds.add(doctor.id);
+                            } else {
+                              draftIds.remove(doctor.id);
+                            }
+                          }),
+                          tileColor: Colors.white,
+                          selectedTileColor: const Color(0xFFEAF7E5),
+                          selected: selected,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(15),
+                            side: BorderSide(
+                              color: selected
+                                  ? AppColors.primary
+                                  : AppColors.border,
+                            ),
+                          ),
+                          title: Text(
+                            doctor.name,
+                            style: const TextStyle(fontWeight: FontWeight.w700),
+                          ),
+                          subtitle: Text(
+                            doctor.specialization ?? 'General physician',
+                          ),
+                          secondary: AppAvatar(
+                            memberId: doctor.id,
+                            name: doctor.name,
+                            avatarUrl: doctor.avatarUrl,
+                            size: 42,
+                          ),
+                          controlAffinity: ListTileControlAffinity.trailing,
+                        );
+                      },
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: FilledButton.icon(
+                        onPressed: () => Navigator.pop(sheetContext, draftIds),
+                        icon: const Icon(Icons.check_rounded),
+                        label: const Text('Save assignments'),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+    if (updatedIds == null || !mounted) return;
+
+    try {
+      final additions = updatedIds.difference(selectedIds);
+      final removals = selectedIds.difference(updatedIds);
+      await Future.wait([
+        ...additions.map(
+          (doctorId) => _memberDoctorService.addDoctor(
+            memberId: member.id,
+            doctorId: doctorId,
+          ),
+        ),
+        ...removals.map(
+          (doctorId) => _memberDoctorService.removeDoctor(
+            memberId: member.id,
+            doctorId: doctorId,
+          ),
+        ),
+      ]);
+      await _loadMemberDoctors();
+      if (mounted) context.showSnack('Doctor assignments updated');
+    } catch (error) {
+      if (mounted) {
+        context.showSnack('Could not update doctors: $error', isError: true);
+      }
+    }
+  }
+
+  // ignore: unused_element
   void _showDoctorRecords(MemberModel member, DoctorModel doctor) {
     final visits =
         context
@@ -416,26 +607,26 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
 
   Future<void> _logVital(String memberId) async {
     final vital = await AddVitalDialog.show(context, memberId);
-    if (vital != null && mounted) {
-      await context.read<HealthProvider>().addVital(vital);
-      context.showSnack('Vital sign logged successfully!');
-    }
+    if (vital == null || !mounted) return;
+    await context.read<HealthProvider>().addVital(vital);
+    if (!mounted) return;
+    context.showSnack('Vital sign logged successfully!');
   }
 
   Future<void> _addMedication(String memberId) async {
     final med = await AddMedicationDialog.show(context, memberId);
-    if (med != null && mounted) {
-      await context.read<HealthProvider>().addMedication(med);
-      context.showSnack('Medication prescription added!');
-    }
+    if (med == null || !mounted) return;
+    await context.read<HealthProvider>().addMedication(med);
+    if (!mounted) return;
+    context.showSnack('Medication prescription added!');
   }
 
   Future<void> _addVaccine(String memberId) async {
     final vac = await AddVaccineDialog.show(context, memberId);
-    if (vac != null && mounted) {
-      await context.read<HealthProvider>().addVaccine(vac);
-      context.showSnack('Immunization record saved!');
-    }
+    if (vac == null || !mounted) return;
+    await context.read<HealthProvider>().addVaccine(vac);
+    if (!mounted) return;
+    context.showSnack('Immunization record saved!');
   }
 
   Future<void> _uploadFile(String memberId) async {
@@ -480,8 +671,9 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
         await _showShareLinkDialog(member, link);
       }
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         context.showSnack('Unable to create share link', isError: true);
+      }
     }
   }
 
@@ -567,8 +759,9 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
               onPressed: () async {
                 await MemberShareService.revokeAllShares(member.id);
                 if (dialogContext.mounted) Navigator.pop(dialogContext);
-                if (mounted)
+                if (mounted) {
                   context.showSnack('All active share links revoked');
+                }
               },
               icon: const Icon(Icons.link_off_outlined, color: Colors.red),
               label: const Text(
@@ -832,10 +1025,7 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
                     ),
                     const SizedBox(height: 18),
                     _buildAssignedDoctors(member),
-                    const SizedBox(height: 18),
-
-                    // Modern Segmented Pill Tabs Header
-                    _buildSegmentedTabBar(),
+                    const SizedBox(height: 6),
                   ],
                 ),
               ),
@@ -843,6 +1033,7 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
           ],
           body: TabBarView(
             controller: _tabController,
+            physics: const NeverScrollableScrollPhysics(),
             children: [
               _buildVitalsTab(member, memberVitals, healthProv),
               _buildMedicationsTab(member, memberMeds, healthProv),
@@ -1144,9 +1335,18 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
                 ),
               ),
-              const Text(
-                'Tap doctor for records',
-                style: TextStyle(fontSize: 11, color: AppColors.textLight),
+              TextButton.icon(
+                onPressed: () => _manageAssignedDoctors(member),
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  minimumSize: const Size(0, 34),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                icon: const Icon(Icons.edit_rounded, size: 15),
+                label: const Text(
+                  'Manage',
+                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
+                ),
               ),
             ],
           ),
@@ -1171,7 +1371,10 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
               return Padding(
                 padding: const EdgeInsets.only(top: 8),
                 child: InkWell(
-                  onTap: () => _showDoctorRecords(member, doctor),
+                  onTap: () => context.push(
+                    '/members/${member.id}/doctors/${doctor.id}/records',
+                    extra: doctor,
+                  ),
                   borderRadius: BorderRadius.circular(14),
                   child: Container(
                     padding: const EdgeInsets.symmetric(
@@ -1313,43 +1516,6 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
   }
 
   // ── Segmented Tab Bar ─────────────────────────────────────────────────
-  Widget _buildSegmentedTabBar() {
-    return Container(
-      height: 44,
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF1F5F9),
-        borderRadius: BorderRadius.circular(22),
-      ),
-      child: TabBar(
-        controller: _tabController,
-        isScrollable: true,
-        tabAlignment: TabAlignment.start,
-        dividerColor: Colors.transparent,
-        indicatorSize: TabBarIndicatorSize.tab,
-        indicator: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(18),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withAlpha(12),
-              blurRadius: 6,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        labelColor: AppColors.primary,
-        unselectedLabelColor: AppColors.textMid,
-        labelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800),
-        unselectedLabelStyle: const TextStyle(
-          fontSize: 13,
-          fontWeight: FontWeight.w600,
-        ),
-        tabs: _tabs.map((name) => Tab(text: name)).toList(),
-      ),
-    );
-  }
-
   // ── Tab 1: Vitals View ────────────────────────────────────────────────
   Widget _buildVitalsTab(
     MemberModel member,
@@ -1478,7 +1644,7 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: vitals.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 8),
+              separatorBuilder: (_, _) => const SizedBox(height: 8),
               itemBuilder: (context, index) {
                 final v = vitals[index];
                 return _buildVitalHistoryTile(v, healthProv);
@@ -1698,7 +1864,7 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: meds.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 10),
+              separatorBuilder: (_, _) => const SizedBox(height: 10),
               itemBuilder: (context, index) {
                 final med = meds[index];
                 return Container(
@@ -1867,7 +2033,7 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: vaccines.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 10),
+              separatorBuilder: (_, _) => const SizedBox(height: 10),
               itemBuilder: (context, index) {
                 final vac = vaccines[index];
                 return Container(
@@ -2002,7 +2168,7 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: visits.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 10),
+              separatorBuilder: (_, _) => const SizedBox(height: 10),
               itemBuilder: (context, index) {
                 final visit = visits[index];
                 return InkWell(
@@ -2144,7 +2310,7 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: files.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 10),
+              separatorBuilder: (_, _) => const SizedBox(height: 10),
               itemBuilder: (context, index) {
                 final f = files[index];
                 return Container(

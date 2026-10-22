@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../config/routes.dart';
@@ -62,10 +63,15 @@ class _DoctorListScreenState extends State<DoctorListScreen> {
 
     if (!filters.contains(_selectedFilter)) _selectedFilter = 'All';
 
-    return Scaffold(
-      backgroundColor: AppColors.bg,
-      body: SafeArea(
-        child: RefreshIndicator(
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+        statusBarBrightness: Brightness.dark,
+      ),
+      child: Scaffold(
+        backgroundColor: AppColors.bg,
+        body: RefreshIndicator(
           color: AppColors.primary,
           onRefresh: _loadDoctors,
           child: SingleChildScrollView(
@@ -162,15 +168,20 @@ class _DoctorListScreenState extends State<DoctorListScreen> {
             ),
           ),
         ),
+        bottomNavigationBar: const BottomNav(currentIndex: 1),
       ),
-      bottomNavigationBar: const BottomNav(currentIndex: 1),
     );
   }
 
   Widget _buildHeader(int doctorCount) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(20, 18, 20, 22),
+      padding: EdgeInsets.fromLTRB(
+        20,
+        18 + MediaQuery.paddingOf(context).top,
+        20,
+        22,
+      ),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,

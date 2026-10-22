@@ -1,11 +1,46 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:go_router/go_router.dart';
 import '../config/theme.dart';
 import '../models/doctor_model.dart';
 import '../models/member_model.dart';
 import 'app_avatar.dart';
+
+class _MeasureSize extends SingleChildRenderObjectWidget {
+  const _MeasureSize({required this.onChange, required super.child});
+
+  final ValueChanged<Size> onChange;
+
+  @override
+  RenderObject createRenderObject(BuildContext context) =>
+      _MeasureSizeRenderObject(onChange);
+
+  @override
+  void updateRenderObject(
+    BuildContext context,
+    covariant _MeasureSizeRenderObject renderObject,
+  ) {
+    renderObject.onChange = onChange;
+  }
+}
+
+class _MeasureSizeRenderObject extends RenderProxyBox {
+  _MeasureSizeRenderObject(this.onChange);
+
+  ValueChanged<Size> onChange;
+  Size? _previousSize;
+
+  @override
+  void performLayout() {
+    super.performLayout();
+    final measuredSize = child?.size ?? Size.zero;
+    if (_previousSize == measuredSize) return;
+    _previousSize = measuredSize;
+    WidgetsBinding.instance.addPostFrameCallback((_) => onChange(measuredSize));
+  }
+}
 
 /// Relationship generational classification and ordering
 enum FamilyGeneration {
@@ -352,13 +387,11 @@ class _InteractiveTreeViewState extends State<InteractiveTreeView> {
   Set<String>? _collapsedBranches;
   TreeDisplayMode _displayMode = TreeDisplayMode.hierarchical;
   final TransformationController _treeController = TransformationController();
-  final GlobalKey _treeContentKey = GlobalKey();
   bool _treeWasMoved = false;
   double _fitScale = 1;
-  double _treeScale = 1;
-  double _treeContentHeight = 0;
   double _lastCanvasWidth = 0;
   double _lastViewportWidth = 0;
+  double? _treeContentHeight;
 
   @override
   void dispose() {
@@ -543,7 +576,6 @@ class _InteractiveTreeViewState extends State<InteractiveTreeView> {
           _lastCanvasWidth = canvasWidth;
           _lastViewportWidth = viewportWidth;
           _fitScale = nextFitScale;
-          _treeScale = nextFitScale;
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (!mounted || _treeWasMoved) return;
             _treeController.value = _centeredTreeMatrix(
@@ -553,14 +585,9 @@ class _InteractiveTreeViewState extends State<InteractiveTreeView> {
             );
           });
         }
-        _scheduleTreeContentMeasurement();
-        final fallbackHeight = _calculateTreeCanvasHeight(members);
-        final viewportHeight = math.max(
-          70.0,
-          (_treeContentHeight > 0 ? _treeContentHeight : fallbackHeight) *
-                  _treeScale +
-              4,
-        );
+        final canvasHeight =
+            _treeContentHeight ?? _calculateTreeCanvasHeight(members);
+        final viewportHeight = math.max(70.0, canvasHeight * _fitScale + 2);
 
         return SizedBox(
           width: viewportWidth,
@@ -570,32 +597,48 @@ class _InteractiveTreeViewState extends State<InteractiveTreeView> {
               Positioned.fill(
                 child: InteractiveViewer(
                   transformationController: _treeController,
-                  alignment: Alignment.topCenter,
+                  alignment: Alignment.topLeft,
                   constrained: false,
-                  minScale: 0.35,
+                  minScale: math.max(0.35, nextFitScale * 0.7),
                   maxScale: 2.4,
-                  boundaryMargin: const EdgeInsets.all(180),
-                  panAxis: PanAxis.horizontal,
+                  boundaryMargin: const EdgeInsets.symmetric(
+                    horizontal: 72,
+                    vertical: 36,
+                  ),
+                  panAxis: PanAxis.free,
+                  clipBehavior: Clip.hardEdge,
                   trackpadScrollCausesScale: true,
                   onInteractionStart: (_) => _treeWasMoved = true,
-                  onInteractionEnd: (_) {
-                    final nextScale = _treeController.value.getMaxScaleOnAxis();
-                    if ((_treeScale - nextScale).abs() > 0.01 && mounted) {
-                      setState(() => _treeScale = nextScale);
-                    }
-                  },
-                  child: SizedBox(
-                    key: _treeContentKey,
-                    width: canvasWidth,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (_displayMode == TreeDisplayMode.hierarchical)
-                          ..._buildDirectTreeMembers(members)
-                        else
-                          ..._buildGenerationalTreeBranches(members),
-                      ],
+                  child: _MeasureSize(
+                    onChange: (size) {
+                      if (!mounted ||
+                          (_treeContentHeight != null &&
+                              (_treeContentHeight! - size.height).abs() <
+                                  0.5)) {
+                        return;
+                      }
+                      setState(() => _treeContentHeight = size.height);
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        if (!mounted || _treeWasMoved) return;
+                        _treeController.value = _centeredTreeMatrix(
+                          viewportWidth,
+                          canvasWidth,
+                          _fitScale,
+                        );
+                      });
+                    },
+                    child: SizedBox(
+                      width: canvasWidth,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (_displayMode == TreeDisplayMode.hierarchical)
+                            ..._buildDirectTreeMembers(members)
+                          else
+                            ..._buildGenerationalTreeBranches(members),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -614,7 +657,6 @@ class _InteractiveTreeViewState extends State<InteractiveTreeView> {
                       onTap: () {
                         setState(() {
                           _treeWasMoved = false;
-                          _treeScale = _fitScale;
                         });
                         _treeController.value = _centeredTreeMatrix(
                           viewportWidth,
@@ -654,19 +696,6 @@ class _InteractiveTreeViewState extends State<InteractiveTreeView> {
       ..setEntry(0, 0, scale)
       ..setEntry(1, 1, scale)
       ..setTranslationRaw(horizontalOffset, 0, 0);
-  }
-
-  void _scheduleTreeContentMeasurement() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      final renderBox =
-          _treeContentKey.currentContext?.findRenderObject() as RenderBox?;
-      final measuredHeight = renderBox?.size.height ?? 0;
-      if (measuredHeight > 0 &&
-          (_treeContentHeight - measuredHeight).abs() > 0.5) {
-        setState(() => _treeContentHeight = measuredHeight);
-      }
-    });
   }
 
   double _calculateTreeCanvasWidth(
@@ -776,7 +805,7 @@ class _InteractiveTreeViewState extends State<InteractiveTreeView> {
     )) {
       groupCount++;
     }
-    return math.max(1, groupCount) * 180 + 24;
+    return math.max(1, groupCount) * 132 + 12;
   }
 
   Widget _buildModeToggleBtn({
@@ -1340,12 +1369,16 @@ class _InteractiveTreeViewState extends State<InteractiveTreeView> {
                         children: [
                           Icon(relIcon, size: 9, color: badgeColor),
                           const SizedBox(width: 3),
-                          Text(
-                            displayRelation,
-                            style: TextStyle(
-                              fontSize: 9,
-                              fontWeight: FontWeight.w700,
-                              color: badgeColor,
+                          Flexible(
+                            child: Text(
+                              displayRelation,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 9,
+                                fontWeight: FontWeight.w700,
+                                color: badgeColor,
+                              ),
                             ),
                           ),
                         ],

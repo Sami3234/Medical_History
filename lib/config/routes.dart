@@ -14,6 +14,8 @@ import '../screens/family/family_detail_screen.dart';
 import '../screens/member/member_list_screen.dart';
 import '../screens/member/member_form_screen.dart';
 import '../screens/member/member_detail_screen.dart';
+import '../screens/member/member_doctor_records_screen.dart';
+import '../models/doctor_model.dart';
 import '../screens/doctor/doctor_list_screen.dart';
 import '../screens/doctor/doctor_form_screen.dart';
 import '../screens/doctor/doctor_detail_screen.dart';
@@ -48,6 +50,8 @@ class AppRoutes {
   static const memberAdd = '/members/add';
   static const memberEdit = '/members/:id/edit';
   static const memberDetail = '/members/:id';
+  static const memberDoctorRecords =
+      '/members/:memberId/doctors/:doctorId/records';
   static const doctors = '/doctors';
   static const doctorAdd = '/doctors/add';
   static const doctorEdit = '/doctors/:id/edit';
@@ -122,6 +126,14 @@ class AppRoutes {
             MemberFormScreen(memberId: state.pathParameters['id']),
       ),
       GoRoute(
+        path: memberDoctorRecords,
+        builder: (_, state) => MemberDoctorRecordsScreen(
+          memberId: state.pathParameters['memberId']!,
+          doctorId: state.pathParameters['doctorId']!,
+          initialDoctor: state.extra as DoctorModel?,
+        ),
+      ),
+      GoRoute(
         path: memberDetail,
         builder: (_, state) =>
             MemberDetailScreen(id: state.pathParameters['id']!),
@@ -141,8 +153,10 @@ class AppRoutes {
       GoRoute(path: visits, builder: (_, _) => const VisitListScreen()),
       GoRoute(
         path: visitAdd,
-        builder: (_, state) =>
-            VisitFormScreen(memberId: state.uri.queryParameters['memberId']),
+        builder: (_, state) => VisitFormScreen(
+          memberId: state.uri.queryParameters['memberId'],
+          doctorId: state.uri.queryParameters['doctorId'],
+        ),
       ),
       GoRoute(
         path: visitDetail,

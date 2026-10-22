@@ -12,8 +12,9 @@ import '../../utils/extensions.dart';
 
 class VisitFormScreen extends StatefulWidget {
   final String? memberId;
+  final String? doctorId;
 
-  const VisitFormScreen({super.key, this.memberId});
+  const VisitFormScreen({super.key, this.memberId, this.doctorId});
 
   @override
   State<VisitFormScreen> createState() => _VisitFormScreenState();
@@ -43,9 +44,25 @@ class _VisitFormScreenState extends State<VisitFormScreen> {
           '${_visitDate.day.toString().padLeft(2, '0')} / ${_visitDate.month.toString().padLeft(2, '0')} / ${_visitDate.year}',
     );
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final uid = SupabaseConfig.currentUserId;
-      if (uid != null) context.read<DoctorProvider>().loadDoctors(uid);
+      _loadDoctorsAndPrefill();
     });
+  }
+
+  Future<void> _loadDoctorsAndPrefill() async {
+    final uid = SupabaseConfig.currentUserId;
+    final provider = context.read<DoctorProvider>();
+    if (uid != null) await provider.loadDoctors(uid);
+    final requestedDoctorId = widget.doctorId;
+    if (!mounted || requestedDoctorId == null) return;
+    for (final doctor in provider.doctors) {
+      if (doctor.id != requestedDoctorId) continue;
+      setState(() {
+        _selectedDoctorId = doctor.id;
+        _doctorName.text = doctor.name;
+        _hospital.text = doctor.hospital ?? '';
+      });
+      break;
+    }
   }
 
   @override

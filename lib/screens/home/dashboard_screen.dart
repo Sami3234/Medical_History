@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -120,7 +121,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           },
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.only(bottom: 112),
+            padding: const EdgeInsets.only(bottom: 16),
             child: Column(
               children: [
                 _buildDashboardHero(),
@@ -483,10 +484,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
         : 'Good evening';
     final dateStr = DateFormat('EEEE, d MMMM yyyy').format(DateTime.now());
 
-    return Scaffold(
-      backgroundColor: AppColors.bg,
-      body: SafeArea(
-        child: RefreshIndicator(
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+        statusBarBrightness: Brightness.dark,
+      ),
+      child: Scaffold(
+        backgroundColor: AppColors.bg,
+        body: RefreshIndicator(
           color: AppColors.primary,
           onRefresh: () async {
             final uid = auth.uid ?? SupabaseConfig.currentUserId;
@@ -500,157 +506,177 @@ class _DashboardScreenState extends State<DashboardScreen> {
           },
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 112),
+            padding: const EdgeInsets.only(bottom: 16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (SupabaseConfig.db == null)
-                  _buildStatusBanner(
-                    'Offline mode: showing locally saved records',
-                    Icons.cloud_off_outlined,
-                  ),
-                OverflowBox(
-                  minWidth: MediaQuery.sizeOf(context).width,
-                  maxWidth: MediaQuery.sizeOf(context).width,
-                  alignment: Alignment.topCenter,
-                  child: _buildGlassDashboardHeader(
-                    userName: userName,
-                    avatarUrl: user?.avatarUrl,
-                    greeting: greeting,
-                    firstName: userFirstName,
-                    date: dateStr,
-                    upcomingAppointments: upcomingAppointments,
-                  ),
-                ),
-                const SizedBox(height: 22),
-
-                const Text(
-                  'Medical history hub',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.textDark,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                const Text(
-                  'Manage your family, doctor visits, and documents in one place.',
-                  style: TextStyle(fontSize: 13, color: AppColors.textLight),
-                ),
-                const SizedBox(height: 14),
-
-                _buildQuickLinks(),
-                const SizedBox(height: 22),
-
-                _buildHealthSummary(
-                  activeMedicationCount: activeMedicationCount,
-                  vitalCount: vitalCount,
+                _buildGlassDashboardHeader(
+                  userName: userName,
+                  avatarUrl: user?.avatarUrl,
+                  greeting: greeting,
+                  firstName: userFirstName,
+                  date: dateStr,
                   upcomingAppointments: upcomingAppointments,
-                  membersNeedingEmergency: membersNeedingEmergency,
                 ),
-                const SizedBox(height: 22),
-
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Family members',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.textDark,
-                      ),
+                if (SupabaseConfig.db == null)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+                    child: _buildStatusBanner(
+                      'Offline mode: showing locally saved records',
+                      Icons.cloud_off_outlined,
                     ),
-                    TextButton.icon(
-                      onPressed: () => context.push(AppRoutes.memberAdd),
-                      style: TextButton.styleFrom(
-                        padding: EdgeInsets.zero,
-                        minimumSize: Size.zero,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 22, 20, 0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Medical history hub',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.textDark,
+                        ),
                       ),
-                      icon: const Icon(
-                        Icons.person_add_rounded,
-                        size: 15,
-                        color: AppColors.primary,
-                      ),
-                      label: const Text(
-                        'Add member',
+                      const SizedBox(height: 4),
+                      const Text(
+                        'Manage your family, doctor visits, and documents in one place.',
                         style: TextStyle(
                           fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.primary,
+                          color: AppColors.textLight,
                         ),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                const Text(
-                  'Tap a person to see their visits, doctors, and documents',
-                  style: TextStyle(fontSize: 11, color: AppColors.textLight),
-                ),
-                const SizedBox(height: 12),
+                      const SizedBox(height: 14),
 
-                // Tree Card
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 16,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: AppColors.border, width: 1.2),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.shadow,
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
+                      _buildQuickLinks(),
+                      const SizedBox(height: 22),
+
+                      _buildHealthSummary(
+                        activeMedicationCount: activeMedicationCount,
+                        vitalCount: vitalCount,
+                        upcomingAppointments: upcomingAppointments,
+                        membersNeedingEmergency: membersNeedingEmergency,
                       ),
-                    ],
-                  ),
-                  child: familyProv.loading
-                      ? const Center(
-                          child: Padding(
-                            padding: EdgeInsets.all(16),
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: AppColors.primary,
+                      const SizedBox(height: 22),
+
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Expanded(
+                            child: Text(
+                              'Family members',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.textDark,
+                              ),
                             ),
                           ),
-                        )
-                      : memberProv.members.isEmpty
-                      ? _buildEmptyTree()
-                      : InteractiveTreeView(
-                          members: memberProv.members,
-                          memberDoctors: _memberDoctors,
-                          currentUserName: userName,
-                          familyName: ownerName ?? userName,
-                          showToolbar: false,
-                          onMemberTap: (member) async {
-                            await context.push('/members/${member.id}');
-                            await _loadMemberDoctors(memberProv.members);
-                          },
-                          onAddMember: () => context.push(AppRoutes.memberAdd),
+                          const SizedBox(width: 8),
+                          TextButton.icon(
+                            onPressed: () => context.push(AppRoutes.memberAdd),
+                            style: TextButton.styleFrom(
+                              padding: EdgeInsets.zero,
+                              minimumSize: Size.zero,
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                            icon: const Icon(
+                              Icons.person_add_rounded,
+                              size: 15,
+                              color: AppColors.primary,
+                            ),
+                            label: const Text(
+                              'Add member',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.primary,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      const Text(
+                        'Tap a person to see their visits, doctors, and documents',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: AppColors.textLight,
                         ),
-                ),
-                const SizedBox(height: 18),
+                      ),
+                      const SizedBox(height: 12),
 
-                if (upcomingAppointments > 0)
-                  InfoBanner(
-                    icon: Icons.event_available_outlined,
-                    title: '$upcomingAppointments upcoming appointment(s)',
-                    subtitle: 'Open calendar to review follow-ups.',
-                    onTap: () => context.push('/appointments'),
+                      // Tree Card
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 16,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: AppColors.border,
+                            width: 1.2,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.shadow,
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: familyProv.loading
+                            ? const Center(
+                                child: Padding(
+                                  padding: EdgeInsets.all(16),
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: AppColors.primary,
+                                  ),
+                                ),
+                              )
+                            : memberProv.members.isEmpty
+                            ? _buildEmptyTree()
+                            : InteractiveTreeView(
+                                members: memberProv.members,
+                                memberDoctors: _memberDoctors,
+                                currentUserName: userName,
+                                familyName: ownerName ?? userName,
+                                showToolbar: false,
+                                onMemberTap: (member) async {
+                                  await context.push('/members/${member.id}');
+                                  await _loadMemberDoctors(memberProv.members);
+                                },
+                                onAddMember: () =>
+                                    context.push(AppRoutes.memberAdd),
+                              ),
+                      ),
+                      if (upcomingAppointments > 0) ...[
+                        const SizedBox(height: 18),
+                        InfoBanner(
+                          icon: Icons.event_available_outlined,
+                          title:
+                              '$upcomingAppointments upcoming appointment(s)',
+                          subtitle: 'Open calendar to review follow-ups.',
+                          onTap: () => context.push('/appointments'),
+                        ),
+                      ],
+                      const SizedBox(height: 4),
+                    ],
                   ),
-                const SizedBox(height: 20),
+                ),
               ],
             ),
           ),
         ),
+        bottomNavigationBar: const BottomNav(currentIndex: 0),
       ),
-      bottomNavigationBar: const BottomNav(currentIndex: 0),
     );
   }
 
@@ -704,7 +730,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
             ),
             Container(
-              padding: const EdgeInsets.all(18),
+              padding: EdgeInsets.fromLTRB(
+                18,
+                18 + MediaQuery.paddingOf(context).top,
+                18,
+                18,
+              ),
               decoration: BoxDecoration(
                 color: Colors.white.withAlpha(18),
                 borderRadius: bottomRadius,
@@ -1008,6 +1039,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
     required Color surface,
     required VoidCallback onTap,
   }) {
+    final labelWidget = Text(
+      label,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: TextStyle(
+        fontSize: horizontal ? 11 : 9.5,
+        fontWeight: FontWeight.w700,
+        color: AppColors.textDark,
+      ),
+      textAlign: TextAlign.center,
+    );
+
     return SizedBox(
       width: width,
       child: InkWell(
@@ -1049,19 +1092,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 child: Icon(icon, color: accent, size: 18),
               ),
               SizedBox(width: horizontal ? 9 : 0, height: horizontal ? 0 : 6),
-              Flexible(
-                child: Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: horizontal ? 11 : 9.5,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textDark,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ),
+              if (horizontal) Flexible(child: labelWidget) else labelWidget,
             ],
           ),
         ),
