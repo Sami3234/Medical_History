@@ -45,7 +45,7 @@ class _ForgotScreenState extends State<ForgotScreen> {
     final auth = context.watch<AuthProvider>();
 
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: context.appBackground,
       appBar: AppBar(
         title: const Text('Reset password'),
         leading: IconButton(
@@ -87,13 +87,13 @@ class _ForgotScreenState extends State<ForgotScreen> {
                   ),
                 ),
                 const SizedBox(height: 36),
-                const Text(
+                Text(
                   'Forgot your password?',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 26,
                     fontWeight: FontWeight.w800,
-                    color: AppColors.textDark,
+                    color: context.appTextPrimary,
                   ),
                 ),
                 const SizedBox(height: 10),
@@ -109,12 +109,12 @@ class _ForgotScreenState extends State<ForgotScreen> {
                 const SizedBox(height: 32),
                 Align(
                   alignment: Alignment.centerLeft,
-                  child: const Text(
+                  child: Text(
                     'Email address',
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.textDark,
+                      color: context.appTextPrimary,
                     ),
                   ),
                 ),

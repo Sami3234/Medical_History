@@ -20,7 +20,7 @@ class DoctorChip extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: context.appSurfaceSoft,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: AppColors.primary.withAlpha(40)),
         ),

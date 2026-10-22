@@ -17,6 +17,7 @@ import 'services/native_document_service.dart';
 
 import 'providers/health_provider.dart';
 import 'providers/theme_provider.dart';
+import 'providers/notification_inbox_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -48,6 +49,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => RecordsProvider()),
         ChangeNotifierProvider(create: (_) => BackupProvider()),
         ChangeNotifierProvider(create: (_) => HealthProvider()),
+        ChangeNotifierProvider(create: (_) => NotificationInboxProvider()),
       ],
       child: Consumer<AppThemeController>(
         builder: (context, themeController, _) => MaterialApp.router(

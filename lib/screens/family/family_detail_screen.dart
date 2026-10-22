@@ -41,7 +41,7 @@ class _FamilyDetailScreenState extends State<FamilyDetailScreen> {
 
     if (family == null) {
       return Scaffold(
-        backgroundColor: AppColors.bg,
+        backgroundColor: context.appBackground,
         appBar: AppBar(
           title: const Text('Family details'),
           leading: IconButton(
@@ -61,12 +61,12 @@ class _FamilyDetailScreenState extends State<FamilyDetailScreen> {
                       color: AppColors.textLight,
                     ),
                     const SizedBox(height: 14),
-                    const Text(
+                    Text(
                       'Family space not found',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.textDark,
+                        color: context.appTextPrimary,
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -95,7 +95,7 @@ class _FamilyDetailScreenState extends State<FamilyDetailScreen> {
     final surfaceColor = Theme.of(context).colorScheme.surface;
 
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: context.appBackground,
       appBar: AppBar(
         title: const Text('Family details'),
         leading: IconButton(
@@ -157,10 +157,10 @@ class _FamilyDetailScreenState extends State<FamilyDetailScreen> {
                             members.length < 10
                                 ? '0${members.length}'
                                 : '${members.length}',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 32,
                               fontWeight: FontWeight.w800,
-                              color: AppColors.textDark,
+                              color: context.appTextPrimary,
                             ),
                           ),
                           const SizedBox(height: 4),
@@ -203,7 +203,7 @@ class _FamilyDetailScreenState extends State<FamilyDetailScreen> {
                             style: TextStyle(
                               fontSize: 32,
                               fontWeight: FontWeight.w800,
-                              color: AppColors.textDark,
+                              color: context.appTextPrimary,
                             ),
                           ),
                           SizedBox(height: 4),
@@ -227,12 +227,12 @@ class _FamilyDetailScreenState extends State<FamilyDetailScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
+                  Text(
                     'Family members',
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.w800,
-                      color: AppColors.textDark,
+                      color: context.appTextPrimary,
                     ),
                   ),
                   TextButton.icon(
@@ -321,10 +321,10 @@ class _FamilyDetailScreenState extends State<FamilyDetailScreen> {
                               children: [
                                 Text(
                                   member.name,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w700,
-                                    color: AppColors.textDark,
+                                    color: context.appTextPrimary,
                                   ),
                                 ),
                                 const SizedBox(height: 3),

@@ -193,8 +193,8 @@ class _DoctorListScreenState extends State<DoctorListScreen> {
       child: Stack(
         children: [
           Positioned(
-            right: -42,
-            top: -58,
+            right: -18,
+            top: -22,
             child: Container(
               width: 160,
               height: 160,

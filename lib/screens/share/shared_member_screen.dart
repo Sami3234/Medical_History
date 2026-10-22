@@ -24,7 +24,7 @@ class _SharedMemberScreenState extends State<SharedMemberScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: context.appBackground,
       appBar: AppBar(
         title: const Text('Shared medical profile'),
         automaticallyImplyLeading: false,
@@ -47,14 +47,19 @@ class _SharedMemberScreenState extends State<SharedMemberScreen> {
             children: [
               _header(member),
               const SizedBox(height: 16),
-              _section('Health profile', [
-                _info('Relation', member['relation']),
-                _info('Blood group', member['blood_group']),
-                _info('Allergies', member['allergies']),
-                _info('Emergency contact', member['emergency_contact']),
+              _section(context, 'Health profile', [
+                _info(context, 'Relation', member['relation']),
+                _info(context, 'Blood group', member['blood_group']),
+                _info(context, 'Allergies', member['allergies']),
+                _info(
+                  context,
+                  'Emergency contact',
+                  member['emergency_contact'],
+                ),
               ]),
               const SizedBox(height: 14),
               _section(
+                context,
                 'Visits (${visits.length})',
                 visits.isEmpty
                     ? [const Text('No visits shared.')]
@@ -73,6 +78,7 @@ class _SharedMemberScreenState extends State<SharedMemberScreen> {
               ),
               const SizedBox(height: 14),
               _section(
+                context,
                 'Documents (${documents.length})',
                 documents.isEmpty
                     ? [const Text('No documents shared.')]
@@ -138,23 +144,23 @@ class _SharedMemberScreenState extends State<SharedMemberScreen> {
     );
   }
 
-  Widget _section(String title, List<Widget> children) {
+  Widget _section(BuildContext context, String title, List<Widget> children) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.appSurface,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: context.appBorder),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             title,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w800,
-              color: AppColors.textDark,
+              color: context.appTextPrimary,
             ),
           ),
           const SizedBox(height: 8),
@@ -164,7 +170,7 @@ class _SharedMemberScreenState extends State<SharedMemberScreen> {
     );
   }
 
-  Widget _info(String label, dynamic value) {
+  Widget _info(BuildContext context, String label, dynamic value) {
     final text = value?.toString().trim() ?? '';
     if (text.isEmpty) return const SizedBox.shrink();
     return Padding(
@@ -182,9 +188,9 @@ class _SharedMemberScreenState extends State<SharedMemberScreen> {
           Expanded(
             child: Text(
               text,
-              style: const TextStyle(
+              style: TextStyle(
                 fontWeight: FontWeight.w700,
-                color: AppColors.textDark,
+                color: context.appTextPrimary,
               ),
             ),
           ),

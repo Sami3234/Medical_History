@@ -51,7 +51,7 @@ class _NotificationsSettingsScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: context.appBackground,
       appBar: AppBar(
         title: const Text('Notifications'),
         leading: IconButton(
@@ -69,7 +69,7 @@ class _NotificationsSettingsScreenState
               Container(
                 padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: context.appSurface,
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
                     color: _masterNotifications
@@ -106,7 +106,7 @@ class _NotificationsSettingsScreenState
                       ),
                     ),
                     const SizedBox(width: 14),
-                    const Expanded(
+                    Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -115,7 +115,7 @@ class _NotificationsSettingsScreenState
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w700,
-                              color: AppColors.textDark,
+                              color: context.appTextPrimary,
                             ),
                           ),
                           SizedBox(height: 2),
@@ -264,7 +264,7 @@ class _NotificationsSettingsScreenState
 
   BoxDecoration _cardDecoration() {
     return BoxDecoration(
-      color: Colors.white,
+      color: context.appSurface,
       borderRadius: BorderRadius.circular(20),
       border: Border.all(color: AppColors.border, width: 1.2),
       boxShadow: const [
@@ -288,7 +288,9 @@ class _NotificationsSettingsScreenState
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: enabled ? AppColors.surface : Colors.grey.shade100,
+              color: enabled
+                  ? context.appSurfaceSoft
+                  : context.appSurfaceSoft.withAlpha(120),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(
@@ -307,7 +309,7 @@ class _NotificationsSettingsScreenState
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
-                    color: enabled ? AppColors.textDark : Colors.grey,
+                    color: enabled ? context.appTextPrimary : Colors.grey,
                   ),
                 ),
                 const SizedBox(height: 2),

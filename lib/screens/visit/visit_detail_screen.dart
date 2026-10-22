@@ -25,7 +25,7 @@ class VisitDetailScreen extends StatelessWidget {
 
     if (visit == null) {
       return Scaffold(
-        backgroundColor: AppColors.bg,
+        backgroundColor: context.appBackground,
         appBar: AppBar(
           title: const Text('Visit details'),
           leading: IconButton(
@@ -46,7 +46,7 @@ class VisitDetailScreen extends StatelessWidget {
         .toList();
 
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: context.appBackground,
       appBar: AppBar(
         title: const Text('Visit details'),
         leading: IconButton(
@@ -113,6 +113,7 @@ class VisitDetailScreen extends StatelessWidget {
             ),
             const SizedBox(height: 18),
             _section(
+              context: context,
               title: 'Consultation summary',
               children: [
                 _field('Symptoms', visit.symptoms),
@@ -127,6 +128,7 @@ class VisitDetailScreen extends StatelessWidget {
             if (visit.treatment?.trim().isNotEmpty == true) ...[
               const SizedBox(height: 18),
               _section(
+                context: context,
                 title: 'Prescribed medicines',
                 children: [
                   Text(
@@ -139,6 +141,7 @@ class VisitDetailScreen extends StatelessWidget {
             if (visit.followUpDate != null) ...[
               const SizedBox(height: 18),
               _section(
+                context: context,
                 title: 'Follow-up',
                 children: [
                   Text(DateFormat('dd MMMM yyyy').format(visit.followUpDate!)),
@@ -148,6 +151,7 @@ class VisitDetailScreen extends StatelessWidget {
             if (attachments.isNotEmpty) ...[
               const SizedBox(height: 18),
               _section(
+                context: context,
                 title: 'Attached documents',
                 children: attachments
                     .map(
@@ -210,26 +214,29 @@ class VisitDetailScreen extends StatelessWidget {
     ],
   );
 
-  Widget _section({required String title, required List<Widget> children}) =>
-      Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(22),
-          border: Border.all(color: AppColors.border),
+  Widget _section({
+    required BuildContext context,
+    required String title,
+    required List<Widget> children,
+  }) => Container(
+    padding: const EdgeInsets.all(20),
+    decoration: BoxDecoration(
+      color: context.appSurface,
+      borderRadius: BorderRadius.circular(22),
+      border: Border.all(color: context.appBorder),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
-            ),
-            const SizedBox(height: 16),
-            ...children,
-          ],
-        ),
-      );
+        const SizedBox(height: 16),
+        ...children,
+      ],
+    ),
+  );
 
   Future<void> _confirmDelete(BuildContext context) async {
     final confirmed = await showDialog<bool>(

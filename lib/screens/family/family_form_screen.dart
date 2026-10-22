@@ -63,7 +63,7 @@ class _FamilyFormScreenState extends State<FamilyFormScreen> {
     final nextFamilyId = 'FAM-${1000 + famCount + 1}';
 
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: context.appBackground,
       appBar: AppBar(
         title: const Text('New family'),
         leading: IconButton(
@@ -152,12 +152,12 @@ class _FamilyFormScreenState extends State<FamilyFormScreen> {
                 const SizedBox(height: 28),
 
                 // Family name
-                const Text(
+                Text(
                   'Family name',
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.textDark,
+                    color: context.appTextPrimary,
                   ),
                 ),
                 const SizedBox(height: 6),
@@ -178,12 +178,12 @@ class _FamilyFormScreenState extends State<FamilyFormScreen> {
                 const SizedBox(height: 18),
 
                 // Contact number
-                const Text(
+                Text(
                   'Contact number',
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.textDark,
+                    color: context.appTextPrimary,
                   ),
                 ),
                 const SizedBox(height: 6),
@@ -202,12 +202,12 @@ class _FamilyFormScreenState extends State<FamilyFormScreen> {
                 const SizedBox(height: 18),
 
                 // City
-                const Text(
+                Text(
                   'City',
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.textDark,
+                    color: context.appTextPrimary,
                   ),
                 ),
                 const SizedBox(height: 6),
@@ -225,12 +225,12 @@ class _FamilyFormScreenState extends State<FamilyFormScreen> {
                 const SizedBox(height: 18),
 
                 // Address
-                const Text(
+                Text(
                   'Address',
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.textDark,
+                    color: context.appTextPrimary,
                   ),
                 ),
                 const SizedBox(height: 6),

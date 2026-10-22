@@ -142,7 +142,7 @@ class _OwnerSetupScreenState extends State<OwnerSetupScreen> {
     return PopScope(
       canPop: false,
       child: Scaffold(
-        backgroundColor: AppColors.bg,
+        backgroundColor: context.appBackground,
         body: _loading
             ? const Center(
                 child: CircularProgressIndicator(color: AppColors.primary),
@@ -169,12 +169,12 @@ class _OwnerSetupScreenState extends State<OwnerSetupScreen> {
                           ),
                         ),
                         const SizedBox(height: 22),
-                        const Text(
+                        Text(
                           'Complete your health profile',
                           style: TextStyle(
                             fontSize: 27,
                             fontWeight: FontWeight.w800,
-                            color: AppColors.textDark,
+                            color: context.appTextPrimary,
                           ),
                         ),
                         const SizedBox(height: 8),

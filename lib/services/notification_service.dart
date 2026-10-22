@@ -39,30 +39,39 @@ class NotificationService {
     required DateTime appointmentTime,
   }) async {
     await initialize();
-    final reminderTime = appointmentTime.subtract(const Duration(hours: 24));
-    if (!reminderTime.isAfter(DateTime.now())) return;
-    final scheduled = tz.TZDateTime.from(reminderTime, tz.local);
-    await plugin.zonedSchedule(
-      appointmentId.hashCode,
-      'Upcoming medical appointment',
-      '$memberName with $doctorName is scheduled tomorrow.',
-      scheduled,
-      const NotificationDetails(
-        android: AndroidNotificationDetails(
-          'appointments',
-          'Appointments',
-          channelDescription: 'Appointment reminders',
-          importance: Importance.high,
-          priority: Priority.high,
+    await cancel(appointmentId);
+    final reminders = <({Duration before, String label})>[
+      (before: const Duration(hours: 24), label: 'tomorrow'),
+      (before: const Duration(hours: 2), label: 'in 2 hours'),
+    ];
+    for (final reminder in reminders) {
+      final reminderTime = appointmentTime.subtract(reminder.before);
+      if (!reminderTime.isAfter(DateTime.now())) continue;
+      final scheduled = tz.TZDateTime.from(reminderTime, tz.local);
+      await plugin.zonedSchedule(
+        '$appointmentId:${reminder.before.inHours}h'.hashCode,
+        'Upcoming medical appointment',
+        '$memberName with $doctorName is scheduled ${reminder.label}.',
+        scheduled,
+        const NotificationDetails(
+          android: AndroidNotificationDetails(
+            'appointments',
+            'Appointments',
+            channelDescription: 'Appointment reminders',
+            importance: Importance.high,
+            priority: Priority.high,
+          ),
+          iOS: DarwinNotificationDetails(),
         ),
-        iOS: DarwinNotificationDetails(),
-      ),
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-    );
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      );
+    }
   }
 
   static Future<void> cancel(String appointmentId) async {
     await initialize();
     await plugin.cancel(appointmentId.hashCode);
+    await plugin.cancel('$appointmentId:24h'.hashCode);
+    await plugin.cancel('$appointmentId:2h'.hashCode);
   }
 }

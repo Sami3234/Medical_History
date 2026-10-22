@@ -46,9 +46,9 @@ class MedicalSummarySheet extends StatelessWidget {
 
     return Container(
       height: media.size.height * 0.9,
-      decoration: const BoxDecoration(
-        color: Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      decoration: BoxDecoration(
+        color: context.appBackground,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
       ),
       child: Column(
         children: [
@@ -86,7 +86,7 @@ class MedicalSummarySheet extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 10),
-                        const Column(
+                        Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
@@ -94,7 +94,7 @@ class MedicalSummarySheet extends StatelessWidget {
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w800,
-                                color: AppColors.textDark,
+                                color: context.appTextPrimary,
                               ),
                             ),
                             Text(
@@ -129,9 +129,9 @@ class MedicalSummarySheet extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.all(22),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: context.appSurface,
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                  border: Border.all(color: context.appBorder),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withAlpha(8),
@@ -192,9 +192,9 @@ class MedicalSummarySheet extends StatelessWidget {
                             vertical: 4,
                           ),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFF1F5F9),
+                            color: context.appSurfaceSoft,
                             borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: const Color(0xFFCBD5E1)),
+                            border: Border.all(color: context.appBorder),
                           ),
                           child: Text(
                             member.bloodGroup ?? 'Not recorded',
@@ -212,57 +212,66 @@ class MedicalSummarySheet extends StatelessWidget {
                     const SizedBox(height: 16),
 
                     // Section: Patient Demographics
-                    _sectionHeader('1. PATIENT DEMOGRAPHICS'),
+                    _sectionHeader(context, '1. PATIENT DEMOGRAPHICS'),
                     const SizedBox(height: 10),
-                    _demographicGrid(),
+                    _demographicGrid(context),
                     const SizedBox(height: 18),
 
                     // Section: Allergies & Chronic Conditions (Alert Box)
-                    _sectionHeader('2. CRITICAL ALERTS & CHRONIC CONDITIONS'),
+                    _sectionHeader(
+                      context,
+                      '2. CRITICAL ALERTS & CHRONIC CONDITIONS',
+                    ),
                     const SizedBox(height: 10),
-                    _criticalAlertsBox(),
+                    _criticalAlertsBox(context),
                     const SizedBox(height: 18),
 
                     // Section: Current Vitals
-                    _sectionHeader('3. CURRENT VITAL SIGNS'),
+                    _sectionHeader(context, '3. CURRENT VITAL SIGNS'),
                     const SizedBox(height: 10),
-                    _vitalsRow(bp, sugar, hr, weight),
+                    _vitalsRow(context, bp, sugar, hr, weight),
                     const SizedBox(height: 18),
 
                     // Section: Active Medications
-                    _sectionHeader('4. ACTIVE PRESCRIPTIONS & MEDICATIONS'),
+                    _sectionHeader(
+                      context,
+                      '4. ACTIVE PRESCRIPTIONS & MEDICATIONS',
+                    ),
                     const SizedBox(height: 10),
                     medications.isEmpty
-                        ? _emptyNote('No active medications on record.')
+                        ? _emptyNote(
+                            context,
+                            'No active medications on record.',
+                          )
                         : Column(
                             children: medications
                                 .where((m) => m.isActive)
-                                .map((m) => _medicationRow(m))
+                                .map((m) => _medicationRow(context, m))
                                 .toList(),
                           ),
                     const SizedBox(height: 18),
 
                     // Section: Immunizations
-                    _sectionHeader('5. IMMUNIZATION & VACCINE RECORD'),
+                    _sectionHeader(context, '5. IMMUNIZATION & VACCINE RECORD'),
                     const SizedBox(height: 10),
                     vaccines.isEmpty
-                        ? _emptyNote('No immunization records logged.')
+                        ? _emptyNote(context, 'No immunization records logged.')
                         : Column(
                             children: vaccines
-                                .map((v) => _vaccineRow(v))
+                                .map((v) => _vaccineRow(context, v))
                                 .toList(),
                           ),
                     const SizedBox(height: 18),
 
                     // Section: Clinical Visits
-                    _sectionHeader('6. RECENT CLINICAL VISITS'),
+                    _sectionHeader(context, '6. RECENT CLINICAL VISITS'),
                     const SizedBox(height: 10),
                     visits.isEmpty
-                        ? _emptyNote('No doctor visits logged yet.')
+                        ? _emptyNote(context, 'No doctor visits logged yet.')
                         : Column(
                             children: visits
                                 .take(3)
-                                .map((v) => _visitRow(v))
+                                .map((v) => _visitRow(context, v))
                                 .toList(),
                           ),
                     const SizedBox(height: 24),
@@ -271,9 +280,9 @@ class MedicalSummarySheet extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF8FAFC),
+                        color: context.appSurfaceSoft,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                        border: Border.all(color: context.appBorder),
                       ),
                       child: const Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -396,39 +405,40 @@ class MedicalSummarySheet extends StatelessWidget {
     );
   }
 
-  Widget _sectionHeader(String title) {
+  Widget _sectionHeader(BuildContext context, String title) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: const Color(0xFFF1F5F9),
+        color: context.appSurfaceSoft,
         borderRadius: BorderRadius.circular(6),
       ),
       child: Text(
         title,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 11.5,
           fontWeight: FontWeight.w800,
-          color: Color(0xFF334155),
+          color: context.appTextPrimary,
           letterSpacing: 0.5,
         ),
       ),
     );
   }
 
-  Widget _demographicGrid() {
+  Widget _demographicGrid(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: context.appBorder),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Column(
         children: [
           Row(
             children: [
-              _dataCell('Full Name', member.name),
+              _dataCell(context, 'Full Name', member.name),
               _dataCell(
+                context,
                 'Age',
                 member.age == 'N/A' ? 'Not specified' : member.age,
               ),
@@ -437,8 +447,12 @@ class MedicalSummarySheet extends StatelessWidget {
           const SizedBox(height: 8),
           Row(
             children: [
-              _dataCell('Relationship', member.relation),
-              _dataCell('Blood Group', member.bloodGroup ?? 'Not recorded'),
+              _dataCell(context, 'Relationship', member.relation),
+              _dataCell(
+                context,
+                'Blood Group',
+                member.bloodGroup ?? 'Not recorded',
+              ),
             ],
           ),
           if (member.emergencyContact != null &&
@@ -446,8 +460,12 @@ class MedicalSummarySheet extends StatelessWidget {
             const SizedBox(height: 8),
             Row(
               children: [
-                _dataCell('Emergency Contact', member.emergencyContact!),
-                _dataCell('Status', 'Active Patient'),
+                _dataCell(
+                  context,
+                  'Emergency Contact',
+                  member.emergencyContact!,
+                ),
+                _dataCell(context, 'Status', 'Active Patient'),
               ],
             ),
           ],
@@ -456,14 +474,14 @@ class MedicalSummarySheet extends StatelessWidget {
     );
   }
 
-  Widget _dataCell(String label, String value) {
+  Widget _dataCell(BuildContext context, String label, String value) {
     return Expanded(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             label.toUpperCase(),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 9.5,
               fontWeight: FontWeight.w600,
               color: AppColors.textLight,
@@ -472,10 +490,10 @@ class MedicalSummarySheet extends StatelessWidget {
           const SizedBox(height: 2),
           Text(
             value,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w700,
-              color: AppColors.textDark,
+              color: context.appTextPrimary,
             ),
           ),
         ],
@@ -483,7 +501,7 @@ class MedicalSummarySheet extends StatelessWidget {
     );
   }
 
-  Widget _criticalAlertsBox() {
+  Widget _criticalAlertsBox(BuildContext context) {
     final hasAllergy = member.allergies != null && member.allergies!.isNotEmpty;
     final hasCondition = member.notes != null && member.notes!.isNotEmpty;
 
@@ -535,10 +553,10 @@ class MedicalSummarySheet extends StatelessWidget {
               Expanded(
                 child: Text(
                   'Chronic History: ${hasCondition ? member.notes! : "No chronic illnesses reported"}',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
-                    color: AppColors.textDark,
+                    color: context.appTextPrimary,
                   ),
                 ),
               ),
@@ -550,6 +568,7 @@ class MedicalSummarySheet extends StatelessWidget {
   }
 
   Widget _vitalsRow(
+    BuildContext context,
     VitalModel? bp,
     VitalModel? sugar,
     VitalModel? hr,
@@ -558,24 +577,28 @@ class MedicalSummarySheet extends StatelessWidget {
     return Row(
       children: [
         _vitalMiniCard(
+          context,
           'BP',
           bp != null ? '${bp.value} ${bp.unit}' : 'Not recorded',
           Icons.speed_rounded,
         ),
         const SizedBox(width: 8),
         _vitalMiniCard(
+          context,
           'Sugar',
           sugar != null ? '${sugar.value} ${sugar.unit}' : 'Not recorded',
           Icons.bloodtype_rounded,
         ),
         const SizedBox(width: 8),
         _vitalMiniCard(
+          context,
           'Pulse',
           hr != null ? '${hr.value} ${hr.unit}' : 'Not recorded',
           Icons.favorite_rounded,
         ),
         const SizedBox(width: 8),
         _vitalMiniCard(
+          context,
           'Weight',
           weight != null ? '${weight.value} ${weight.unit}' : 'Not recorded',
           Icons.monitor_weight_rounded,
@@ -584,14 +607,19 @@ class MedicalSummarySheet extends StatelessWidget {
     );
   }
 
-  Widget _vitalMiniCard(String label, String value, IconData icon) {
+  Widget _vitalMiniCard(
+    BuildContext context,
+    String label,
+    String value,
+    IconData icon,
+  ) {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
         decoration: BoxDecoration(
-          color: const Color(0xFFF8FAFC),
+          color: context.appSurfaceSoft,
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: const Color(0xFFE2E8F0)),
+          border: Border.all(color: context.appBorder),
         ),
         child: Column(
           children: [
@@ -599,7 +627,7 @@ class MedicalSummarySheet extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 10,
                 color: AppColors.textLight,
                 fontWeight: FontWeight.w600,
@@ -609,10 +637,10 @@ class MedicalSummarySheet extends StatelessWidget {
             Text(
               value,
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w800,
-                color: AppColors.textDark,
+                color: context.appTextPrimary,
               ),
             ),
           ],
@@ -621,14 +649,14 @@ class MedicalSummarySheet extends StatelessWidget {
     );
   }
 
-  Widget _medicationRow(MedicationModel med) {
+  Widget _medicationRow(BuildContext context, MedicationModel med) {
     return Container(
       margin: const EdgeInsets.only(bottom: 6),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
+        color: context.appSurfaceSoft,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: context.appBorder),
       ),
       child: Row(
         children: [
@@ -644,10 +672,10 @@ class MedicalSummarySheet extends StatelessWidget {
               children: [
                 Text(
                   med.name,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12.5,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.textDark,
+                    color: context.appTextPrimary,
                   ),
                 ),
                 Text(
@@ -680,14 +708,14 @@ class MedicalSummarySheet extends StatelessWidget {
     );
   }
 
-  Widget _vaccineRow(VaccineModel vac) {
+  Widget _vaccineRow(BuildContext context, VaccineModel vac) {
     return Container(
       margin: const EdgeInsets.only(bottom: 6),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
+        color: context.appSurfaceSoft,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: context.appBorder),
       ),
       child: Row(
         children: [
@@ -703,10 +731,10 @@ class MedicalSummarySheet extends StatelessWidget {
               children: [
                 Text(
                   '${vac.name} (${vac.dose ?? "Dose not recorded"})',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12.5,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.textDark,
+                    color: context.appTextPrimary,
                   ),
                 ),
                 Text(
@@ -739,14 +767,14 @@ class MedicalSummarySheet extends StatelessWidget {
     );
   }
 
-  Widget _visitRow(VisitModel visit) {
+  Widget _visitRow(BuildContext context, VisitModel visit) {
     return Container(
       margin: const EdgeInsets.only(bottom: 6),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
+        color: context.appSurfaceSoft,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: context.appBorder),
       ),
       child: Row(
         children: [
@@ -762,10 +790,10 @@ class MedicalSummarySheet extends StatelessWidget {
               children: [
                 Text(
                   visit.diagnosis ?? 'Diagnosis not recorded',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12.5,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.textDark,
+                    color: context.appTextPrimary,
                   ),
                 ),
                 Text(
@@ -783,12 +811,12 @@ class MedicalSummarySheet extends StatelessWidget {
     );
   }
 
-  Widget _emptyNote(String text) {
+  Widget _emptyNote(BuildContext context, String text) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
+        color: context.appSurfaceSoft,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(

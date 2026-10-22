@@ -24,7 +24,7 @@ class MemberTile extends StatelessWidget {
       onTap: onTap,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       leading: CircleAvatar(
-        backgroundColor: AppColors.surface,
+        backgroundColor: context.appSurfaceSoft,
         child: Text(
           Helpers.initials(name),
           style: const TextStyle(
@@ -45,7 +45,7 @@ class MemberTile extends StatelessWidget {
           ? Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
-                color: AppColors.surface,
+                color: context.appSurfaceSoft,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(

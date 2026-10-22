@@ -14,14 +14,19 @@ import 'package:medical_history/main.dart';
 import 'package:medical_history/config/theme.dart';
 import 'package:medical_history/models/member_model.dart';
 import 'package:medical_history/providers/auth_provider.dart';
+import 'package:medical_history/providers/backup_provider.dart';
 import 'package:medical_history/providers/doctor_provider.dart';
 import 'package:medical_history/providers/family_provider.dart';
 import 'package:medical_history/providers/health_provider.dart';
 import 'package:medical_history/providers/member_provider.dart';
 import 'package:medical_history/providers/records_provider.dart';
 import 'package:medical_history/providers/theme_provider.dart';
+import 'package:medical_history/providers/notification_inbox_provider.dart';
+import 'package:medical_history/providers/visit_provider.dart';
 import 'package:medical_history/screens/home/dashboard_screen.dart';
+import 'package:medical_history/screens/documents/upload_doc_screen.dart';
 import 'package:medical_history/screens/profile/app_preferences_screen.dart';
+import 'package:medical_history/screens/search/search_screen.dart';
 import 'package:medical_history/widgets/tree_view.dart';
 
 void main() {
@@ -91,7 +96,12 @@ void main() {
     WidgetTester tester,
   ) async {
     SharedPreferences.setMockInitialValues({});
-    await tester.pumpWidget(const MyApp());
+    await tester.pumpWidget(
+      ChangeNotifierProvider(
+        create: (_) => AppThemeController(),
+        child: const MyApp(),
+      ),
+    );
     expect(find.text('Medical History'), findsOneWidget);
     expect(find.text("Your Family's Health Companion"), findsOneWidget);
     await tester.pump(const Duration(seconds: 3));
@@ -188,6 +198,7 @@ void main() {
           ChangeNotifierProvider(create: (_) => DoctorProvider()),
           ChangeNotifierProvider(create: (_) => HealthProvider()),
           ChangeNotifierProvider(create: (_) => RecordsProvider()),
+          ChangeNotifierProvider(create: (_) => NotificationInboxProvider()),
         ],
         child: const MaterialApp(home: DashboardScreen()),
       ),
@@ -218,6 +229,7 @@ void main() {
           ChangeNotifierProvider(create: (_) => DoctorProvider()),
           ChangeNotifierProvider(create: (_) => HealthProvider()),
           ChangeNotifierProvider(create: (_) => RecordsProvider()),
+          ChangeNotifierProvider(create: (_) => NotificationInboxProvider()),
         ],
         child: MaterialApp(
           theme: AppTheme.light,
@@ -233,6 +245,71 @@ void main() {
     final scaffold = tester.widget<Scaffold>(find.byType(Scaffold).first);
     expect(scaffold.backgroundColor, AppTheme.dark.scaffoldBackgroundColor);
     expect(find.text('Medical history hub'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('health search fits a narrow mobile viewport', (
+    WidgetTester tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    tester.view.physicalSize = const Size(360, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider(create: (_) => FamilyProvider()),
+          ChangeNotifierProvider(create: (_) => MemberProvider()),
+          ChangeNotifierProvider(create: (_) => DoctorProvider()),
+          ChangeNotifierProvider(create: (_) => VisitProvider()),
+          ChangeNotifierProvider(create: (_) => HealthProvider()),
+          ChangeNotifierProvider(create: (_) => RecordsProvider()),
+        ],
+        child: MaterialApp(theme: AppTheme.light, home: const SearchScreen()),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+
+    expect(find.byKey(const Key('health-search-field')), findsOneWidget);
+    expect(find.text('Search across your records'), findsOneWidget);
+    expect(find.text('Members 0'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('document upload fits a narrow dark viewport', (
+    WidgetTester tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    tester.view.physicalSize = const Size(360, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider(create: (_) => MemberProvider()),
+          ChangeNotifierProvider(create: (_) => VisitProvider()),
+          ChangeNotifierProvider(create: (_) => RecordsProvider()),
+          ChangeNotifierProvider(create: (_) => BackupProvider()),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.light,
+          darkTheme: AppTheme.dark,
+          themeMode: ThemeMode.dark,
+          home: const UploadDocScreen(),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+
+    expect(find.text('Save a health record'), findsOneWidget);
+    expect(find.text('Scan document'), findsOneWidget);
+    expect(find.text('Discharge summary'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }

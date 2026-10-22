@@ -45,7 +45,7 @@ class _MemberListScreenState extends State<MemberListScreen> {
     }).toList();
 
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: context.appBackground,
       appBar: AppBar(
         title: const Text('Family members'),
         leading: IconButton(
@@ -74,7 +74,7 @@ class _MemberListScreenState extends State<MemberListScreen> {
               Container(
                 height: 52,
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: context.appSurface,
                   borderRadius: BorderRadius.circular(18),
                   border: Border.all(color: AppColors.border, width: 1.2),
                   boxShadow: [
@@ -136,7 +136,7 @@ class _MemberListScreenState extends State<MemberListScreen> {
                         vertical: 14,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: context.appSurface,
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(color: AppColors.border, width: 1.2),
                         boxShadow: [
@@ -165,10 +165,10 @@ class _MemberListScreenState extends State<MemberListScreen> {
                               children: [
                                 Text(
                                   member.name,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w800,
-                                    color: AppColors.textDark,
+                                    color: context.appTextPrimary,
                                   ),
                                 ),
                                 const SizedBox(height: 3),

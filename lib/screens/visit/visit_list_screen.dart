@@ -63,7 +63,7 @@ class _VisitListScreenState extends State<VisitListScreen> {
     }
 
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: context.appBackground,
       appBar: AppBar(
         title: const Text('Medical history'),
         leading: IconButton(
@@ -178,10 +178,10 @@ class _VisitListScreenState extends State<VisitListScreen> {
                             padding: const EdgeInsets.only(bottom: 10, top: 4),
                             child: Text(
                               entry.key,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.w800,
-                                color: AppColors.textDark,
+                                color: context.appTextPrimary,
                               ),
                             ),
                           ),
@@ -228,7 +228,7 @@ class _VisitListScreenState extends State<VisitListScreen> {
         color: selected ? Colors.white : AppColors.textDark,
         fontWeight: FontWeight.w700,
       ),
-      backgroundColor: Colors.white,
+      backgroundColor: context.appSurface,
       side: const BorderSide(color: AppColors.border),
     );
   }
@@ -236,7 +236,7 @@ class _VisitListScreenState extends State<VisitListScreen> {
   Widget _messageCard(String message, IconData icon) => Container(
     padding: const EdgeInsets.all(24),
     decoration: BoxDecoration(
-      color: Colors.white,
+      color: context.appSurface,
       borderRadius: BorderRadius.circular(20),
       border: Border.all(color: AppColors.border),
     ),
@@ -260,7 +260,7 @@ class _VisitListScreenState extends State<VisitListScreen> {
     child: Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.appSurface,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: AppColors.border),
       ),

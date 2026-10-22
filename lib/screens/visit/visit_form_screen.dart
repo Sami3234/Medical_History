@@ -118,9 +118,9 @@ class _VisitFormScreenState extends State<VisitFormScreen> {
           24,
           MediaQuery.of(ctx).viewInsets.bottom + 24,
         ),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        decoration: BoxDecoration(
+          color: ctx.appSurface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -131,18 +131,18 @@ class _VisitFormScreenState extends State<VisitFormScreen> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppColors.border,
+                  color: ctx.appBorder,
                   borderRadius: BorderRadius.circular(10),
                 ),
               ),
             ),
             const SizedBox(height: 18),
-            const Text(
+            Text(
               'Add Prescribed Medicine',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w800,
-                color: AppColors.textDark,
+                color: ctx.appTextPrimary,
               ),
             ),
             const SizedBox(height: 14),
@@ -249,7 +249,7 @@ class _VisitFormScreenState extends State<VisitFormScreen> {
 
     if (members.isEmpty) {
       return Scaffold(
-        backgroundColor: AppColors.bg,
+        backgroundColor: context.appBackground,
         appBar: AppBar(
           title: const Text('New doctor visit'),
           leading: IconButton(
@@ -269,19 +269,22 @@ class _VisitFormScreenState extends State<VisitFormScreen> {
                   color: AppColors.primary,
                 ),
                 const SizedBox(height: 16),
-                const Text(
+                Text(
                   'No family members found',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w800,
-                    color: AppColors.textDark,
+                    color: context.appTextPrimary,
                   ),
                 ),
                 const SizedBox(height: 8),
-                const Text(
+                Text(
                   'Please add at least one family member before recording a doctor visit.',
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 13, color: AppColors.textLight),
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: context.appTextSecondary,
+                  ),
                 ),
                 const SizedBox(height: 20),
                 ElevatedButton.icon(
@@ -321,7 +324,7 @@ class _VisitFormScreenState extends State<VisitFormScreen> {
         members.first;
 
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: context.appBackground,
       appBar: AppBar(
         title: const Text('New doctor visit'),
         leading: IconButton(
@@ -342,20 +345,17 @@ class _VisitFormScreenState extends State<VisitFormScreen> {
                   width: double.infinity,
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFEFF8EC),
+                    color: context.appSurfaceSoft,
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: const Color(0xFFD6EBD2),
-                      width: 1.2,
-                    ),
+                    border: Border.all(color: context.appBorder, width: 1.2),
                   ),
                   child: Row(
                     children: [
                       Container(
                         width: 52,
                         height: 52,
-                        decoration: const BoxDecoration(
-                          color: Colors.white,
+                        decoration: BoxDecoration(
+                          color: context.appSurface,
                           shape: BoxShape.circle,
                         ),
                         alignment: Alignment.center,
@@ -380,19 +380,19 @@ class _VisitFormScreenState extends State<VisitFormScreen> {
                           children: [
                             Text(
                               selectedMember.name,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 17,
                                 fontWeight: FontWeight.w800,
-                                color: AppColors.textDark,
+                                color: context.appTextPrimary,
                               ),
                             ),
                             const SizedBox(height: 2),
-                            const Text(
-                              'PAT-003 • Selected patient',
+                            Text(
+                              '${selectedMember.relation} • ${selectedMember.age}',
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
-                                color: Color(0xFF2E7D32),
+                                color: AppColors.primary,
                               ),
                             ),
                           ],
@@ -404,12 +404,12 @@ class _VisitFormScreenState extends State<VisitFormScreen> {
                 const SizedBox(height: 24),
 
                 // Linked doctor
-                const Text(
+                Text(
                   'Doctor / clinic specialist',
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.textDark,
+                    color: context.appTextPrimary,
                   ),
                 ),
                 const SizedBox(height: 6),
@@ -476,12 +476,12 @@ class _VisitFormScreenState extends State<VisitFormScreen> {
                 const SizedBox(height: 18),
 
                 // Hospital / Clinic
-                const Text(
+                Text(
                   'Hospital / Clinic',
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.textDark,
+                    color: context.appTextPrimary,
                   ),
                 ),
                 const SizedBox(height: 6),
@@ -499,12 +499,12 @@ class _VisitFormScreenState extends State<VisitFormScreen> {
                 const SizedBox(height: 18),
 
                 // Visit date
-                const Text(
+                Text(
                   'Visit date',
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.textDark,
+                    color: context.appTextPrimary,
                   ),
                 ),
                 const SizedBox(height: 6),
@@ -524,12 +524,12 @@ class _VisitFormScreenState extends State<VisitFormScreen> {
                 const SizedBox(height: 18),
 
                 // Symptoms / reason
-                const Text(
+                Text(
                   'Symptoms / reason',
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.textDark,
+                    color: context.appTextPrimary,
                   ),
                 ),
                 const SizedBox(height: 6),
@@ -550,12 +550,12 @@ class _VisitFormScreenState extends State<VisitFormScreen> {
                 const SizedBox(height: 18),
 
                 // Diagnosis / treatment
-                const Text(
+                Text(
                   'Diagnosis / treatment',
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.textDark,
+                    color: context.appTextPrimary,
                   ),
                 ),
                 const SizedBox(height: 6),
@@ -611,9 +611,9 @@ class _VisitFormScreenState extends State<VisitFormScreen> {
                         vertical: 10,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: context.appSurface,
                         borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: AppColors.border),
+                        border: Border.all(color: context.appBorder),
                       ),
                       child: Row(
                         children: [
@@ -645,23 +645,20 @@ class _VisitFormScreenState extends State<VisitFormScreen> {
                     width: double.infinity,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFEFF8EC),
+                      color: context.appSurfaceSoft,
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: const Color(0xFFD6EBD2),
-                        width: 1.2,
-                      ),
+                      border: Border.all(color: context.appBorder, width: 1.2),
                     ),
-                    child: const Row(
+                    child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(
+                        const Icon(
                           Icons.add_rounded,
                           color: Color(0xFF2E7D32),
                           size: 20,
                         ),
-                        SizedBox(width: 6),
-                        Text(
+                        const SizedBox(width: 6),
+                        const Text(
                           '+ Add medicines / prescriptions',
                           style: TextStyle(
                             fontSize: 14,

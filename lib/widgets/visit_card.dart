@@ -25,7 +25,7 @@ class VisitCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: AppColors.card,
+          color: context.appSurface,
           borderRadius: BorderRadius.circular(14),
           boxShadow: [
             BoxShadow(
@@ -41,7 +41,7 @@ class VisitCard extends StatelessWidget {
               width: 46,
               height: 46,
               decoration: BoxDecoration(
-                color: AppColors.surface,
+                color: context.appSurfaceSoft,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: const Icon(

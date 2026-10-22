@@ -47,7 +47,7 @@ class _FamilyListScreenState extends State<FamilyListScreen> {
     }).toList();
 
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: context.appBackground,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
@@ -70,12 +70,12 @@ class _FamilyListScreenState extends State<FamilyListScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
+                  Text(
                     'My families',
                     style: TextStyle(
                       fontSize: 30,
                       fontWeight: FontWeight.w800,
-                      color: AppColors.textDark,
+                      color: context.appTextPrimary,
                     ),
                   ),
                   GestureDetector(
@@ -109,7 +109,7 @@ class _FamilyListScreenState extends State<FamilyListScreen> {
               Container(
                 height: 52,
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: context.appSurface,
                   borderRadius: BorderRadius.circular(18),
                   border: Border.all(color: AppColors.border, width: 1.2),
                   boxShadow: [
@@ -142,10 +142,10 @@ class _FamilyListScreenState extends State<FamilyListScreen> {
               // Counter
               Text(
                 '${families.length} families',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
-                  color: AppColors.textDark,
+                  color: context.appTextPrimary,
                 ),
               ),
               const SizedBox(height: 14),
@@ -172,7 +172,7 @@ class _FamilyListScreenState extends State<FamilyListScreen> {
                       child: Container(
                         padding: const EdgeInsets.all(18),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: context.appSurface,
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
                             color: AppColors.border,
@@ -191,10 +191,10 @@ class _FamilyListScreenState extends State<FamilyListScreen> {
                           children: [
                             Text(
                               family.name,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.w800,
-                                color: AppColors.textDark,
+                                color: context.appTextPrimary,
                               ),
                             ),
                             const SizedBox(height: 4),

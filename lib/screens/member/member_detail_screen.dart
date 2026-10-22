@@ -124,9 +124,11 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
             constraints: BoxConstraints(
               maxHeight: MediaQuery.sizeOf(context).height * 0.82,
             ),
-            decoration: const BoxDecoration(
-              color: AppColors.bg,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+            decoration: BoxDecoration(
+              color: context.appBackground,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(28),
+              ),
             ),
             child: SafeArea(
               top: false,
@@ -193,8 +195,8 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
                               draftIds.remove(doctor.id);
                             }
                           }),
-                          tileColor: Colors.white,
-                          selectedTileColor: const Color(0xFFEAF7E5),
+                          tileColor: context.appSurface,
+                          selectedTileColor: AppColors.primary.withAlpha(24),
                           selected: selected,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(15),
@@ -296,9 +298,9 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
         maxChildSize: 0.95,
         expand: false,
         builder: (context, scrollController) => Container(
-          decoration: const BoxDecoration(
-            color: AppColors.bg,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+          decoration: BoxDecoration(
+            color: context.appBackground,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
           ),
           child: ListView(
             controller: scrollController,
@@ -375,7 +377,7 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
                   return Card(
                     margin: const EdgeInsets.only(bottom: 12),
                     elevation: 0,
-                    color: Colors.white,
+                    color: context.appSurface,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(18),
                       side: const BorderSide(color: AppColors.border),

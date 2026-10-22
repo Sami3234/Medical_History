@@ -124,7 +124,7 @@ class _SecurityPrivacyScreenState extends State<SecurityPrivacyScreen> {
     final user = context.watch<AuthProvider>().user;
 
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: context.appBackground,
       appBar: AppBar(
         title: const Text('Security & Privacy'),
         leading: IconButton(
@@ -149,7 +149,7 @@ class _SecurityPrivacyScreenState extends State<SecurityPrivacyScreen> {
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: AppColors.surface,
+                        color: context.appSurfaceSoft,
                         borderRadius: BorderRadius.circular(14),
                       ),
                       child: const Icon(
@@ -159,7 +159,7 @@ class _SecurityPrivacyScreenState extends State<SecurityPrivacyScreen> {
                       ),
                     ),
                     const SizedBox(width: 14),
-                    const Expanded(
+                    Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -168,7 +168,7 @@ class _SecurityPrivacyScreenState extends State<SecurityPrivacyScreen> {
                             style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w700,
-                              color: AppColors.textDark,
+                              color: context.appTextPrimary,
                             ),
                           ),
                           SizedBox(height: 2),
@@ -201,12 +201,12 @@ class _SecurityPrivacyScreenState extends State<SecurityPrivacyScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'Update Password',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.textDark,
+                        color: context.appTextPrimary,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -475,7 +475,7 @@ class _SecurityPrivacyScreenState extends State<SecurityPrivacyScreen> {
 
   BoxDecoration _cardDecoration() {
     return BoxDecoration(
-      color: Colors.white,
+      color: context.appSurface,
       borderRadius: BorderRadius.circular(20),
       border: Border.all(color: AppColors.border, width: 1.2),
       boxShadow: const [
@@ -495,7 +495,7 @@ class _SecurityPrivacyScreenState extends State<SecurityPrivacyScreen> {
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: AppColors.surface,
+            color: context.appSurfaceSoft,
             borderRadius: BorderRadius.circular(10),
           ),
           child: Icon(icon, color: AppColors.primary, size: 20),
@@ -507,10 +507,10 @@ class _SecurityPrivacyScreenState extends State<SecurityPrivacyScreen> {
             children: [
               Text(
                 title,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w700,
-                  color: AppColors.textDark,
+                  color: context.appTextPrimary,
                 ),
               ),
               const SizedBox(height: 3),

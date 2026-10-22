@@ -479,9 +479,15 @@ class _DoctorFormScreenState extends State<DoctorFormScreen> {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        gradient: AppColors.heroSubtleGradient,
+        gradient: context.isDarkMode
+            ? const LinearGradient(
+                colors: [Color(0xFF173B29), Color(0xFF102D21)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              )
+            : AppColors.heroSubtleGradient,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFFD5EACF)),
+        border: Border.all(color: context.appBorder),
       ),
       child: Row(
         children: [
@@ -492,7 +498,7 @@ class _DoctorFormScreenState extends State<DoctorFormScreen> {
                 name: _name.text.trim().isEmpty ? 'Doctor' : _name.text.trim(),
                 avatarUrl: _avatarUrl,
                 size: 82,
-                border: Border.all(color: Colors.white, width: 3),
+                border: Border.all(color: context.appSurface, width: 3),
                 boxShadow: const [
                   BoxShadow(
                     color: AppColors.shadow,

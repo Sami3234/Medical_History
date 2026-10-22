@@ -23,9 +23,9 @@ class InfoBanner extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: context.appSurfaceSoft,
           borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: const Color(0xFFD8EDD3), width: 1.2),
+          border: Border.all(color: context.appBorder, width: 1.2),
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -45,10 +45,10 @@ class InfoBanner extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.textDark,
+                      color: context.appTextPrimary,
                     ),
                   ),
                   const SizedBox(height: 3),

@@ -1006,10 +1006,6 @@ class _InteractiveTreeViewState extends State<InteractiveTreeView> {
           members: coreMembers,
           branchId: 'gen-core',
           title: 'You, Spouse & Siblings',
-          connectCoupleCount: math.min(
-            2,
-            ownerMembers.length + spouseMembers.length,
-          ),
         ),
       );
     }

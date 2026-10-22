@@ -40,7 +40,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: context.appBackground,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -50,7 +50,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
               child: Container(
                 padding: const EdgeInsets.all(28),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: context.appSurface,
                   borderRadius: BorderRadius.circular(28),
                   border: Border.all(color: AppColors.border),
                 ),
@@ -70,13 +70,13 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                       ),
                     ),
                     const SizedBox(height: 22),
-                    const Text(
+                    Text(
                       'Verify your email',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 25,
                         fontWeight: FontWeight.w800,
-                        color: AppColors.textDark,
+                        color: context.appTextPrimary,
                       ),
                     ),
                     const SizedBox(height: 10),

@@ -25,6 +25,17 @@ class NativeDocumentService {
     return _parse(raw);
   }
 
+  static Future<String> requestCameraPermission() async {
+    if (kIsWeb || !Platform.isAndroid) return 'granted';
+    return await _channel.invokeMethod<String>('requestCameraPermission') ??
+        'denied';
+  }
+
+  static Future<bool> openAppSettings() async {
+    if (kIsWeb || !Platform.isAndroid) return false;
+    return await _channel.invokeMethod<bool>('openAppSettings') ?? false;
+  }
+
   static Future<String> recognizeText(String path) async {
     if (kIsWeb || !Platform.isAndroid) return '';
     return await _channel.invokeMethod<String>('recognizeText', {

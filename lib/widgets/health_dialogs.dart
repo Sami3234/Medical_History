@@ -101,9 +101,9 @@ class _AddVitalDialogState extends State<AddVitalDialog> {
 
     return Container(
       padding: EdgeInsets.fromLTRB(20, 16, 20, media.viewInsets.bottom + 20),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      decoration: BoxDecoration(
+        color: context.appSurface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
       ),
       child: Form(
         key: _formKey,
@@ -130,12 +130,20 @@ class _AddVitalDialogState extends State<AddVitalDialog> {
                     color: AppColors.primary.withAlpha(25),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(Icons.favorite_rounded, color: AppColors.primary, size: 20),
+                  child: const Icon(
+                    Icons.favorite_rounded,
+                    color: AppColors.primary,
+                    size: 20,
+                  ),
                 ),
                 const SizedBox(width: 12),
-                const Text(
+                Text(
                   'Log Health Vital',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.textDark),
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: context.appTextPrimary,
+                  ),
                 ),
               ],
             ),
@@ -151,11 +159,11 @@ class _AddVitalDialogState extends State<AddVitalDialog> {
                   label: Text(type),
                   selected: isSelected,
                   selectedColor: AppColors.primary,
-                  backgroundColor: const Color(0xFFF1F5F9),
+                  backgroundColor: context.appSurfaceSoft,
                   labelStyle: TextStyle(
                     fontSize: 12,
                     fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                    color: isSelected ? Colors.white : AppColors.textDark,
+                    color: isSelected ? Colors.white : context.appTextPrimary,
                   ),
                   onSelected: (val) {
                     if (val) _onTypeChanged(type);
@@ -168,7 +176,11 @@ class _AddVitalDialogState extends State<AddVitalDialog> {
             // Value Input
             Text(
               'Measurement Value (${_typeUnits[_selectedType]})',
-              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textDark),
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: context.appTextPrimary,
+              ),
             ),
             const SizedBox(height: 6),
             TextFormField(
@@ -177,23 +189,37 @@ class _AddVitalDialogState extends State<AddVitalDialog> {
               decoration: InputDecoration(
                 hintText: _typeHints[_selectedType],
                 suffixText: _typeUnits[_selectedType],
-                prefixIcon: const Icon(Icons.speed_rounded, color: AppColors.textLight, size: 20),
+                prefixIcon: const Icon(
+                  Icons.speed_rounded,
+                  color: AppColors.textLight,
+                  size: 20,
+                ),
               ),
-              validator: (v) => (v == null || v.trim().isEmpty) ? 'Please enter a value' : null,
+              validator: (v) => (v == null || v.trim().isEmpty)
+                  ? 'Please enter a value'
+                  : null,
             ),
             const SizedBox(height: 14),
 
             // Notes Input
-            const Text(
+            Text(
               'Context / Note (Optional)',
-              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textDark),
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: context.appTextPrimary,
+              ),
             ),
             const SizedBox(height: 6),
             TextFormField(
               controller: _notesCtrl,
               decoration: const InputDecoration(
                 hintText: 'e.g. Fasting, after dinner, post-workout',
-                prefixIcon: Icon(Icons.notes_rounded, color: AppColors.textLight, size: 20),
+                prefixIcon: Icon(
+                  Icons.notes_rounded,
+                  color: AppColors.textLight,
+                  size: 20,
+                ),
               ),
             ),
             const SizedBox(height: 20),
@@ -204,7 +230,10 @@ class _AddVitalDialogState extends State<AddVitalDialog> {
               child: ElevatedButton.icon(
                 onPressed: _save,
                 icon: const Icon(Icons.check_circle_outline_rounded, size: 18),
-                label: const Text('Save Vital Log', style: TextStyle(fontWeight: FontWeight.w700)),
+                label: const Text(
+                  'Save Vital Log',
+                  style: TextStyle(fontWeight: FontWeight.w700),
+                ),
               ),
             ),
           ],
@@ -275,7 +304,9 @@ class _AddMedicationDialogState extends State<AddMedicationDialog> {
       dosage: _dosageCtrl.text.trim(),
       frequency: _frequency,
       timing: _timing,
-      duration: _durationCtrl.text.trim().isNotEmpty ? _durationCtrl.text.trim() : null,
+      duration: _durationCtrl.text.trim().isNotEmpty
+          ? _durationCtrl.text.trim()
+          : null,
       notes: _notesCtrl.text.trim().isNotEmpty ? _notesCtrl.text.trim() : null,
       isActive: true,
       takenToday: false,
@@ -289,9 +320,9 @@ class _AddMedicationDialogState extends State<AddMedicationDialog> {
 
     return Container(
       padding: EdgeInsets.fromLTRB(20, 16, 20, media.viewInsets.bottom + 20),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      decoration: BoxDecoration(
+        color: context.appSurface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
       ),
       child: Form(
         key: _formKey,
@@ -319,27 +350,44 @@ class _AddMedicationDialogState extends State<AddMedicationDialog> {
                       color: const Color(0xFF0284C7).withAlpha(25),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Icon(Icons.medication_rounded, color: Color(0xFF0284C7), size: 20),
+                    child: const Icon(
+                      Icons.medication_rounded,
+                      color: Color(0xFF0284C7),
+                      size: 20,
+                    ),
                   ),
                   const SizedBox(width: 12),
-                  const Text(
+                  Text(
                     'Add Active Medicine',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.textDark),
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: context.appTextPrimary,
+                    ),
                   ),
                 ],
               ),
               const SizedBox(height: 16),
 
               // Medicine Name
-              const Text('Medicine Name', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+              const Text(
+                'Medicine Name',
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+              ),
               const SizedBox(height: 6),
               TextFormField(
                 controller: _nameCtrl,
                 decoration: const InputDecoration(
                   hintText: 'e.g. Panadol, Augmentin, Metformin',
-                  prefixIcon: Icon(Icons.local_pharmacy_outlined, color: AppColors.textLight, size: 20),
+                  prefixIcon: Icon(
+                    Icons.local_pharmacy_outlined,
+                    color: AppColors.textLight,
+                    size: 20,
+                  ),
                 ),
-                validator: (v) => (v == null || v.trim().isEmpty) ? 'Enter medicine name' : null,
+                validator: (v) => (v == null || v.trim().isEmpty)
+                    ? 'Enter medicine name'
+                    : null,
               ),
               const SizedBox(height: 14),
 
@@ -350,11 +398,19 @@ class _AddMedicationDialogState extends State<AddMedicationDialog> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Dosage', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                        const Text(
+                          'Dosage',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                         const SizedBox(height: 6),
                         TextFormField(
                           controller: _dosageCtrl,
-                          decoration: const InputDecoration(hintText: 'e.g. 500 mg, 1 tablet'),
+                          decoration: const InputDecoration(
+                            hintText: 'e.g. 500 mg, 1 tablet',
+                          ),
                         ),
                       ],
                     ),
@@ -364,11 +420,19 @@ class _AddMedicationDialogState extends State<AddMedicationDialog> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Duration', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                        const Text(
+                          'Duration',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                         const SizedBox(height: 6),
                         TextFormField(
                           controller: _durationCtrl,
-                          decoration: const InputDecoration(hintText: 'e.g. 7 days, Ongoing'),
+                          decoration: const InputDecoration(
+                            hintText: 'e.g. 7 days, Ongoing',
+                          ),
                         ),
                       ],
                     ),
@@ -378,21 +442,31 @@ class _AddMedicationDialogState extends State<AddMedicationDialog> {
               const SizedBox(height: 14),
 
               // Frequency Dropdown
-              const Text('Frequency', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+              const Text(
+                'Frequency',
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+              ),
               const SizedBox(height: 6),
               DropdownButtonFormField<String>(
                 initialValue: _frequency,
-                items: _frequencies.map((f) => DropdownMenuItem(value: f, child: Text(f))).toList(),
+                items: _frequencies
+                    .map((f) => DropdownMenuItem(value: f, child: Text(f)))
+                    .toList(),
                 onChanged: (v) => setState(() => _frequency = v!),
               ),
               const SizedBox(height: 14),
 
               // Timing Dropdown
-              const Text('Timing Instructions', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+              const Text(
+                'Timing Instructions',
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+              ),
               const SizedBox(height: 6),
               DropdownButtonFormField<String>(
                 initialValue: _timing,
-                items: _timings.map((t) => DropdownMenuItem(value: t, child: Text(t))).toList(),
+                items: _timings
+                    .map((t) => DropdownMenuItem(value: t, child: Text(t)))
+                    .toList(),
                 onChanged: (v) => setState(() => _timing = v!),
               ),
               const SizedBox(height: 20),
@@ -402,8 +476,14 @@ class _AddMedicationDialogState extends State<AddMedicationDialog> {
                 width: double.infinity,
                 child: ElevatedButton.icon(
                   onPressed: _save,
-                  icon: const Icon(Icons.check_circle_outline_rounded, size: 18),
-                  label: const Text('Add to Active Prescriptions', style: TextStyle(fontWeight: FontWeight.w700)),
+                  icon: const Icon(
+                    Icons.check_circle_outline_rounded,
+                    size: 18,
+                  ),
+                  label: const Text(
+                    'Add to Active Prescriptions',
+                    style: TextStyle(fontWeight: FontWeight.w700),
+                  ),
                 ),
               ),
             ],
@@ -467,7 +547,9 @@ class _AddVaccineDialogState extends State<AddVaccineDialog> {
       name: _nameCtrl.text.trim(),
       dose: _doseCtrl.text.trim().isNotEmpty ? _doseCtrl.text.trim() : null,
       administeredDate: _administeredDate,
-      administeredBy: _centerCtrl.text.trim().isNotEmpty ? _centerCtrl.text.trim() : null,
+      administeredBy: _centerCtrl.text.trim().isNotEmpty
+          ? _centerCtrl.text.trim()
+          : null,
       status: 'Completed',
     );
     Navigator.of(context).pop(vac);
@@ -479,9 +561,9 @@ class _AddVaccineDialogState extends State<AddVaccineDialog> {
 
     return Container(
       padding: EdgeInsets.fromLTRB(20, 16, 20, media.viewInsets.bottom + 20),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      decoration: BoxDecoration(
+        color: context.appSurface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
       ),
       child: Form(
         key: _formKey,
@@ -509,12 +591,20 @@ class _AddVaccineDialogState extends State<AddVaccineDialog> {
                       color: const Color(0xFF7C3AED).withAlpha(25),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Icon(Icons.vaccines_rounded, color: Color(0xFF7C3AED), size: 20),
+                    child: const Icon(
+                      Icons.vaccines_rounded,
+                      color: Color(0xFF7C3AED),
+                      size: 20,
+                    ),
                   ),
                   const SizedBox(width: 12),
-                  const Text(
+                  Text(
                     'Record Vaccination',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.textDark),
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: context.appTextPrimary,
+                    ),
                   ),
                 ],
               ),
@@ -532,11 +622,15 @@ class _AddVaccineDialogState extends State<AddVaccineDialog> {
                         label: Text(vName),
                         selected: isSelected,
                         selectedColor: const Color(0xFF7C3AED),
-                        backgroundColor: const Color(0xFFF1F5F9),
+                        backgroundColor: context.appSurfaceSoft,
                         labelStyle: TextStyle(
                           fontSize: 11.5,
-                          fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                          color: isSelected ? Colors.white : AppColors.textDark,
+                          fontWeight: isSelected
+                              ? FontWeight.w700
+                              : FontWeight.w500,
+                          color: isSelected
+                              ? Colors.white
+                              : context.appTextPrimary,
                         ),
                         onSelected: (val) {
                           if (val) setState(() => _nameCtrl.text = vName);
@@ -549,12 +643,19 @@ class _AddVaccineDialogState extends State<AddVaccineDialog> {
               const SizedBox(height: 14),
 
               // Vaccine Name Input
-              const Text('Vaccine Name', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+              const Text(
+                'Vaccine Name',
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+              ),
               const SizedBox(height: 6),
               TextFormField(
                 controller: _nameCtrl,
-                decoration: const InputDecoration(hintText: 'Enter vaccine name'),
-                validator: (v) => (v == null || v.trim().isEmpty) ? 'Please enter vaccine name' : null,
+                decoration: const InputDecoration(
+                  hintText: 'Enter vaccine name',
+                ),
+                validator: (v) => (v == null || v.trim().isEmpty)
+                    ? 'Please enter vaccine name'
+                    : null,
               ),
               const SizedBox(height: 14),
 
@@ -565,11 +666,19 @@ class _AddVaccineDialogState extends State<AddVaccineDialog> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Dose', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                        const Text(
+                          'Dose',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                         const SizedBox(height: 6),
                         TextFormField(
                           controller: _doseCtrl,
-                          decoration: const InputDecoration(hintText: 'e.g. Dose 1, Booster'),
+                          decoration: const InputDecoration(
+                            hintText: 'e.g. Dose 1, Booster',
+                          ),
                         ),
                       ],
                     ),
@@ -579,7 +688,13 @@ class _AddVaccineDialogState extends State<AddVaccineDialog> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Date Given', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                        const Text(
+                          'Date Given',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                         const SizedBox(height: 6),
                         InkWell(
                           onTap: () async {
@@ -594,19 +709,34 @@ class _AddVaccineDialogState extends State<AddVaccineDialog> {
                             }
                           },
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 15),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 15,
+                            ),
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: context.appSurface,
                               borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: AppColors.border, width: 1.2),
+                              border: Border.all(
+                                color: AppColors.border,
+                                width: 1.2,
+                              ),
                             ),
                             child: Row(
                               children: [
-                                const Icon(Icons.calendar_today_rounded, size: 16, color: AppColors.textLight),
+                                const Icon(
+                                  Icons.calendar_today_rounded,
+                                  size: 16,
+                                  color: AppColors.textLight,
+                                ),
                                 const SizedBox(width: 8),
                                 Text(
-                                  DateFormat('dd MMM yyyy').format(_administeredDate),
-                                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                                  DateFormat(
+                                    'dd MMM yyyy',
+                                  ).format(_administeredDate),
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                               ],
                             ),
@@ -620,11 +750,16 @@ class _AddVaccineDialogState extends State<AddVaccineDialog> {
               const SizedBox(height: 14),
 
               // Center / Hospital
-              const Text('Health Center / Hospital', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+              const Text(
+                'Health Center / Hospital',
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+              ),
               const SizedBox(height: 6),
               TextFormField(
                 controller: _centerCtrl,
-                decoration: const InputDecoration(hintText: 'e.g. City Hospital, Dr. Clinic'),
+                decoration: const InputDecoration(
+                  hintText: 'e.g. City Hospital, Dr. Clinic',
+                ),
               ),
               const SizedBox(height: 20),
 
@@ -634,7 +769,10 @@ class _AddVaccineDialogState extends State<AddVaccineDialog> {
                 child: ElevatedButton.icon(
                   onPressed: _save,
                   icon: const Icon(Icons.verified_rounded, size: 18),
-                  label: const Text('Save Vaccination Record', style: TextStyle(fontWeight: FontWeight.w700)),
+                  label: const Text(
+                    'Save Vaccination Record',
+                    style: TextStyle(fontWeight: FontWeight.w700),
+                  ),
                 ),
               ),
             ],
@@ -703,7 +841,11 @@ class EmergencyIceModal extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: const Color(0xFFEF4444)),
                 ),
-                child: const Icon(Icons.emergency_rounded, color: Color(0xFFEF4444), size: 24),
+                child: const Icon(
+                  Icons.emergency_rounded,
+                  color: Color(0xFFEF4444),
+                  size: 24,
+                ),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -748,28 +890,50 @@ class EmergencyIceModal extends StatelessWidget {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('BLOOD GROUP', style: TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w700)),
+                    const Text(
+                      'BLOOD GROUP',
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                     const SizedBox(height: 2),
                     Text(
                       member.bloodGroup ?? 'Unknown',
-                      style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w900),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 28,
+                        fontWeight: FontWeight.w900,
+                      ),
                     ),
                   ],
                 ),
                 const Spacer(),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white.withAlpha(25),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.favorite_rounded, color: Colors.white, size: 16),
+                      const Icon(
+                        Icons.favorite_rounded,
+                        color: Colors.white,
+                        size: 16,
+                      ),
                       const SizedBox(width: 6),
                       Text(
                         member.age == 'N/A' ? 'Age N/A' : member.age,
-                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 13,
+                        ),
                       ),
                     ],
                   ),
@@ -806,12 +970,18 @@ class EmergencyIceModal extends StatelessWidget {
                 backgroundColor: const Color(0xFFDC2626),
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
               ),
               icon: const Icon(Icons.phone_in_talk_rounded, size: 22),
               label: const Text(
                 'CALL RESCUE (1122) / EMERGENCY',
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, letterSpacing: 0.5),
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0.5,
+                ),
               ),
             ),
           ),
@@ -843,14 +1013,23 @@ class EmergencyIceModal extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 title,
-                style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 0.5),
+                style: TextStyle(
+                  color: color,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0.5,
+                ),
               ),
             ],
           ),
           const SizedBox(height: 6),
           Text(
             content,
-            style: const TextStyle(color: Colors.white, fontSize: 13.5, fontWeight: FontWeight.w500),
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 13.5,
+              fontWeight: FontWeight.w500,
+            ),
           ),
         ],
       ),

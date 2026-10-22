@@ -143,7 +143,7 @@ class BackupScreen extends StatelessWidget {
     final meta = backupProv.backupMetadata;
 
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: context.appBackground,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 112),
@@ -160,12 +160,12 @@ class BackupScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 6),
-              const Text(
+              Text(
                 'Google Drive Backup',
                 style: TextStyle(
                   fontSize: 26,
                   fontWeight: FontWeight.w800,
-                  color: AppColors.textDark,
+                  color: context.appTextPrimary,
                 ),
               ),
               const SizedBox(height: 18),
@@ -294,7 +294,7 @@ class BackupScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: context.appSurface,
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(color: AppColors.border, width: 1.2),
                   boxShadow: const [
@@ -325,12 +325,12 @@ class BackupScreen extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
+                          Text(
                             'Google Account',
                             style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w800,
-                              color: AppColors.textDark,
+                              color: context.appTextPrimary,
                             ),
                           ),
                           const SizedBox(height: 2),
@@ -400,7 +400,7 @@ class BackupScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: context.appSurface,
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(color: AppColors.border, width: 1.2),
                 ),
@@ -409,7 +409,7 @@ class BackupScreen extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Column(
+                        Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
@@ -417,7 +417,7 @@ class BackupScreen extends StatelessWidget {
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w700,
-                                color: AppColors.textDark,
+                                color: context.appTextPrimary,
                               ),
                             ),
                             SizedBox(height: 2),
@@ -459,6 +459,7 @@ class BackupScreen extends StatelessWidget {
                       children: [
                         Expanded(
                           child: _buildStatItem(
+                            context: context,
                             icon: Icons.calendar_today_rounded,
                             label: 'Last Backup',
                             value: meta != null
@@ -470,6 +471,7 @@ class BackupScreen extends StatelessWidget {
                         ),
                         Expanded(
                           child: _buildStatItem(
+                            context: context,
                             icon: Icons.data_usage_rounded,
                             label: 'Backup Size',
                             value: meta != null ? meta.formattedSize : '0 KB',
@@ -483,18 +485,19 @@ class BackupScreen extends StatelessWidget {
               const SizedBox(height: 22),
 
               // Actions Section
-              const Text(
+              Text(
                 'Backup & Restore',
                 style: TextStyle(
                   fontSize: 17,
                   fontWeight: FontWeight.w800,
-                  color: AppColors.textDark,
+                  color: context.appTextPrimary,
                 ),
               ),
               const SizedBox(height: 12),
 
               // Button 1: Create Backup
               _buildActionCard(
+                context: context,
                 icon: Icons.cloud_upload_rounded,
                 iconColor: const Color(0xFF10B981),
                 title: 'Back Up Now',
@@ -525,6 +528,7 @@ class BackupScreen extends StatelessWidget {
 
               // Button 2: Restore from Backup
               _buildActionCard(
+                context: context,
                 icon: Icons.cloud_download_rounded,
                 iconColor: const Color(0xFF0EA5E9),
                 title: 'Restore from Google Drive',
@@ -546,7 +550,7 @@ class BackupScreen extends StatelessWidget {
                     vertical: 14,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: context.appSurface,
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(color: AppColors.border),
                   ),
@@ -569,12 +573,12 @@ class BackupScreen extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
+                            Text(
                               'Auto-Backup Schedule',
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w700,
-                                color: AppColors.textDark,
+                                color: context.appTextPrimary,
                               ),
                             ),
                             Text(
@@ -615,6 +619,7 @@ class BackupScreen extends StatelessWidget {
   }
 
   Widget _buildStatItem({
+    required BuildContext context,
     required IconData icon,
     required String label,
     required String value,
@@ -629,18 +634,15 @@ class BackupScreen extends StatelessWidget {
             children: [
               Text(
                 label,
-                style: const TextStyle(
-                  fontSize: 11,
-                  color: AppColors.textLight,
-                ),
+                style: TextStyle(fontSize: 11, color: AppColors.textLight),
               ),
               const SizedBox(height: 2),
               Text(
                 value,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 12.5,
                   fontWeight: FontWeight.w700,
-                  color: AppColors.textDark,
+                  color: context.appTextPrimary,
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -653,6 +655,7 @@ class BackupScreen extends StatelessWidget {
   }
 
   Widget _buildActionCard({
+    required BuildContext context,
     required IconData icon,
     required Color iconColor,
     required String title,
@@ -666,7 +669,7 @@ class BackupScreen extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: context.appSurface,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(color: AppColors.border),
           boxShadow: const [
@@ -694,10 +697,10 @@ class BackupScreen extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14.5,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.textDark,
+                      color: context.appTextPrimary,
                     ),
                   ),
                   const SizedBox(height: 2),

@@ -152,7 +152,7 @@ class RecordsProvider extends ChangeNotifier {
     return true;
   }
 
-  Future<void> addAppointment(AppointmentModel appointment) async {
+  Future<AppointmentModel> addAppointment(AppointmentModel appointment) async {
     final userId = SupabaseConfig.currentUserId;
     if (SupabaseConfig.isInitialized &&
         SupabaseConfig.db != null &&
@@ -162,11 +162,63 @@ class RecordsProvider extends ChangeNotifier {
           .insert(appointment.toMap(userId))
           .select('*, members(name)')
           .single();
-      _appointments.add(AppointmentModel.fromMap(data));
+      final created = AppointmentModel.fromMap(data);
+      _appointments.add(created);
       _appointments.sort((a, b) => a.dateTime.compareTo(b.dateTime));
+      notifyListeners();
+      return created;
     } else {
       throw StateError('Sign in is required before adding an appointment.');
     }
+  }
+
+  Future<AppointmentModel> updateAppointment(
+    AppointmentModel appointment,
+  ) async {
+    final userId = SupabaseConfig.currentUserId;
+    if (!SupabaseConfig.isInitialized ||
+        SupabaseConfig.db == null ||
+        userId == null) {
+      throw StateError('Sign in is required before updating an appointment.');
+    }
+    final data = await SupabaseConfig.db!
+        .from('appointments')
+        .update(appointment.toMap(userId))
+        .eq('id', appointment.id)
+        .select('*, members(name)')
+        .single();
+    final updated = AppointmentModel.fromMap(data);
+    final index = _appointments.indexWhere((item) => item.id == updated.id);
+    if (index == -1) {
+      _appointments.add(updated);
+    } else {
+      _appointments[index] = updated;
+    }
+    _appointments.sort((a, b) => a.dateTime.compareTo(b.dateTime));
+    notifyListeners();
+    return updated;
+  }
+
+  Future<void> cancelAppointment(String appointmentId) async {
+    final appointment = _appointments.firstWhere(
+      (item) => item.id == appointmentId,
+    );
+    await updateAppointment(appointment.copyWith(status: 'cancelled'));
+  }
+
+  Future<void> deleteAppointment(String appointmentId) async {
+    final userId = SupabaseConfig.currentUserId;
+    if (!SupabaseConfig.isInitialized ||
+        SupabaseConfig.db == null ||
+        userId == null) {
+      throw StateError('Sign in is required before deleting an appointment.');
+    }
+    await SupabaseConfig.db!
+        .from('appointments')
+        .delete()
+        .eq('id', appointmentId)
+        .eq('user_id', userId);
+    _appointments.removeWhere((item) => item.id == appointmentId);
     notifyListeners();
   }
 
@@ -181,6 +233,12 @@ class RecordsProvider extends ChangeNotifier {
 
   void clearRecentSearches() {
     _recentSearches.clear();
+    _persistRecentSearches();
+    notifyListeners();
+  }
+
+  void removeRecentSearch(String query) {
+    _recentSearches.remove(query);
     _persistRecentSearches();
     notifyListeners();
   }

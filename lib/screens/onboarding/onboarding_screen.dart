@@ -80,9 +80,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       backgroundColor: Colors.transparent,
       builder: (ctx) => Container(
         height: MediaQuery.of(ctx).size.height * 0.75,
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        decoration: BoxDecoration(
+          color: ctx.appSurface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
         ),
         padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
         child: Column(
@@ -348,9 +348,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   compact ? 18 : 24,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.white.withAlpha(246),
+                  color: context.isDarkMode
+                      ? context.appSurface.withAlpha(246)
+                      : Colors.white.withAlpha(246),
                   borderRadius: BorderRadius.circular(30),
-                  border: Border.all(color: Colors.white.withAlpha(170)),
+                  border: Border.all(
+                    color: context.isDarkMode
+                        ? context.appBorder
+                        : Colors.white.withAlpha(170),
+                  ),
                   boxShadow: const [
                     BoxShadow(
                       color: Color(0x300F3521),

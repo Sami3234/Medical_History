@@ -1,9 +1,13 @@
 package com.medicalhistory.app
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
+import android.provider.Settings
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
@@ -21,7 +25,21 @@ private const val CHANNEL = "medical_history/native_documents"
 
 class MainActivity : FlutterFragmentActivity() {
     private var scanResult: MethodChannel.Result? = null
+    private var cameraPermissionResult: MethodChannel.Result? = null
     private val pendingSharedFiles = mutableListOf<Map<String, String>>()
+
+    private val cameraPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { granted ->
+        val callback = cameraPermissionResult ?: return@registerForActivityResult
+        cameraPermissionResult = null
+        if (granted) {
+            callback.success("granted")
+        } else {
+            val permanentlyDenied = !shouldShowRequestPermissionRationale(Manifest.permission.CAMERA)
+            callback.success(if (permanentlyDenied) "permanentlyDenied" else "denied")
+        }
+    }
 
     private val scannerLauncher = registerForActivityResult(
         ActivityResultContracts.StartIntentSenderForResult(),
@@ -29,7 +47,7 @@ class MainActivity : FlutterFragmentActivity() {
         val callback = scanResult ?: return@registerForActivityResult
         scanResult = null
         if (result.resultCode != RESULT_OK || result.data == null) {
-            callback.success(emptyList<Map<String, String>>())
+            callback.error("SCAN_CANCELLED", "Document scan was cancelled.", null)
             return@registerForActivityResult
         }
         val scan = GmsDocumentScanningResult.fromActivityResultIntent(result.data)
@@ -53,6 +71,8 @@ class MainActivity : FlutterFragmentActivity() {
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL).setMethodCallHandler { call, result ->
             when (call.method) {
                 "scanDocuments" -> startDocumentScanner(result)
+                "requestCameraPermission" -> requestCameraPermission(result)
+                "openAppSettings" -> openAppSettings(result)
                 "recognizeText" -> recognizeText(call, result)
                 "consumeSharedFiles" -> {
                     val files = pendingSharedFiles.toList()
@@ -61,6 +81,33 @@ class MainActivity : FlutterFragmentActivity() {
                 }
                 else -> result.notImplemented()
             }
+        }
+    }
+
+    private fun requestCameraPermission(result: MethodChannel.Result) {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+            result.success("granted")
+            return
+        }
+        if (cameraPermissionResult != null) {
+            result.error("BUSY", "A camera permission request is already running.", null)
+            return
+        }
+        cameraPermissionResult = result
+        cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+    }
+
+    private fun openAppSettings(result: MethodChannel.Result) {
+        try {
+            startActivity(
+                Intent(
+                    Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                    Uri.fromParts("package", packageName, null),
+                ),
+            )
+            result.success(true)
+        } catch (error: Exception) {
+            result.error("SETTINGS_ERROR", error.message, null)
         }
     }
 

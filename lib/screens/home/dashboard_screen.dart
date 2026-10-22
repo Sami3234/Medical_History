@@ -12,6 +12,7 @@ import '../../providers/doctor_provider.dart';
 import '../../providers/member_provider.dart';
 import '../../providers/health_provider.dart';
 import '../../providers/records_provider.dart';
+import '../../providers/notification_inbox_provider.dart';
 import '../../models/doctor_model.dart';
 import '../../models/member_model.dart';
 import '../../services/member_doctor_service.dart';
@@ -105,7 +106,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         .length;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF7FAF8),
+      backgroundColor: context.appBackground,
       body: SafeArea(
         child: RefreshIndicator(
           color: AppColors.primary,
@@ -261,7 +262,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           const SizedBox(width: 8),
           _dashboardIconButton(
             icon: Icons.notifications_none_rounded,
-            onTap: () => context.push(AppRoutes.notifications),
+            onTap: () => context.push(AppRoutes.notificationCenter),
           ),
         ],
       ),
@@ -437,6 +438,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final memberProv = context.watch<MemberProvider>();
     final healthProv = context.watch<HealthProvider>();
     final recordsProv = context.watch<RecordsProvider>();
+    final notificationInbox = context.watch<NotificationInboxProvider>();
 
     final user = auth.user;
     final userName = user?.fullName ?? 'User';
@@ -474,6 +476,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   m.emergencyContact!.trim().isEmpty),
         )
         .length;
+    final notifications = notificationInbox.buildItems(
+      appointments: recordsProv.appointments,
+      documents: recordsProv.files,
+      members: members,
+    );
+    final unreadNotifications = notificationInbox.unreadCount(notifications);
 
     // Dynamic greeting
     final hour = DateTime.now().hour;
@@ -517,6 +525,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   firstName: userFirstName,
                   date: dateStr,
                   upcomingAppointments: upcomingAppointments,
+                  unreadNotifications: unreadNotifications,
                 ),
                 if (SupabaseConfig.db == null)
                   Padding(
@@ -687,6 +696,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     required String firstName,
     required String date,
     required int upcomingAppointments,
+    required int unreadNotifications,
   }) {
     const bottomRadius = BorderRadius.only(
       bottomLeft: Radius.circular(30),
@@ -739,7 +749,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
               decoration: BoxDecoration(
                 color: Colors.white.withAlpha(18),
                 borderRadius: bottomRadius,
-                border: Border.all(color: Colors.white.withAlpha(190)),
               ),
               child: Column(
                 children: [
@@ -762,9 +771,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       const Spacer(),
                       _glassHeaderAction(
                         icon: Icons.notifications_none_rounded,
-                        badgeCount: upcomingAppointments,
+                        badgeCount: unreadNotifications,
                         tooltip: 'Notifications',
-                        onTap: () => context.push(AppRoutes.notifications),
+                        onTap: () => context.push(AppRoutes.notificationCenter),
                       ),
                       const SizedBox(width: 8),
                       _glassHeaderAction(
@@ -825,6 +834,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   Material(
                     color: Colors.transparent,
                     child: InkWell(
+                      key: const Key('dashboard-search-bar'),
                       onTap: () => context.push(AppRoutes.search),
                       borderRadius: BorderRadius.circular(18),
                       child: Container(
@@ -852,7 +862,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             SizedBox(width: 11),
                             Expanded(
                               child: Text(
-                                'Search members, visits or documents...',
+                                'Search your complete health history...',
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
@@ -1125,13 +1135,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
           _buildStatusBanner(
             '$membersNeedingEmergency member(s) still need blood group / emergency contact.',
             Icons.health_and_safety_outlined,
-          )
-        else
-          _buildStatusBanner(
-            'Emergency details look complete for your family.',
-            Icons.verified_user_outlined,
           ),
-        const SizedBox(height: 10),
+        if (membersNeedingEmergency > 0) const SizedBox(height: 10),
         Row(
           children: [
             _summaryTile(

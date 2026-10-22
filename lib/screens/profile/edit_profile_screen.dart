@@ -222,7 +222,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         .toUpperCase();
 
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: context.appBackground,
       appBar: AppBar(
         title: const Text('Edit Profile'),
         leading: IconButton(
@@ -352,12 +352,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 // Full Name Input
                 Align(
                   alignment: Alignment.centerLeft,
-                  child: const Text(
+                  child: Text(
                     'Full Name',
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.textDark,
+                      color: context.appTextPrimary,
                     ),
                   ),
                 ),
@@ -381,12 +381,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 // Email Input (Read-only with badge)
                 Align(
                   alignment: Alignment.centerLeft,
-                  child: const Text(
+                  child: Text(
                     'Email Address (Linked Account)',
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.textDark,
+                      color: context.appTextPrimary,
                     ),
                   ),
                 ),
@@ -430,12 +430,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 // Phone Input
                 Align(
                   alignment: Alignment.centerLeft,
-                  child: const Text(
+                  child: Text(
                     'Phone Number',
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.textDark,
+                      color: context.appTextPrimary,
                     ),
                   ),
                 ),

@@ -454,7 +454,7 @@ class _MemberFormScreenState extends State<MemberFormScreen> {
         .toList();
 
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: context.appBackground,
       appBar: AppBar(
         title: Text(_isEdit ? 'Edit family member' : 'Add family member'),
         leading: IconButton(
@@ -481,7 +481,7 @@ class _MemberFormScreenState extends State<MemberFormScreen> {
                         width: double.infinity,
                         padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: context.appSurface,
                           borderRadius: BorderRadius.circular(22),
                           border: Border.all(
                             color: AppColors.border,
@@ -572,12 +572,12 @@ class _MemberFormScreenState extends State<MemberFormScreen> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    const Text(
+                                    Text(
                                       'Member Photo',
                                       style: TextStyle(
                                         fontSize: 16,
                                         fontWeight: FontWeight.w700,
-                                        color: AppColors.textDark,
+                                        color: context.appTextPrimary,
                                       ),
                                     ),
                                     const SizedBox(height: 4),
@@ -606,12 +606,12 @@ class _MemberFormScreenState extends State<MemberFormScreen> {
                       ),
                       const SizedBox(height: 18),
 
-                      const Text(
+                      Text(
                         'Full name',
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
-                          color: AppColors.textDark,
+                          color: context.appTextPrimary,
                         ),
                       ),
                       const SizedBox(height: 6),
@@ -631,12 +631,12 @@ class _MemberFormScreenState extends State<MemberFormScreen> {
                       ),
                       const SizedBox(height: 18),
 
-                      const Text(
+                      Text(
                         'Relationship',
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
-                          color: AppColors.textDark,
+                          color: context.appTextPrimary,
                         ),
                       ),
                       const SizedBox(height: 6),
@@ -680,12 +680,12 @@ class _MemberFormScreenState extends State<MemberFormScreen> {
                       if (_selectedRelation == 'Son' ||
                           _selectedRelation == 'Daughter') ...[
                         const SizedBox(height: 18),
-                        const Text(
+                        Text(
                           'Parent / linked adult',
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
-                            color: AppColors.textDark,
+                            color: context.appTextPrimary,
                           ),
                         ),
                         const SizedBox(height: 6),
@@ -728,17 +728,17 @@ class _MemberFormScreenState extends State<MemberFormScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Row(
-                                  children: const [
+                                  children: [
                                     Text(
                                       'Age (years)',
                                       style: TextStyle(
                                         fontSize: 13,
                                         fontWeight: FontWeight.w600,
-                                        color: AppColors.textDark,
+                                        color: context.appTextPrimary,
                                       ),
                                     ),
                                     SizedBox(width: 4),
-                                    Text(
+                                    const Text(
                                       '*',
                                       style: TextStyle(
                                         fontSize: 14,
@@ -781,12 +781,12 @@ class _MemberFormScreenState extends State<MemberFormScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text(
+                                Text(
                                   'Date of birth',
                                   style: TextStyle(
                                     fontSize: 13,
                                     fontWeight: FontWeight.w600,
-                                    color: AppColors.textDark,
+                                    color: context.appTextPrimary,
                                   ),
                                 ),
                                 const SizedBox(height: 6),
@@ -810,12 +810,12 @@ class _MemberFormScreenState extends State<MemberFormScreen> {
                       ),
                       const SizedBox(height: 18),
 
-                      const Text(
+                      Text(
                         'Blood group',
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
-                          color: AppColors.textDark,
+                          color: context.appTextPrimary,
                         ),
                       ),
                       const SizedBox(height: 6),
@@ -841,12 +841,12 @@ class _MemberFormScreenState extends State<MemberFormScreen> {
                       ),
                       const SizedBox(height: 18),
 
-                      const Text(
+                      Text(
                         'Allergies / conditions',
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
-                          color: AppColors.textDark,
+                          color: context.appTextPrimary,
                         ),
                       ),
                       const SizedBox(height: 6),
@@ -863,12 +863,12 @@ class _MemberFormScreenState extends State<MemberFormScreen> {
                         ),
                       ),
                       const SizedBox(height: 18),
-                      const Text(
+                      Text(
                         'Emergency contact',
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
-                          color: AppColors.textDark,
+                          color: context.appTextPrimary,
                         ),
                       ),
                       const SizedBox(height: 6),

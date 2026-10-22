@@ -31,6 +31,7 @@ import '../screens/profile/profile_screen.dart';
 import '../screens/profile/edit_profile_screen.dart';
 import '../screens/profile/security_privacy_screen.dart';
 import '../screens/profile/notifications_settings_screen.dart';
+import '../screens/notifications/notification_center_screen.dart';
 import '../screens/profile/app_preferences_screen.dart';
 import '../screens/share/shared_member_screen.dart';
 
@@ -68,6 +69,7 @@ class AppRoutes {
   static const editProfile = '/profile/edit';
   static const security = '/settings/security';
   static const notifications = '/settings/notifications';
+  static const notificationCenter = '/notifications';
   static const preferences = '/settings/preferences';
   static const sharedMember = '/shared-member';
 
@@ -176,6 +178,10 @@ class AppRoutes {
       GoRoute(path: search, builder: (_, _) => const SearchScreen()),
       GoRoute(path: backup, builder: (_, _) => const BackupScreen()),
       GoRoute(path: profile, builder: (_, _) => const ProfileScreen()),
+      GoRoute(
+        path: notificationCenter,
+        builder: (_, _) => const NotificationCenterScreen(),
+      ),
       GoRoute(path: editProfile, builder: (_, _) => const EditProfileScreen()),
       GoRoute(path: security, builder: (_, _) => const SecurityPrivacyScreen()),
       GoRoute(
