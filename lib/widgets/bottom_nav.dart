@@ -37,9 +37,9 @@ class BottomNav extends StatelessWidget {
       isScrollControlled: true,
       builder: (ctx) => Container(
         padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        decoration: BoxDecoration(
+          color: ctx.appSurface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -50,24 +50,24 @@ class BottomNav extends StatelessWidget {
                 width: 44,
                 height: 5,
                 decoration: BoxDecoration(
-                  color: AppColors.border,
+                  color: ctx.appBorder,
                   borderRadius: BorderRadius.circular(10),
                 ),
               ),
             ),
             const SizedBox(height: 20),
-            const Text(
+            Text(
               'Quick Actions',
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
-                color: AppColors.textDark,
+                color: ctx.appTextPrimary,
               ),
             ),
             const SizedBox(height: 6),
-            const Text(
+            Text(
               'What would you like to record or create today?',
-              style: TextStyle(fontSize: 13, color: AppColors.textLight),
+              style: TextStyle(fontSize: 13, color: ctx.appTextSecondary),
             ),
             const SizedBox(height: 20),
             _buildActionItem(
@@ -137,9 +137,9 @@ class BottomNav extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color: AppColors.bg,
+          color: context.appSurfaceRaised,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.border),
+          border: Border.all(color: context.appBorder),
         ),
         child: Row(
           children: [
@@ -159,27 +159,27 @@ class BottomNav extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.textDark,
+                      color: context.appTextPrimary,
                     ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     subtitle,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
-                      color: AppColors.textLight,
+                      color: context.appTextSecondary,
                     ),
                   ),
                 ],
               ),
             ),
-            const Icon(
+            Icon(
               Icons.arrow_forward_ios_rounded,
               size: 14,
-              color: AppColors.textLight,
+              color: context.appTextSecondary,
             ),
           ],
         ),
@@ -190,12 +190,14 @@ class BottomNav extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      decoration: BoxDecoration(
+        color: context.appSurface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         boxShadow: [
           BoxShadow(
-            color: Color(0x0F0D331E),
+            color: context.isDarkMode
+                ? const Color(0x66000000)
+                : const Color(0x0F0D331E),
             blurRadius: 16,
             offset: Offset(0, -4),
           ),
@@ -270,7 +272,9 @@ class BottomNav extends StatelessWidget {
           children: [
             Icon(
               isSelected ? selectedIcon : unselectedIcon,
-              color: isSelected ? AppColors.primary : AppColors.textLight,
+              color: isSelected
+                  ? Theme.of(context).colorScheme.primary
+                  : context.appTextSecondary,
               size: 24,
             ),
             const SizedBox(height: 4),
@@ -279,7 +283,9 @@ class BottomNav extends StatelessWidget {
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                color: isSelected ? AppColors.primary : AppColors.textLight,
+                color: isSelected
+                    ? Theme.of(context).colorScheme.primary
+                    : context.appTextSecondary,
               ),
             ),
             const SizedBox(height: 3),

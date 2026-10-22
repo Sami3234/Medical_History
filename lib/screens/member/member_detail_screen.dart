@@ -159,7 +159,7 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
                               ),
                               Text(
                                 'Choose doctors who care for ${member.name}',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   color: AppColors.textLight,
                                   fontSize: 12,
                                 ),
@@ -881,7 +881,7 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
 
     if (member == null) {
       return Scaffold(
-        backgroundColor: AppColors.bg,
+        backgroundColor: context.appBackground,
         appBar: AppBar(
           title: const Text('Member profile'),
           leading: IconButton(
@@ -895,18 +895,18 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
               : Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.person_off_rounded,
                       size: 54,
-                      color: AppColors.textLight,
+                      color: context.appTextSecondary,
                     ),
                     const SizedBox(height: 14),
-                    const Text(
+                    Text(
                       'Member profile not found',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.textDark,
+                        color: context.appTextPrimary,
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -940,7 +940,7 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
         .toList();
 
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: context.appBackground,
       appBar: AppBar(
         title: Text(member.name),
         leading: IconButton(
@@ -969,21 +969,18 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
           // Share / Print Summary
           IconButton(
             tooltip: 'Medical Summary',
-            icon: const Icon(
-              Icons.description_outlined,
-              color: AppColors.textDark,
-            ),
+            icon: const Icon(Icons.description_outlined),
             onPressed: () => MedicalSummarySheet.show(context, member),
           ),
           IconButton(
             tooltip: 'Share secure profile',
-            icon: const Icon(Icons.share_outlined, color: AppColors.textDark),
+            icon: const Icon(Icons.share_outlined),
             onPressed: () => _shareMember(member),
           ),
           // Edit Profile
           IconButton(
             tooltip: 'Edit Profile',
-            icon: const Icon(Icons.edit_outlined, color: AppColors.textDark),
+            icon: const Icon(Icons.edit_outlined),
             onPressed: () =>
                 context.push('/members/${member.id}/edit').then((_) {
                   if (mounted) setState(() {});
@@ -991,10 +988,7 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
           ),
           IconButton(
             tooltip: 'Member settings',
-            icon: const Icon(
-              Icons.settings_outlined,
-              color: AppColors.textDark,
-            ),
+            icon: const Icon(Icons.settings_outlined),
             onPressed: () => _showMemberSettings(member),
           ),
           const SizedBox(width: 4),
@@ -1315,9 +1309,9 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.appSurface,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: context.appBorder),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1382,22 +1376,22 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
                       vertical: 10,
                     ),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF7FBF5),
+                      color: context.appSurfaceRaised,
                       borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: const Color(0xFFD9EBD4)),
+                      border: Border.all(color: context.appBorder),
                     ),
                     child: Row(
                       children: [
-                        CircleAvatar(
-                          radius: 19,
+                        AppAvatar(
+                          memberId: doctor.id,
+                          name: doctor.name,
+                          avatarUrl: doctor.avatarUrl,
+                          size: 38,
+                          fontSize: 12,
                           backgroundColor: const Color(0xFFDEF2D7),
-                          child: Text(
-                            _doctorInitials(doctor.name),
-                            style: const TextStyle(
-                              color: AppColors.primaryDark,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w800,
-                            ),
+                          textColor: AppColors.primaryDark,
+                          border: Border.all(
+                            color: AppColors.primary.withAlpha(90),
                           ),
                         ),
                         const SizedBox(width: 10),
@@ -1407,23 +1401,21 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
                             children: [
                               Text(
                                 doctor.name,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w700,
-                                ),
+                                style: TextStyle(fontWeight: FontWeight.w700),
                               ),
                               Text(
                                 '${doctor.specialization ?? "General physician"} • $visits visit${visits == 1 ? "" : "s"}',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 11.5,
-                                  color: AppColors.textLight,
+                                  color: context.appTextSecondary,
                                 ),
                               ),
                             ],
                           ),
                         ),
-                        const Icon(
+                        Icon(
                           Icons.chevron_right_rounded,
-                          color: AppColors.textLight,
+                          color: context.appTextSecondary,
                         ),
                       ],
                     ),
@@ -1446,9 +1438,9 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.appSurface,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.border, width: 1.2),
+        border: Border.all(color: context.appBorder, width: 1.2),
         boxShadow: [
           BoxShadow(
             color: AppColors.shadow,
@@ -1490,10 +1482,10 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
             const SizedBox(width: 4),
             Text(
               value.padLeft(2, '0'),
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 17,
                 fontWeight: FontWeight.w800,
-                color: AppColors.textDark,
+                color: context.appTextPrimary,
               ),
             ),
           ],
@@ -1501,9 +1493,9 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
         const SizedBox(height: 2),
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 11,
-            color: AppColors.textLight,
+            color: context.appTextSecondary,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -1512,7 +1504,7 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
   }
 
   Widget _statDivider() {
-    return Container(width: 1, height: 24, color: AppColors.border);
+    return Container(width: 1, height: 24, color: context.appBorder);
   }
 
   // ── Segmented Tab Bar ─────────────────────────────────────────────────
@@ -1538,12 +1530,12 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 'Latest Vital Signs',
                 style: TextStyle(
                   fontSize: 17,
                   fontWeight: FontWeight.w800,
-                  color: AppColors.textDark,
+                  color: context.appTextPrimary,
                 ),
               ),
               TextButton.icon(
@@ -1626,12 +1618,12 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
           const SizedBox(height: 24),
 
           // Vitals History Log
-          const Text(
+          Text(
             'Recorded Logs',
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w800,
-              color: AppColors.textDark,
+              color: context.appTextPrimary,
             ),
           ),
           const SizedBox(height: 10),
@@ -1671,9 +1663,9 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.appSurface,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.border, width: 1.2),
+        border: Border.all(color: context.appBorder, width: 1.2),
         boxShadow: [
           BoxShadow(
             color: AppColors.shadow,
@@ -1727,9 +1719,9 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
             children: [
               Text(
                 title,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 11,
-                  color: AppColors.textLight,
+                  color: context.appTextSecondary,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -1739,18 +1731,18 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
                   children: [
                     TextSpan(
                       text: value,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w800,
-                        color: AppColors.textDark,
+                        color: context.appTextPrimary,
                       ),
                     ),
                     TextSpan(
                       text: ' $unit',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 10.5,
                         fontWeight: FontWeight.w500,
-                        color: AppColors.textLight,
+                        color: context.appTextSecondary,
                       ),
                     ),
                   ],
@@ -1767,9 +1759,9 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.appSurface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: context.appBorder),
       ),
       child: Row(
         children: [
@@ -1792,27 +1784,27 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
               children: [
                 Text(
                   '${vital.type}: ${vital.value} ${vital.unit}',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13.5,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.textDark,
+                    color: context.appTextPrimary,
                   ),
                 ),
                 Text(
                   DateFormat('dd MMM yyyy, hh:mm a').format(vital.recordedAt),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 11,
-                    color: AppColors.textLight,
+                    color: context.appTextSecondary,
                   ),
                 ),
               ],
             ),
           ),
           IconButton(
-            icon: const Icon(
+            icon: Icon(
               Icons.delete_outline_rounded,
               size: 18,
-              color: AppColors.textLight,
+              color: context.appTextSecondary,
             ),
             onPressed: () => healthProv.deleteVital(vital.id),
           ),
@@ -1835,12 +1827,12 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 'Active Prescriptions',
                 style: TextStyle(
                   fontSize: 17,
                   fontWeight: FontWeight.w800,
-                  color: AppColors.textDark,
+                  color: context.appTextPrimary,
                 ),
               ),
               TextButton.icon(
@@ -1870,12 +1862,12 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
                 return Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: context.appSurface,
                     borderRadius: BorderRadius.circular(18),
                     border: Border.all(
                       color: med.takenToday
                           ? const Color(0xFFBBF7D0)
-                          : AppColors.border,
+                          : context.appBorder,
                       width: 1.2,
                     ),
                     boxShadow: [
@@ -1911,16 +1903,16 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
                           children: [
                             Text(
                               med.name,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w800,
-                                color: AppColors.textDark,
+                                color: context.appTextPrimary,
                               ),
                             ),
                             const SizedBox(height: 4),
                             Text(
                               '${med.dosage} • ${med.frequency}',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 12.5,
                                 fontWeight: FontWeight.w600,
                                 color: AppColors.primary,
@@ -1929,9 +1921,9 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
                             const SizedBox(height: 2),
                             Text(
                               'Timing: ${med.timing} ${med.duration != null ? "• ${med.duration}" : ""}',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 11.5,
-                                color: AppColors.textLight,
+                                color: context.appTextSecondary,
                               ),
                             ),
                           ],
@@ -1949,7 +1941,7 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
                           decoration: BoxDecoration(
                             color: med.takenToday
                                 ? const Color(0xFF16A34A)
-                                : const Color(0xFFF1F5F9),
+                                : context.appSurfaceRaised,
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Row(
@@ -1962,7 +1954,7 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
                                 size: 14,
                                 color: med.takenToday
                                     ? Colors.white
-                                    : AppColors.textMid,
+                                    : context.appTextSecondary,
                               ),
                               const SizedBox(width: 4),
                               Text(
@@ -1972,7 +1964,7 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
                                   fontWeight: FontWeight.w700,
                                   color: med.takenToday
                                       ? Colors.white
-                                      : AppColors.textMid,
+                                      : context.appTextSecondary,
                                 ),
                               ),
                             ],
@@ -2004,12 +1996,12 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 'Immunization Schedule',
                 style: TextStyle(
                   fontSize: 17,
                   fontWeight: FontWeight.w800,
-                  color: AppColors.textDark,
+                  color: context.appTextPrimary,
                 ),
               ),
               TextButton.icon(
@@ -2039,9 +2031,9 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
                 return Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: context.appSurface,
                     borderRadius: BorderRadius.circular(18),
-                    border: Border.all(color: AppColors.border, width: 1.2),
+                    border: Border.all(color: context.appBorder, width: 1.2),
                     boxShadow: [
                       BoxShadow(
                         color: AppColors.shadow,
@@ -2071,10 +2063,10 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
                           children: [
                             Text(
                               '${vac.name} (${vac.dose ?? "Dose"})',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 14.5,
                                 fontWeight: FontWeight.w800,
-                                color: AppColors.textDark,
+                                color: context.appTextPrimary,
                               ),
                             ),
                             const SizedBox(height: 3),
@@ -2090,9 +2082,9 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
                               const SizedBox(height: 2),
                               Text(
                                 vac.administeredBy!,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 11.5,
-                                  color: AppColors.textLight,
+                                  color: context.appTextSecondary,
                                 ),
                               ),
                             ],
@@ -2138,12 +2130,12 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 'Clinical History',
                 style: TextStyle(
                   fontSize: 17,
                   fontWeight: FontWeight.w800,
-                  color: AppColors.textDark,
+                  color: context.appTextPrimary,
                 ),
               ),
               TextButton.icon(
@@ -2177,9 +2169,9 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
                   child: Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: context.appSurface,
                       borderRadius: BorderRadius.circular(18),
-                      border: Border.all(color: AppColors.border, width: 1.2),
+                      border: Border.all(color: context.appBorder, width: 1.2),
                       boxShadow: [
                         BoxShadow(
                           color: AppColors.shadow,
@@ -2196,17 +2188,17 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
                           children: [
                             Text(
                               visit.diagnosis ?? 'General Consultation',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w800,
-                                color: AppColors.textDark,
+                                color: context.appTextPrimary,
                               ),
                             ),
                             Text(
                               DateFormat('dd MMM yyyy').format(visit.visitDate),
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 11.5,
-                                color: AppColors.textLight,
+                                color: context.appTextSecondary,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -2223,24 +2215,26 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
                             const SizedBox(width: 4),
                             Text(
                               visit.doctorName ?? 'Attending Doctor',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 12.5,
-                                color: AppColors.textMid,
+                                color: context.appTextSecondary,
                               ),
                             ),
                             if (visit.hospital != null) ...[
                               const SizedBox(width: 8),
-                              const Text(
+                              Text(
                                 '•',
-                                style: TextStyle(color: AppColors.textLight),
+                                style: TextStyle(
+                                  color: context.appTextSecondary,
+                                ),
                               ),
                               const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
                                   visit.hospital!,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 12,
-                                    color: AppColors.textLight,
+                                    color: context.appTextSecondary,
                                   ),
                                   overflow: TextOverflow.ellipsis,
                                 ),
@@ -2253,9 +2247,9 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
                           const SizedBox(height: 6),
                           Text(
                             'Treatment: ${visit.treatment!}',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 12,
-                              color: AppColors.textLight,
+                              color: context.appTextSecondary,
                             ),
                           ),
                         ],
@@ -2281,12 +2275,12 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 'Reports & Documents',
                 style: TextStyle(
                   fontSize: 17,
                   fontWeight: FontWeight.w800,
-                  color: AppColors.textDark,
+                  color: context.appTextPrimary,
                 ),
               ),
               TextButton.icon(
@@ -2316,9 +2310,9 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
                 return Container(
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: context.appSurface,
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.border, width: 1.2),
+                    border: Border.all(color: context.appBorder, width: 1.2),
                     boxShadow: [
                       BoxShadow(
                         color: AppColors.shadow,
@@ -2348,18 +2342,18 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
                           children: [
                             Text(
                               f.fileName ?? f.description ?? 'Medical Report',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 13.5,
                                 fontWeight: FontWeight.w800,
-                                color: AppColors.textDark,
+                                color: context.appTextPrimary,
                               ),
                             ),
                             const SizedBox(height: 2),
                             Text(
                               '${f.fileType.toUpperCase()} • ${DateFormat('dd MMM yyyy').format(f.createdAt)}',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 11,
-                                color: AppColors.textLight,
+                                color: context.appTextSecondary,
                               ),
                             ),
                           ],
@@ -2393,24 +2387,24 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.appSurface,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: context.appBorder),
       ),
       child: Column(
         children: [
-          const Icon(
+          Icon(
             Icons.folder_open_rounded,
             size: 40,
-            color: AppColors.textLight,
+            color: context.appTextSecondary,
           ),
           const SizedBox(height: 10),
           Text(
             message,
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 13,
-              color: AppColors.textLight,
+              color: context.appTextSecondary,
               height: 1.4,
             ),
           ),

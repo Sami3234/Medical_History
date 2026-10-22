@@ -22,7 +22,7 @@ class DoctorDetailScreen extends StatelessWidget {
 
     if (doc == null) {
       return Scaffold(
-        backgroundColor: AppColors.bg,
+        backgroundColor: context.appBackground,
         appBar: AppBar(
           title: const Text('Doctor profile'),
           leading: IconButton(
@@ -36,18 +36,18 @@ class DoctorDetailScreen extends StatelessWidget {
               : Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.person_off_rounded,
                       size: 54,
-                      color: AppColors.textLight,
+                      color: context.appTextSecondary,
                     ),
                     const SizedBox(height: 14),
-                    const Text(
+                    Text(
                       'Doctor profile not found',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.textDark,
+                        color: context.appTextPrimary,
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -68,7 +68,7 @@ class DoctorDetailScreen extends StatelessWidget {
     }
 
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: context.appBackground,
       appBar: AppBar(
         title: const Text('Doctor profile'),
         leading: IconButton(
@@ -166,6 +166,7 @@ class DoctorDetailScreen extends StatelessWidget {
                     if (doc.experienceYears != null)
                       Expanded(
                         child: _profileStat(
+                          context,
                           Icons.workspace_premium_outlined,
                           '${doc.experienceYears} years',
                           'Experience',
@@ -177,6 +178,7 @@ class DoctorDetailScreen extends StatelessWidget {
                     if (doc.licenseNumber?.trim().isNotEmpty == true)
                       Expanded(
                         child: _profileStat(
+                          context,
                           Icons.badge_outlined,
                           doc.licenseNumber!,
                           'License / PMDC',
@@ -188,12 +190,12 @@ class DoctorDetailScreen extends StatelessWidget {
               ],
 
               // Section: Clinic details
-              const Text(
+              Text(
                 'Clinic details',
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w800,
-                  color: AppColors.textDark,
+                  color: context.appTextPrimary,
                 ),
               ),
               const SizedBox(height: 14),
@@ -205,9 +207,9 @@ class DoctorDetailScreen extends StatelessWidget {
                   vertical: 16,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: context.appSurface,
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: AppColors.border, width: 1.2),
+                  border: Border.all(color: context.appBorder, width: 1.2),
                   boxShadow: [
                     BoxShadow(
                       color: AppColors.shadow,
@@ -230,18 +232,18 @@ class DoctorDetailScreen extends StatelessWidget {
                         children: [
                           Text(
                             doc.hospital ?? 'Clinic not provided',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w700,
-                              color: AppColors.textDark,
+                              color: context.appTextPrimary,
                             ),
                           ),
                           const SizedBox(height: 2),
                           Text(
                             doc.address ?? 'Address not provided',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 12,
-                              color: AppColors.textLight,
+                              color: context.appTextSecondary,
                             ),
                           ),
                         ],
@@ -259,9 +261,9 @@ class DoctorDetailScreen extends StatelessWidget {
                   vertical: 16,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: context.appSurface,
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: AppColors.border, width: 1.2),
+                  border: Border.all(color: context.appBorder, width: 1.2),
                   boxShadow: [
                     BoxShadow(
                       color: AppColors.shadow,
@@ -282,20 +284,20 @@ class DoctorDetailScreen extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
+                          Text(
                             'Clinic contact',
                             style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w700,
-                              color: AppColors.textDark,
+                              color: context.appTextPrimary,
                             ),
                           ),
                           const SizedBox(height: 2),
                           Text(
                             doc.phone ?? 'Contact details not provided',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 12,
-                              color: AppColors.textLight,
+                              color: context.appTextSecondary,
                             ),
                           ),
                         ],
@@ -307,6 +309,7 @@ class DoctorDetailScreen extends StatelessWidget {
               if (doc.email?.trim().isNotEmpty == true) ...[
                 const SizedBox(height: 12),
                 _detailTile(
+                  context: context,
                   icon: Icons.email_outlined,
                   title: 'Email',
                   subtitle: doc.email!,
@@ -315,6 +318,7 @@ class DoctorDetailScreen extends StatelessWidget {
               if (doc.availability?.trim().isNotEmpty == true) ...[
                 const SizedBox(height: 12),
                 _detailTile(
+                  context: context,
                   icon: Icons.schedule_outlined,
                   title: 'Clinic timings',
                   subtitle: doc.availability!,
@@ -323,6 +327,7 @@ class DoctorDetailScreen extends StatelessWidget {
               if (doc.notes?.trim().isNotEmpty == true) ...[
                 const SizedBox(height: 12),
                 _detailTile(
+                  context: context,
                   icon: Icons.notes_rounded,
                   title: 'Notes',
                   subtitle: doc.notes!,
@@ -395,13 +400,18 @@ class DoctorDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _profileStat(IconData icon, String value, String label) {
+  Widget _profileStat(
+    BuildContext context,
+    IconData icon,
+    String value,
+    String label,
+  ) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.appSurface,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: context.appBorder),
       ),
       child: Column(
         children: [
@@ -416,7 +426,7 @@ class DoctorDetailScreen extends StatelessWidget {
           const SizedBox(height: 2),
           Text(
             label,
-            style: const TextStyle(fontSize: 10.5, color: AppColors.textLight),
+            style: TextStyle(fontSize: 10.5, color: context.appTextSecondary),
           ),
         ],
       ),
@@ -424,6 +434,7 @@ class DoctorDetailScreen extends StatelessWidget {
   }
 
   Widget _detailTile({
+    required BuildContext context,
     required IconData icon,
     required String title,
     required String subtitle,
@@ -431,9 +442,9 @@ class DoctorDetailScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.appSurface,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: context.appBorder),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -451,10 +462,10 @@ class DoctorDetailScreen extends StatelessWidget {
                 const SizedBox(height: 3),
                 Text(
                   subtitle,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
                     height: 1.45,
-                    color: AppColors.textLight,
+                    color: context.appTextSecondary,
                   ),
                 ),
               ],

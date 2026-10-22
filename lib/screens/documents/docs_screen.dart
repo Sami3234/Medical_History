@@ -127,7 +127,7 @@ class _DocsScreenState extends State<DocsScreen> {
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
-                value: memberId,
+                initialValue: memberId,
                 decoration: const InputDecoration(labelText: 'Family member'),
                 items: members
                     .map(
@@ -142,7 +142,7 @@ class _DocsScreenState extends State<DocsScreen> {
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
-                value: fileType,
+                initialValue: fileType,
                 decoration: const InputDecoration(labelText: 'Document type'),
                 items: const [
                   DropdownMenuItem(
@@ -212,7 +212,7 @@ class _DocsScreenState extends State<DocsScreen> {
     }).toList();
 
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: context.appBackground,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
@@ -233,12 +233,12 @@ class _DocsScreenState extends State<DocsScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
+                  Text(
                     'Medical documents',
                     style: TextStyle(
                       fontSize: 30,
                       fontWeight: FontWeight.w800,
-                      color: AppColors.textDark,
+                      color: context.appTextPrimary,
                     ),
                   ),
                   GestureDetector(
@@ -272,9 +272,9 @@ class _DocsScreenState extends State<DocsScreen> {
               Container(
                 height: 52,
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: context.appSurface,
                   borderRadius: BorderRadius.circular(18),
-                  border: Border.all(color: AppColors.border, width: 1.2),
+                  border: Border.all(color: context.appBorder, width: 1.2),
                   boxShadow: [
                     BoxShadow(
                       color: AppColors.shadow,
@@ -321,12 +321,12 @@ class _DocsScreenState extends State<DocsScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
+                    Text(
                       'Draft inbox',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w800,
-                        color: AppColors.textDark,
+                        color: context.appTextPrimary,
                       ),
                     ),
                     Text(
@@ -379,12 +379,12 @@ class _DocsScreenState extends State<DocsScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
+                  Text(
                     'Recent uploads',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w800,
-                      color: AppColors.textDark,
+                      color: context.appTextPrimary,
                     ),
                   ),
                   Text(
@@ -405,16 +405,16 @@ class _DocsScreenState extends State<DocsScreen> {
                   width: double.infinity,
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: context.appSurface,
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: AppColors.border),
+                    border: Border.all(color: context.appBorder),
                   ),
-                  child: const Column(
+                  child: Column(
                     children: [
                       Icon(
                         Icons.folder_open_rounded,
                         size: 38,
-                        color: AppColors.textLight,
+                        color: context.appTextSecondary,
                       ),
                       SizedBox(height: 10),
                       Text('No local documents found'),
@@ -442,9 +442,12 @@ class _DocsScreenState extends State<DocsScreen> {
                     child: Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: context.appSurface,
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: AppColors.border, width: 1.2),
+                        border: Border.all(
+                          color: context.appBorder,
+                          width: 1.2,
+                        ),
                         boxShadow: [
                           BoxShadow(
                             color: AppColors.shadow,
@@ -479,10 +482,10 @@ class _DocsScreenState extends State<DocsScreen> {
                               children: [
                                 Text(
                                   fileName,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 15,
                                     fontWeight: FontWeight.w800,
-                                    color: AppColors.textDark,
+                                    color: context.appTextPrimary,
                                   ),
                                 ),
                                 const SizedBox(height: 3),
@@ -492,9 +495,9 @@ class _DocsScreenState extends State<DocsScreen> {
                                       : file.fileType == 'labReport'
                                       ? "Lab report"
                                       : "Medical report"}',
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 12,
-                                    color: AppColors.textLight,
+                                    color: context.appTextSecondary,
                                   ),
                                 ),
                                 const SizedBox(height: 4),
@@ -575,10 +578,10 @@ class _DocsScreenState extends State<DocsScreen> {
         duration: const Duration(milliseconds: 150),
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF287D1F) : Colors.white,
+          color: isSelected ? const Color(0xFF287D1F) : context.appSurface,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isSelected ? const Color(0xFF287D1F) : AppColors.border,
+            color: isSelected ? const Color(0xFF287D1F) : context.appBorder,
             width: 1.2,
           ),
           boxShadow: [
@@ -594,7 +597,7 @@ class _DocsScreenState extends State<DocsScreen> {
           style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w700,
-            color: isSelected ? Colors.white : AppColors.textDark,
+            color: isSelected ? Colors.white : context.appTextPrimary,
           ),
         ),
       ),

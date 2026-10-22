@@ -73,7 +73,7 @@ class _MemberDoctorRecordsScreenState extends State<MemberDoctorRecordsScreen> {
 
     if (member == null || doctor == null) {
       return Scaffold(
-        backgroundColor: AppColors.bg,
+        backgroundColor: context.appBackground,
         appBar: AppBar(title: const Text('Doctor records')),
         body: Center(
           child: visitProvider.loading
@@ -86,7 +86,7 @@ class _MemberDoctorRecordsScreenState extends State<MemberDoctorRecordsScreen> {
     return DefaultTabController(
       length: 2,
       child: Scaffold(
-        backgroundColor: AppColors.bg,
+        backgroundColor: context.appBackground,
         appBar: AppBar(
           title: Text(member.name),
           leading: IconButton(
@@ -117,7 +117,7 @@ class _MemberDoctorRecordsScreenState extends State<MemberDoctorRecordsScreen> {
                 dividerColor: Colors.transparent,
                 indicatorSize: TabBarIndicatorSize.tab,
                 indicator: BoxDecoration(
-                  color: Colors.white,
+                  color: context.appSurface,
                   borderRadius: BorderRadius.circular(13),
                   boxShadow: const [
                     BoxShadow(
@@ -128,7 +128,7 @@ class _MemberDoctorRecordsScreenState extends State<MemberDoctorRecordsScreen> {
                   ],
                 ),
                 labelColor: AppColors.primaryDark,
-                unselectedLabelColor: AppColors.textMid,
+                unselectedLabelColor: context.appTextSecondary,
                 tabs: [
                   Tab(text: 'Visits (${visits.length})'),
                   Tab(text: 'Documents (${documents.length})'),
@@ -277,10 +277,10 @@ class _MemberDoctorRecordsScreenState extends State<MemberDoctorRecordsScreen> {
         return Card(
           elevation: 0,
           margin: EdgeInsets.zero,
-          color: Colors.white,
+          color: context.appSurface,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(18),
-            side: const BorderSide(color: AppColors.border),
+            side: BorderSide(color: context.appBorder),
           ),
           clipBehavior: Clip.antiAlias,
           child: ExpansionTile(
@@ -329,8 +329,8 @@ class _MemberDoctorRecordsScreenState extends State<MemberDoctorRecordsScreen> {
                   const Spacer(),
                   Text(
                     '${attachments.length} attachments',
-                    style: const TextStyle(
-                      color: AppColors.textLight,
+                    style: TextStyle(
+                      color: context.appTextSecondary,
                       fontSize: 11,
                     ),
                   ),
@@ -375,10 +375,10 @@ class _MemberDoctorRecordsScreenState extends State<MemberDoctorRecordsScreen> {
       itemBuilder: (context, index) {
         final document = documents[index];
         return ListTile(
-          tileColor: Colors.white,
+          tileColor: context.appSurface,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
-            side: const BorderSide(color: AppColors.border),
+            side: BorderSide(color: context.appBorder),
           ),
           leading: Container(
             width: 44,
@@ -435,7 +435,7 @@ class _MemberDoctorRecordsScreenState extends State<MemberDoctorRecordsScreen> {
           Text(
             subtitle,
             textAlign: TextAlign.center,
-            style: const TextStyle(color: AppColors.textLight),
+            style: TextStyle(color: context.appTextSecondary),
           ),
         ],
       ),

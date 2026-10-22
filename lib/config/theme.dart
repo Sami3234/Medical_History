@@ -47,14 +47,29 @@ class AppColors {
   static const shadow = Color(0x0C0E2818);
 }
 
+extension AppThemeContext on BuildContext {
+  bool get isDarkMode => Theme.of(this).brightness == Brightness.dark;
+  Color get appBackground => Theme.of(this).scaffoldBackgroundColor;
+  Color get appSurface => Theme.of(this).colorScheme.surface;
+  Color get appSurfaceRaised => Theme.of(this).colorScheme.surfaceContainer;
+  Color get appSurfaceSoft => Theme.of(this).colorScheme.surfaceContainerLow;
+  Color get appTextPrimary => Theme.of(this).colorScheme.onSurface;
+  Color get appTextSecondary => Theme.of(this).colorScheme.onSurfaceVariant;
+  Color get appBorder => Theme.of(this).colorScheme.outlineVariant;
+}
+
 class AppTheme {
   static ThemeData get light {
-    return ThemeData(
+    final base = ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
       colorSchemeSeed: AppColors.primary,
+    );
+    return base.copyWith(
       scaffoldBackgroundColor: AppColors.bg,
-      textTheme: GoogleFonts.plusJakartaSansTextTheme(),
+      textTheme: GoogleFonts.plusJakartaSansTextTheme(
+        base.textTheme,
+      ).apply(bodyColor: AppColors.textDark, displayColor: AppColors.textDark),
       appBarTheme: AppBarTheme(
         elevation: 0,
         centerTitle: false,
@@ -84,6 +99,7 @@ class AppTheme {
             borderRadius: BorderRadius.circular(16),
           ),
           textStyle: GoogleFonts.plusJakartaSans(
+            textStyle: base.textTheme.labelLarge,
             fontSize: 15,
             fontWeight: FontWeight.w600,
           ),
@@ -98,6 +114,7 @@ class AppTheme {
             borderRadius: BorderRadius.circular(16),
           ),
           textStyle: GoogleFonts.plusJakartaSans(
+            textStyle: base.textTheme.labelLarge,
             fontSize: 15,
             fontWeight: FontWeight.w600,
           ),
@@ -139,14 +156,40 @@ class AppTheme {
   }
 
   static ThemeData get dark {
-    final base = ThemeData.dark(useMaterial3: true);
+    const colorScheme = ColorScheme.dark(
+      primary: Color(0xFF7BD957),
+      onPrimary: Color(0xFF0B2A12),
+      primaryContainer: Color(0xFF214A29),
+      onPrimaryContainer: Color(0xFFC5F5B4),
+      secondary: Color(0xFF9AD77C),
+      onSecondary: Color(0xFF12321A),
+      surface: Color(0xFF17231B),
+      onSurface: Color(0xFFE8F3EA),
+      surfaceContainerLowest: Color(0xFF0D1510),
+      surfaceContainerLow: Color(0xFF131E17),
+      surfaceContainer: Color(0xFF1B2A20),
+      surfaceContainerHigh: Color(0xFF223429),
+      surfaceContainerHighest: Color(0xFF2A4030),
+      onSurfaceVariant: Color(0xFFADC0B0),
+      outline: Color(0xFF5D7562),
+      outlineVariant: Color(0xFF304737),
+      error: Color(0xFFFFB4AB),
+      onError: Color(0xFF690005),
+    );
+    final base = ThemeData(
+      useMaterial3: true,
+      brightness: Brightness.dark,
+      colorScheme: colorScheme,
+    );
     return base.copyWith(
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: AppColors.primary,
-        brightness: Brightness.dark,
-      ),
       scaffoldBackgroundColor: const Color(0xFF101A13),
-      textTheme: GoogleFonts.plusJakartaSansTextTheme(base.textTheme),
+      canvasColor: const Color(0xFF101A13),
+      dividerColor: colorScheme.outlineVariant,
+      textTheme: GoogleFonts.plusJakartaSansTextTheme(base.textTheme).apply(
+        bodyColor: colorScheme.onSurface,
+        displayColor: colorScheme.onSurface,
+      ),
+      iconTheme: const IconThemeData(color: Color(0xFFCAD9CC)),
       appBarTheme: AppBarTheme(
         elevation: 0,
         backgroundColor: const Color(0xFF101A13),
@@ -159,26 +202,109 @@ class AppTheme {
       ),
       cardTheme: CardThemeData(
         elevation: 0,
-        color: const Color(0xFF18241B),
+        color: colorScheme.surface,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
-          side: const BorderSide(color: Color(0xFF2B4430), width: 1.2),
+          side: BorderSide(color: colorScheme.outlineVariant, width: 1.2),
+        ),
+      ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: colorScheme.surfaceContainer,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      ),
+      bottomSheetTheme: const BottomSheetThemeData(
+        backgroundColor: Color(0xFF17231B),
+        modalBackgroundColor: Color(0xFF17231B),
+        surfaceTintColor: Colors.transparent,
+      ),
+      navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: colorScheme.surface,
+        indicatorColor: colorScheme.primaryContainer,
+        labelTextStyle: WidgetStatePropertyAll(
+          GoogleFonts.plusJakartaSans(
+            textStyle: base.textTheme.labelMedium,
+            color: colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ),
+      listTileTheme: ListTileThemeData(
+        textColor: colorScheme.onSurface,
+        iconColor: colorScheme.onSurfaceVariant,
+        tileColor: colorScheme.surface,
+      ),
+      dividerTheme: DividerThemeData(color: colorScheme.outlineVariant),
+      chipTheme: base.chipTheme.copyWith(
+        backgroundColor: colorScheme.surfaceContainerHigh,
+        selectedColor: colorScheme.primaryContainer,
+        side: BorderSide(color: colorScheme.outlineVariant),
+        labelStyle: base.textTheme.labelLarge?.copyWith(
+          color: colorScheme.onSurface,
+        ),
+      ),
+      tabBarTheme: TabBarThemeData(
+        labelColor: colorScheme.primary,
+        unselectedLabelColor: colorScheme.onSurfaceVariant,
+        dividerColor: Colors.transparent,
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          backgroundColor: colorScheme.primary,
+          foregroundColor: colorScheme.onPrimary,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          textStyle: GoogleFonts.plusJakartaSans(
+            textStyle: base.textTheme.labelLarge,
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: colorScheme.primary,
+          foregroundColor: colorScheme.onPrimary,
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          textStyle: GoogleFonts.plusJakartaSans(
+            textStyle: base.textTheme.labelLarge,
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: colorScheme.primary,
+          side: BorderSide(color: colorScheme.primary, width: 1.5),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 15),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          textStyle: GoogleFonts.plusJakartaSans(
+            textStyle: base.textTheme.labelLarge,
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: const Color(0xFF18241B),
+        fillColor: colorScheme.surfaceContainer,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 18,
           vertical: 16,
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: Color(0xFF2B4430)),
+          borderSide: BorderSide(color: colorScheme.outlineVariant),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: Color(0xFF2B4430)),
+          borderSide: BorderSide(color: colorScheme.outlineVariant),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
@@ -187,6 +313,8 @@ class AppTheme {
             width: 1.8,
           ),
         ),
+        hintStyle: TextStyle(color: colorScheme.onSurfaceVariant),
+        labelStyle: TextStyle(color: colorScheme.onSurfaceVariant),
       ),
     );
   }

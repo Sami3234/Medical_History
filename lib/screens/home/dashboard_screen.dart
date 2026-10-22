@@ -421,9 +421,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     if (_checkingOwner) {
-      return const Scaffold(
-        backgroundColor: AppColors.bg,
-        body: Center(
+      return Scaffold(
+        backgroundColor: context.appBackground,
+        body: const Center(
           child: CircularProgressIndicator(color: AppColors.primary),
         ),
       );
@@ -491,7 +491,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         statusBarBrightness: Brightness.dark,
       ),
       child: Scaffold(
-        backgroundColor: AppColors.bg,
+        backgroundColor: context.appBackground,
         body: RefreshIndicator(
           color: AppColors.primary,
           onRefresh: () async {
@@ -531,20 +531,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'Medical history hub',
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.w800,
-                          color: AppColors.textDark,
+                          color: context.appTextPrimary,
                         ),
                       ),
                       const SizedBox(height: 4),
-                      const Text(
+                      Text(
                         'Manage your family, doctor visits, and documents in one place.',
                         style: TextStyle(
                           fontSize: 13,
-                          color: AppColors.textLight,
+                          color: context.appTextSecondary,
                         ),
                       ),
                       const SizedBox(height: 14),
@@ -563,7 +563,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Expanded(
+                          Expanded(
                             child: Text(
                               'Family members',
                               maxLines: 1,
@@ -571,7 +571,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.w800,
-                                color: AppColors.textDark,
+                                color: context.appTextPrimary,
                               ),
                             ),
                           ),
@@ -600,11 +600,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ],
                       ),
                       const SizedBox(height: 4),
-                      const Text(
+                      Text(
                         'Tap a person to see their visits, doctors, and documents',
                         style: TextStyle(
                           fontSize: 11,
-                          color: AppColors.textLight,
+                          color: context.appTextSecondary,
                         ),
                       ),
                       const SizedBox(height: 12),
@@ -617,10 +617,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           vertical: 16,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: context.appSurface,
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
-                            color: AppColors.border,
+                            color: context.appBorder,
                             width: 1.2,
                           ),
                           boxShadow: [
@@ -948,15 +948,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
           Icon(
             Icons.family_restroom_rounded,
             size: 40,
-            color: AppColors.textLight.withAlpha(120),
+            color: context.appTextSecondary.withAlpha(120),
           ),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             'No family members yet',
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: AppColors.textLight,
+              color: context.appTextSecondary,
             ),
           ),
           const SizedBox(height: 4),
@@ -1046,7 +1046,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       style: TextStyle(
         fontSize: horizontal ? 11 : 9.5,
         fontWeight: FontWeight.w700,
-        color: AppColors.textDark,
+        color: context.appTextPrimary,
       ),
       textAlign: TextAlign.center,
     );
@@ -1066,7 +1066,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [surface, Colors.white],
+              colors: [
+                context.isDarkMode ? context.appSurfaceRaised : surface,
+                context.appSurface,
+              ],
             ),
             borderRadius: BorderRadius.circular(17),
             border: Border.all(color: accent.withAlpha(35)),
@@ -1086,7 +1089,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 width: 32,
                 height: 32,
                 decoration: BoxDecoration(
-                  color: Colors.white.withAlpha(210),
+                  color: context.appSurface,
                   borderRadius: BorderRadius.circular(11),
                 ),
                 child: Icon(icon, color: accent, size: 18),
@@ -1109,12 +1112,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Family health snapshot',
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w800,
-            color: AppColors.textDark,
+            color: context.appTextPrimary,
           ),
         ),
         const SizedBox(height: 10),
@@ -1157,7 +1160,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         decoration: BoxDecoration(
           color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.border),
+          border: Border.all(color: context.appBorder),
         ),
         child: Column(
           children: [
@@ -1165,15 +1168,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
             const SizedBox(height: 5),
             Text(
               value,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w800,
-                color: AppColors.textDark,
+                color: context.appTextPrimary,
               ),
             ),
             Text(
               label,
-              style: const TextStyle(fontSize: 10, color: AppColors.textLight),
+              style: TextStyle(fontSize: 10, color: context.appTextSecondary),
             ),
           ],
         ),
@@ -1188,7 +1191,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: context.appBorder),
       ),
       child: Row(
         children: [
@@ -1197,7 +1200,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           Expanded(
             child: Text(
               message,
-              style: const TextStyle(fontSize: 12, color: AppColors.textMid),
+              style: TextStyle(fontSize: 12, color: context.appTextSecondary),
             ),
           ),
         ],

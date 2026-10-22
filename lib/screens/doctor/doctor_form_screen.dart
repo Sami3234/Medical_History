@@ -284,7 +284,7 @@ class _DoctorFormScreenState extends State<DoctorFormScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: context.appBackground,
       appBar: AppBar(
         title: Text(_isEdit ? 'Edit doctor' : 'Add doctor'),
         leading: IconButton(
@@ -534,7 +534,7 @@ class _DoctorFormScreenState extends State<DoctorFormScreen> {
             ],
           ),
           const SizedBox(width: 18),
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -548,7 +548,7 @@ class _DoctorFormScreenState extends State<DoctorFormScreen> {
                   style: TextStyle(
                     fontSize: 11.5,
                     height: 1.45,
-                    color: AppColors.textLight,
+                    color: context.appTextSecondary,
                   ),
                 ),
               ],
@@ -565,17 +565,17 @@ class _DoctorFormScreenState extends State<DoctorFormScreen> {
       children: [
         Text(
           title,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w800,
-            color: AppColors.textDark,
+            color: context.appTextPrimary,
           ),
         ),
         if (subtitle != null) ...[
           const SizedBox(height: 3),
           Text(
             subtitle,
-            style: const TextStyle(fontSize: 11.5, color: AppColors.textLight),
+            style: TextStyle(fontSize: 11.5, color: context.appTextSecondary),
           ),
         ],
       ],
@@ -601,10 +601,10 @@ class _DoctorFormScreenState extends State<DoctorFormScreen> {
         children: [
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 12.5,
               fontWeight: FontWeight.w700,
-              color: AppColors.textDark,
+              color: context.appTextPrimary,
             ),
           ),
           const SizedBox(height: 6),
@@ -618,7 +618,7 @@ class _DoctorFormScreenState extends State<DoctorFormScreen> {
             onChanged: controller == _name ? (_) => setState(() {}) : null,
             decoration: InputDecoration(
               hintText: hint,
-              prefixIcon: Icon(icon, color: AppColors.textLight, size: 20),
+              prefixIcon: Icon(icon, color: context.appTextSecondary, size: 20),
               suffixIcon: suffixIcon,
               alignLabelWithHint: maxLines > 1,
             ),

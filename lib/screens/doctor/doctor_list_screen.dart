@@ -70,7 +70,7 @@ class _DoctorListScreenState extends State<DoctorListScreen> {
         statusBarBrightness: Brightness.dark,
       ),
       child: Scaffold(
-        backgroundColor: AppColors.bg,
+        backgroundColor: context.appBackground,
         body: RefreshIndicator(
           color: AppColors.primary,
           onRefresh: _loadDoctors,
@@ -107,20 +107,20 @@ class _DoctorListScreenState extends State<DoctorListScreen> {
                         _buildEmptyState(allDoctors.isEmpty)
                       else ...[
                         if (featuredDoctor != null && _query.isEmpty) ...[
-                          const Text(
+                          Text(
                             'Your care team',
                             style: TextStyle(
                               fontSize: 19,
                               fontWeight: FontWeight.w800,
-                              color: AppColors.textDark,
+                              color: context.appTextPrimary,
                             ),
                           ),
                           const SizedBox(height: 4),
-                          const Text(
+                          Text(
                             'Quick access to your priority doctor',
                             style: TextStyle(
                               fontSize: 12.5,
-                              color: AppColors.textLight,
+                              color: context.appTextSecondary,
                             ),
                           ),
                           const SizedBox(height: 12),
@@ -129,13 +129,13 @@ class _DoctorListScreenState extends State<DoctorListScreen> {
                         ],
                         Row(
                           children: [
-                            const Expanded(
+                            Expanded(
                               child: Text(
                                 'All doctors',
                                 style: TextStyle(
                                   fontSize: 19,
                                   fontWeight: FontWeight.w800,
-                                  color: AppColors.textDark,
+                                  color: context.appTextPrimary,
                                 ),
                               ),
                             ),
@@ -145,7 +145,7 @@ class _DoctorListScreenState extends State<DoctorListScreen> {
                                 vertical: 5,
                               ),
                               decoration: BoxDecoration(
-                                color: AppColors.surface,
+                                color: context.appSurfaceRaised,
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: Text(
@@ -352,9 +352,9 @@ class _DoctorListScreenState extends State<DoctorListScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 13),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.appSurface,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: context.appBorder),
         boxShadow: const [
           BoxShadow(
             color: AppColors.shadow,
@@ -369,17 +369,17 @@ class _DoctorListScreenState extends State<DoctorListScreen> {
           const SizedBox(height: 5),
           Text(
             value,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w800,
-              color: AppColors.textDark,
+              color: context.appTextPrimary,
             ),
           ),
           Text(
             label,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontSize: 10.5, color: AppColors.textLight),
+            style: TextStyle(fontSize: 10.5, color: context.appTextSecondary),
           ),
         ],
       ),
@@ -410,12 +410,12 @@ class _DoctorListScreenState extends State<DoctorListScreen> {
             labelStyle: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w700,
-              color: selected ? Colors.white : AppColors.textMid,
+              color: selected ? Colors.white : context.appTextSecondary,
             ),
             selectedColor: AppColors.primaryDark,
-            backgroundColor: Colors.white,
+            backgroundColor: context.appSurface,
             side: BorderSide(
-              color: selected ? AppColors.primaryDark : AppColors.border,
+              color: selected ? AppColors.primaryDark : context.appBorder,
             ),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(20),
@@ -537,7 +537,7 @@ class _DoctorListScreenState extends State<DoctorListScreen> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 11),
       child: Material(
-        color: Colors.white,
+        color: context.appSurface,
         borderRadius: BorderRadius.circular(20),
         child: InkWell(
           onTap: () => context.push('/doctors/${doctor.id}'),
@@ -546,7 +546,7 @@ class _DoctorListScreenState extends State<DoctorListScreen> {
             padding: const EdgeInsets.fromLTRB(13, 13, 8, 13),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: AppColors.border),
+              border: Border.all(color: context.appBorder),
               boxShadow: const [
                 BoxShadow(
                   color: AppColors.shadow,
@@ -567,10 +567,10 @@ class _DoctorListScreenState extends State<DoctorListScreen> {
                         doctor.name,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w800,
-                          color: AppColors.textDark,
+                          color: context.appTextPrimary,
                         ),
                       ),
                       const SizedBox(height: 3),
@@ -588,10 +588,10 @@ class _DoctorListScreenState extends State<DoctorListScreen> {
                         const SizedBox(height: 4),
                         Row(
                           children: [
-                            const Icon(
+                            Icon(
                               Icons.location_on_outlined,
                               size: 13,
-                              color: AppColors.textLight,
+                              color: context.appTextSecondary,
                             ),
                             const SizedBox(width: 3),
                             Expanded(
@@ -599,9 +599,9 @@ class _DoctorListScreenState extends State<DoctorListScreen> {
                                 doctor.hospital!,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 10.5,
-                                  color: AppColors.textLight,
+                                  color: context.appTextSecondary,
                                 ),
                               ),
                             ),
@@ -623,7 +623,7 @@ class _DoctorListScreenState extends State<DoctorListScreen> {
                         : Icons.star_border_rounded,
                     color: doctor.isFavorite
                         ? AppColors.warning
-                        : AppColors.textLight,
+                        : context.appTextSecondary,
                   ),
                 ),
                 PopupMenuButton<String>(
@@ -681,17 +681,17 @@ class _DoctorListScreenState extends State<DoctorListScreen> {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 48),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.appSurface,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: context.appBorder),
       ),
       child: Column(
         children: [
           Container(
             width: 74,
             height: 74,
-            decoration: const BoxDecoration(
-              color: AppColors.surface,
+            decoration: BoxDecoration(
+              color: context.appSurfaceRaised,
               shape: BoxShape.circle,
             ),
             child: const Icon(
@@ -703,10 +703,10 @@ class _DoctorListScreenState extends State<DoctorListScreen> {
           const SizedBox(height: 16),
           Text(
             hasNoDoctors ? 'No doctors added yet' : 'No matching doctors',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 17,
               fontWeight: FontWeight.w800,
-              color: AppColors.textDark,
+              color: context.appTextPrimary,
             ),
           ),
           const SizedBox(height: 6),
@@ -715,7 +715,7 @@ class _DoctorListScreenState extends State<DoctorListScreen> {
                 ? 'Add a doctor to organize visits and family care records.'
                 : 'Try another name, specialty, clinic, or filter.',
             textAlign: TextAlign.center,
-            style: const TextStyle(color: AppColors.textLight, height: 1.5),
+            style: TextStyle(color: context.appTextSecondary, height: 1.5),
           ),
           if (hasNoDoctors) ...[
             const SizedBox(height: 18),

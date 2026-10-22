@@ -83,7 +83,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final auth = context.watch<AuthProvider>();
 
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: context.appBackground,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
@@ -103,37 +103,40 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                 ),
                 const SizedBox(height: 10),
-                const Text(
+                Text(
                   'Create account',
                   style: TextStyle(
                     fontSize: 30,
                     fontWeight: FontWeight.w800,
-                    color: AppColors.textDark,
+                    color: context.appTextPrimary,
                   ),
                 ),
                 const SizedBox(height: 6),
-                const Text(
+                Text(
                   'Manage everyone\'s care under one account.',
-                  style: TextStyle(fontSize: 14, color: AppColors.textLight),
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: context.appTextSecondary,
+                  ),
                 ),
                 const SizedBox(height: 28),
                 // Full Name
-                const Text(
+                Text(
                   'Full name',
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.textDark,
+                    color: context.appTextPrimary,
                   ),
                 ),
                 const SizedBox(height: 6),
                 TextFormField(
                   controller: _name,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     hintText: 'Enter your full name',
                     prefixIcon: Icon(
                       Icons.person_outline_rounded,
-                      color: AppColors.textLight,
+                      color: context.appTextSecondary,
                       size: 20,
                     ),
                   ),
@@ -143,23 +146,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 const SizedBox(height: 18),
                 // Email
-                const Text(
+                Text(
                   'Email address',
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.textDark,
+                    color: context.appTextPrimary,
                   ),
                 ),
                 const SizedBox(height: 6),
                 TextFormField(
                   controller: _email,
                   keyboardType: TextInputType.emailAddress,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     hintText: 'you@example.com',
                     prefixIcon: Icon(
                       Icons.mail_outline_rounded,
-                      color: AppColors.textLight,
+                      color: context.appTextSecondary,
                       size: 20,
                     ),
                   ),
@@ -169,12 +172,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 const SizedBox(height: 18),
                 // Password
-                const Text(
+                Text(
                   'Password',
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.textDark,
+                    color: context.appTextPrimary,
                   ),
                 ),
                 const SizedBox(height: 6),
@@ -182,11 +185,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   controller: _pass,
                   onChanged: (_) => setState(() => _passwordChanged = true),
                   obscureText: true,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     hintText: 'Enter password',
                     prefixIcon: Icon(
                       Icons.lock_outline_rounded,
-                      color: AppColors.textLight,
+                      color: context.appTextSecondary,
                       size: 20,
                     ),
                   ),
@@ -212,7 +215,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           color: _passwordStrengthColor(
                             _passwordStrength(_pass.text),
                           ),
-                          backgroundColor: AppColors.surface,
+                          backgroundColor: context.appSurfaceRaised,
                         ),
                       ),
                       const SizedBox(width: 10),
@@ -231,23 +234,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ],
                 const SizedBox(height: 18),
                 // Confirm Password
-                const Text(
+                Text(
                   'Confirm password',
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.textDark,
+                    color: context.appTextPrimary,
                   ),
                 ),
                 const SizedBox(height: 6),
                 TextFormField(
                   controller: _confirmPass,
                   obscureText: true,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     hintText: 'Enter password again',
                     prefixIcon: Icon(
                       Icons.lock_outline_rounded,
-                      color: AppColors.textLight,
+                      color: context.appTextSecondary,
                       size: 20,
                     ),
                   ),
@@ -305,10 +308,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Text(
+                    Text(
                       'Already have an account? ',
                       style: TextStyle(
-                        color: AppColors.textLight,
+                        color: context.appTextSecondary,
                         fontSize: 13,
                       ),
                     ),

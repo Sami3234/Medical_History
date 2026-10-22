@@ -487,10 +487,10 @@ class _InteractiveTreeViewState extends State<InteractiveTreeView> {
                   const SizedBox(width: 8),
                   Text(
                     '${members.length} Members',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.textLight,
+                      color: context.appTextSecondary,
                     ),
                   ),
                 ],
@@ -498,9 +498,9 @@ class _InteractiveTreeViewState extends State<InteractiveTreeView> {
               final modeToggle = Container(
                 padding: const EdgeInsets.all(2.5),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF1F5F9),
+                  color: context.appSurfaceRaised,
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: AppColors.border),
+                  border: Border.all(color: context.appBorder),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -819,7 +819,7 @@ class _InteractiveTreeViewState extends State<InteractiveTreeView> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
-          color: isSelected ? Colors.white : Colors.transparent,
+          color: isSelected ? context.appSurface : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
           boxShadow: isSelected
               ? const [
@@ -837,7 +837,7 @@ class _InteractiveTreeViewState extends State<InteractiveTreeView> {
             Icon(
               icon,
               size: 13,
-              color: isSelected ? AppColors.primary : AppColors.textLight,
+              color: isSelected ? AppColors.primary : context.appTextSecondary,
             ),
             const SizedBox(width: 4),
             Text(
@@ -845,7 +845,9 @@ class _InteractiveTreeViewState extends State<InteractiveTreeView> {
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                color: isSelected ? AppColors.primary : AppColors.textLight,
+                color: isSelected
+                    ? AppColors.primary
+                    : context.appTextSecondary,
               ),
             ),
           ],
@@ -1228,7 +1230,9 @@ class _InteractiveTreeViewState extends State<InteractiveTreeView> {
                   right: index == visibleDoctors.length - 1 ? 0 : avatarSpacing,
                 ),
                 child: AppAvatar(
+                  memberId: doctor.id,
                   name: doctor.name,
+                  avatarUrl: doctor.avatarUrl,
                   size: avatarSize,
                   fontSize: 7,
                   backgroundColor: const Color(0xFFEAF8EE),
@@ -1267,7 +1271,7 @@ class _InteractiveTreeViewState extends State<InteractiveTreeView> {
         ? const Color(0xFFE11D48)
         : isSibling
         ? const Color(0xFF7C3AED)
-        : AppColors.border;
+        : context.appBorder;
     final displayRelation = isSelf ? 'You' : relation;
     final relIcon = getRelationIcon(isSelf ? 'self' : relation);
     final badgeColor = getRelationBadgeColor(isSelf ? 'self' : relation);
@@ -1284,7 +1288,11 @@ class _InteractiveTreeViewState extends State<InteractiveTreeView> {
             vertical: compact ? 5 : 10,
           ),
           decoration: BoxDecoration(
-            color: isSelf ? const Color(0xFFF0FDF4) : Colors.white,
+            color: isSelf
+                ? (context.isDarkMode
+                      ? const Color(0xFF183421)
+                      : const Color(0xFFF0FDF4))
+                : context.appSurface,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: outlineColor,
@@ -1349,7 +1357,7 @@ class _InteractiveTreeViewState extends State<InteractiveTreeView> {
                       style: TextStyle(
                         fontSize: compact ? 12.5 : 14,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.textDark,
+                        color: context.appTextPrimary,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -1389,10 +1397,10 @@ class _InteractiveTreeViewState extends State<InteractiveTreeView> {
               ),
 
               // Arrow indicator
-              const Icon(
+              Icon(
                 Icons.arrow_forward_ios_rounded,
                 size: 13,
-                color: AppColors.textLight,
+                color: context.appTextSecondary,
               ),
             ],
           ),
@@ -1420,19 +1428,19 @@ class _InteractiveTreeViewState extends State<InteractiveTreeView> {
             ),
           ),
           const SizedBox(height: 12),
-          const Text(
+          Text(
             'Family Tree is Empty',
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w700,
-              color: AppColors.textDark,
+              color: context.appTextPrimary,
             ),
           ),
           const SizedBox(height: 6),
-          const Text(
+          Text(
             'Add your family members (Grandparents, Parents, Self, Children) to build your tree.',
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 12, color: AppColors.textLight),
+            style: TextStyle(fontSize: 12, color: context.appTextSecondary),
           ),
           const SizedBox(height: 14),
           if (widget.onAddMember != null)
@@ -1469,9 +1477,9 @@ class _InteractiveTreeViewState extends State<InteractiveTreeView> {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
             decoration: BoxDecoration(
-              color: depth == 0 ? AppColors.primary : Colors.white,
+              color: depth == 0 ? AppColors.primary : context.appSurface,
               borderRadius: BorderRadius.circular(12),
-              border: depth > 0 ? Border.all(color: AppColors.border) : null,
+              border: depth > 0 ? Border.all(color: context.appBorder) : null,
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -1487,7 +1495,7 @@ class _InteractiveTreeViewState extends State<InteractiveTreeView> {
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
-                    color: depth == 0 ? Colors.white : AppColors.textDark,
+                    color: depth == 0 ? Colors.white : context.appTextPrimary,
                   ),
                 ),
                 if (node.relation != null) ...[

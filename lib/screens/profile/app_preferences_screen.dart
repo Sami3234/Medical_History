@@ -25,7 +25,7 @@ class _AppPreferencesScreenState extends State<AppPreferencesScreen> {
     'Dark Mode',
   ];
 
-  final List<String> _languages = ['English', 'Urdu (اردو)'];
+  final List<String> _languages = ['English', 'Urdu'];
 
   final List<String> _dateFormats = [
     'DD / MM / YYYY',
@@ -44,7 +44,10 @@ class _AppPreferencesScreenState extends State<AppPreferencesScreen> {
     if (mounted) {
       setState(() {
         _selectedTheme = prefs.getString('pref_theme') ?? _themes.first;
-        _selectedLanguage = prefs.getString('pref_lang') ?? _languages.first;
+        final savedLanguage = prefs.getString('pref_lang');
+        _selectedLanguage = savedLanguage?.startsWith('Urdu') == true
+            ? 'Urdu'
+            : (savedLanguage ?? _languages.first);
         _selectedDateFormat =
             prefs.getString('pref_date') ?? _dateFormats.first;
       });
@@ -73,7 +76,7 @@ class _AppPreferencesScreenState extends State<AppPreferencesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: context.appBackground,
       appBar: AppBar(
         title: const Text('App Preferences'),
         leading: IconButton(
@@ -101,7 +104,7 @@ class _AppPreferencesScreenState extends State<AppPreferencesScreen> {
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: AppColors.surface,
+                            color: context.appSurfaceRaised,
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: const Icon(
@@ -111,12 +114,15 @@ class _AppPreferencesScreenState extends State<AppPreferencesScreen> {
                           ),
                         ),
                         const SizedBox(width: 12),
-                        const Text(
-                          'Theme Palette',
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textDark,
+                        Expanded(
+                          child: Text(
+                            'Theme Palette',
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              color: context.appTextPrimary,
+                            ),
                           ),
                         ),
                       ],
@@ -124,6 +130,7 @@ class _AppPreferencesScreenState extends State<AppPreferencesScreen> {
                     const SizedBox(height: 14),
                     DropdownButtonFormField<String>(
                       initialValue: _selectedTheme,
+                      isExpanded: true,
                       decoration: const InputDecoration(
                         contentPadding: EdgeInsets.symmetric(
                           horizontal: 16,
@@ -131,12 +138,20 @@ class _AppPreferencesScreenState extends State<AppPreferencesScreen> {
                         ),
                       ),
                       items: _themes.map((t) {
-                        return DropdownMenuItem(value: t, child: Text(t));
+                        return DropdownMenuItem(
+                          value: t,
+                          child: Text(t, overflow: TextOverflow.ellipsis),
+                        );
                       }).toList(),
-                      onChanged: (val) {
+                      onChanged: (val) async {
                         if (val != null) {
+                          final controller = context.read<AppThemeController>();
                           setState(() => _selectedTheme = val);
-                          context.read<AppThemeController>().setTheme(val);
+                          await Future<void>.delayed(
+                            const Duration(milliseconds: 250),
+                          );
+                          if (!mounted) return;
+                          await controller.setTheme(val);
                         }
                       },
                     ),
@@ -188,7 +203,7 @@ class _AppPreferencesScreenState extends State<AppPreferencesScreen> {
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: AppColors.surface,
+                            color: context.appSurfaceRaised,
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: const Icon(
@@ -198,7 +213,7 @@ class _AppPreferencesScreenState extends State<AppPreferencesScreen> {
                           ),
                         ),
                         const SizedBox(width: 12),
-                        const Expanded(
+                        Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -207,7 +222,7 @@ class _AppPreferencesScreenState extends State<AppPreferencesScreen> {
                                 style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w700,
-                                  color: AppColors.textDark,
+                                  color: context.appTextPrimary,
                                 ),
                               ),
                               SizedBox(height: 2),
@@ -215,7 +230,7 @@ class _AppPreferencesScreenState extends State<AppPreferencesScreen> {
                                 'mg/dL (Glucose), mmHg (BP), kg (Weight)',
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: AppColors.textLight,
+                                  color: context.appTextSecondary,
                                 ),
                               ),
                             ],
@@ -239,12 +254,13 @@ class _AppPreferencesScreenState extends State<AppPreferencesScreen> {
               Container(
                 padding: const EdgeInsets.all(18),
                 decoration: _cardDecoration(),
-                child: Row(
-                  children: [
-                    Container(
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final compact = constraints.maxWidth < 300;
+                    final icon = Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: AppColors.surface,
+                        color: context.appSurfaceRaised,
                         borderRadius: BorderRadius.circular(14),
                       ),
                       child: const Icon(
@@ -252,32 +268,29 @@ class _AppPreferencesScreenState extends State<AppPreferencesScreen> {
                         color: AppColors.primary,
                         size: 22,
                       ),
-                    ),
-                    const SizedBox(width: 14),
-                    const Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Clear Offline Cache',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.textDark,
-                            ),
+                    );
+                    final details = Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Clear Offline Cache',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: context.appTextPrimary,
                           ),
-                          SizedBox(height: 2),
-                          Text(
-                            'Frees up temporary images & document cache',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: AppColors.textLight,
-                            ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          'Frees up temporary images & document cache',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: context.appTextSecondary,
                           ),
-                        ],
-                      ),
-                    ),
-                    OutlinedButton(
+                        ),
+                      ],
+                    );
+                    final clearButton = OutlinedButton(
                       onPressed: _clearingCache ? null : _clearCache,
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(
@@ -301,8 +314,39 @@ class _AppPreferencesScreenState extends State<AppPreferencesScreen> {
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
-                    ),
-                  ],
+                    );
+
+                    if (compact) {
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              icon,
+                              const SizedBox(width: 12),
+                              Expanded(child: details),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: clearButton,
+                          ),
+                        ],
+                      );
+                    }
+
+                    return Row(
+                      children: [
+                        icon,
+                        const SizedBox(width: 14),
+                        Expanded(child: details),
+                        const SizedBox(width: 10),
+                        clearButton,
+                      ],
+                    );
+                  },
                 ),
               ),
               const SizedBox(height: 28),
@@ -324,20 +368,20 @@ class _AppPreferencesScreenState extends State<AppPreferencesScreen> {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    const Text(
+                    Text(
                       'Medical History App',
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.textDark,
+                        color: context.appTextPrimary,
                       ),
                     ),
                     const SizedBox(height: 2),
-                    const Text(
+                    Text(
                       'Version 1.0.4 • Cloud powered with private access',
                       style: TextStyle(
                         fontSize: 12,
-                        color: AppColors.textLight,
+                        color: context.appTextSecondary,
                       ),
                     ),
                   ],
@@ -365,9 +409,9 @@ class _AppPreferencesScreenState extends State<AppPreferencesScreen> {
 
   BoxDecoration _cardDecoration() {
     return BoxDecoration(
-      color: Colors.white,
+      color: context.appSurface,
       borderRadius: BorderRadius.circular(20),
-      border: Border.all(color: AppColors.border, width: 1.2),
+      border: Border.all(color: context.appBorder, width: 1.2),
       boxShadow: const [
         BoxShadow(color: AppColors.shadow, blurRadius: 6, offset: Offset(0, 2)),
       ],
@@ -389,18 +433,21 @@ class _AppPreferencesScreenState extends State<AppPreferencesScreen> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: AppColors.surface,
+                color: context.appSurfaceRaised,
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(icon, color: AppColors.primary, size: 20),
             ),
             const SizedBox(width: 12),
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textDark,
+            Expanded(
+              child: Text(
+                title,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: context.appTextPrimary,
+                ),
               ),
             ),
           ],
@@ -408,11 +455,15 @@ class _AppPreferencesScreenState extends State<AppPreferencesScreen> {
         const SizedBox(height: 10),
         DropdownButtonFormField<String>(
           initialValue: value,
+          isExpanded: true,
           decoration: const InputDecoration(
             contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           ),
           items: items.map((i) {
-            return DropdownMenuItem(value: i, child: Text(i));
+            return DropdownMenuItem(
+              value: i,
+              child: Text(i, overflow: TextOverflow.ellipsis),
+            );
           }).toList(),
           onChanged: onChanged,
         ),

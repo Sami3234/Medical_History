@@ -84,7 +84,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final auth = context.watch<AuthProvider>();
 
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: context.appBackground,
       body: Stack(
         children: [
           // Top Green Hero Section
@@ -211,9 +211,11 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Container(
               height: MediaQuery.of(context).size.height * 0.63,
               width: double.infinity,
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+              decoration: BoxDecoration(
+                color: context.appSurface,
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(32),
+                ),
                 boxShadow: [
                   BoxShadow(
                     color: Color(0x18000000),
@@ -229,41 +231,41 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'Welcome back',
                         style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.w800,
-                          color: AppColors.textDark,
+                          color: context.appTextPrimary,
                         ),
                       ),
                       const SizedBox(height: 4),
-                      const Text(
+                      Text(
                         'Sign in to continue your care journey.',
                         style: TextStyle(
                           fontSize: 14,
-                          color: AppColors.textLight,
+                          color: context.appTextSecondary,
                         ),
                       ),
                       const SizedBox(height: 24),
                       // Email Address
-                      const Text(
+                      Text(
                         'Email Address',
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
-                          color: AppColors.textDark,
+                          color: context.appTextPrimary,
                         ),
                       ),
                       const SizedBox(height: 6),
                       TextFormField(
                         controller: _email,
                         keyboardType: TextInputType.emailAddress,
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           hintText: 'Enter your email',
                           prefixIcon: Icon(
                             Icons.mail_outline_rounded,
-                            color: AppColors.textLight,
+                            color: context.appTextSecondary,
                             size: 20,
                           ),
                         ),
@@ -277,12 +279,12 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       const SizedBox(height: 16),
                       // Password
-                      const Text(
+                      Text(
                         'Password',
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
-                          color: AppColors.textDark,
+                          color: context.appTextPrimary,
                         ),
                       ),
                       const SizedBox(height: 6),
@@ -291,9 +293,9 @@ class _LoginScreenState extends State<LoginScreen> {
                         obscureText: !_showPass,
                         decoration: InputDecoration(
                           hintText: 'Enter your password',
-                          prefixIcon: const Icon(
+                          prefixIcon: Icon(
                             Icons.lock_outline_rounded,
-                            color: AppColors.textLight,
+                            color: context.appTextSecondary,
                             size: 20,
                           ),
                           suffixIcon: IconButton(
@@ -301,7 +303,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               _showPass
                                   ? Icons.visibility_off_outlined
                                   : Icons.visibility_outlined,
-                              color: AppColors.textLight,
+                              color: context.appTextSecondary,
                               size: 20,
                             ),
                             onPressed: () =>
@@ -389,7 +391,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 width: 52,
                                 height: 52,
                                 decoration: BoxDecoration(
-                                  color: AppColors.surface,
+                                  color: context.appSurfaceRaised,
                                   borderRadius: BorderRadius.circular(16),
                                   border: Border.all(
                                     color: AppColors.primary.withAlpha(90),
@@ -414,7 +416,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           'or continue with',
                           style: TextStyle(
                             fontSize: 12,
-                            color: AppColors.textLight,
+                            color: context.appTextSecondary,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -427,8 +429,8 @@ class _LoginScreenState extends State<LoginScreen> {
                         child: OutlinedButton(
                           onPressed: auth.loading ? null : _loginWithGoogle,
                           style: OutlinedButton.styleFrom(
-                            backgroundColor: AppColors.bg,
-                            side: const BorderSide(color: AppColors.border),
+                            backgroundColor: context.appSurfaceRaised,
+                            side: BorderSide(color: context.appBorder),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16),
                             ),
@@ -450,10 +452,10 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                               ),
                               const SizedBox(width: 10),
-                              const Text(
+                              Text(
                                 'Continue with Google',
                                 style: TextStyle(
-                                  color: AppColors.textDark,
+                                  color: context.appTextPrimary,
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -466,10 +468,10 @@ class _LoginScreenState extends State<LoginScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Text(
+                          Text(
                             'No account yet? ',
                             style: TextStyle(
-                              color: AppColors.textLight,
+                              color: context.appTextSecondary,
                               fontSize: 13,
                             ),
                           ),

@@ -18,7 +18,7 @@ class ProfileScreen extends StatelessWidget {
     final email = user?.email ?? '';
 
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: context.appBackground,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 112),
@@ -36,12 +36,12 @@ class ProfileScreen extends StatelessWidget {
               ),
               const SizedBox(height: 8),
 
-              const Text(
+              Text(
                 'My profile',
                 style: TextStyle(
                   fontSize: 30,
                   fontWeight: FontWeight.w800,
-                  color: AppColors.textDark,
+                  color: context.appTextPrimary,
                 ),
               ),
               const SizedBox(height: 20),
@@ -50,9 +50,9 @@ class ProfileScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: context.appSurface,
                   borderRadius: BorderRadius.circular(22),
-                  border: Border.all(color: AppColors.border, width: 1.2),
+                  border: Border.all(color: context.appBorder, width: 1.2),
                   boxShadow: const [
                     BoxShadow(
                       color: AppColors.shadow,
@@ -79,18 +79,18 @@ class ProfileScreen extends StatelessWidget {
                         children: [
                           Text(
                             fullName,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w800,
-                              color: AppColors.textDark,
+                              color: context.appTextPrimary,
                             ),
                           ),
                           const SizedBox(height: 3),
                           Text(
                             email,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 13,
-                              color: AppColors.textLight,
+                              color: context.appTextSecondary,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -128,18 +128,19 @@ class ProfileScreen extends StatelessWidget {
               const SizedBox(height: 28),
 
               // Section: Account settings
-              const Text(
+              Text(
                 'Account settings',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w800,
-                  color: AppColors.textDark,
+                  color: context.appTextPrimary,
                 ),
               ),
               const SizedBox(height: 14),
 
               // Setting 1: Family members
               _buildSettingTile(
+                context: context,
                 icon: Icons.groups_outlined,
                 title: 'Family members',
                 subtitle: 'Manage family member profiles',
@@ -149,6 +150,7 @@ class ProfileScreen extends StatelessWidget {
 
               // Setting 2: Security & privacy
               _buildSettingTile(
+                context: context,
                 icon: Icons.verified_user_outlined,
                 title: 'Security & privacy',
                 subtitle: 'Biometrics, passwords and data',
@@ -158,6 +160,7 @@ class ProfileScreen extends StatelessWidget {
 
               // Setting 3: Backup & restore
               _buildSettingTile(
+                context: context,
                 icon: Icons.cloud_outlined,
                 title: 'Backup & restore',
                 subtitle: 'Google Drive sync & cloud vault',
@@ -167,6 +170,7 @@ class ProfileScreen extends StatelessWidget {
 
               // Setting 4: Notifications
               _buildSettingTile(
+                context: context,
                 icon: Icons.notifications_none_rounded,
                 title: 'Notifications',
                 subtitle: 'Appointment & medication alerts',
@@ -176,6 +180,7 @@ class ProfileScreen extends StatelessWidget {
 
               // Setting 5: App preferences
               _buildSettingTile(
+                context: context,
                 icon: Icons.settings_outlined,
                 title: 'App preferences',
                 subtitle: 'Language, themes & cache',
@@ -218,6 +223,7 @@ class ProfileScreen extends StatelessWidget {
   }
 
   Widget _buildSettingTile({
+    required BuildContext context,
     required IconData icon,
     required String title,
     required String subtitle,
@@ -229,9 +235,9 @@ class ProfileScreen extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: context.appSurface,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: AppColors.border, width: 1.2),
+          border: Border.all(color: context.appBorder, width: 1.2),
           boxShadow: [
             BoxShadow(
               color: AppColors.shadow,
@@ -250,26 +256,26 @@ class ProfileScreen extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.textDark,
+                      color: context.appTextPrimary,
                     ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     subtitle,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
-                      color: AppColors.textLight,
+                      color: context.appTextSecondary,
                     ),
                   ),
                 ],
               ),
             ),
-            const Icon(
+            Icon(
               Icons.arrow_forward_ios_rounded,
-              color: AppColors.textLight,
+              color: context.appTextSecondary,
               size: 16,
             ),
           ],
