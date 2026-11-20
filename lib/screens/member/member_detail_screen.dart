@@ -341,7 +341,7 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
                           ),
                         ),
                         Text(
-                          '${doctor.specialization ?? "General physician"} â€¢ ${visits.length} visit${visits.length == 1 ? "" : "s"}',
+                          '${doctor.specialization ?? "General physician"} • ${visits.length} visit${visits.length == 1 ? "" : "s"}',
                           style: const TextStyle(color: AppColors.textLight),
                         ),
                       ],
@@ -408,7 +408,7 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
                         style: const TextStyle(fontWeight: FontWeight.w700),
                       ),
                       subtitle: Text(
-                        '${DateFormat('dd MMM yyyy').format(visit.visitDate)} â€¢ ${documents.length} document${documents.length == 1 ? "" : "s"}',
+                        '${DateFormat('dd MMM yyyy').format(visit.visitDate)} • ${documents.length} document${documents.length == 1 ? "" : "s"}',
                       ),
                       children: [
                         if (visit.symptoms?.trim().isNotEmpty == true)
@@ -1005,7 +1005,7 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '${member.relation.toUpperCase()} â€¢ PAT-${member.id.length > 5 ? member.id.substring(0, 4).toUpperCase() : member.id.toUpperCase()}',
+                      '${member.relation.toUpperCase()} • PAT-${member.id.length > 5 ? member.id.substring(0, 4).toUpperCase() : member.id.toUpperCase()}',
                       style: TextStyle(
                         fontSize: 12.5,
                         fontWeight: FontWeight.w600,
@@ -1280,7 +1280,7 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
                                 style: TextStyle(fontWeight: FontWeight.w700),
                               ),
                               Text(
-                                '${doctor.specialization ?? "General physician"} â€¢ $visits visit${visits == 1 ? "" : "s"}',
+                                '${doctor.specialization ?? "General physician"} • $visits visit${visits == 1 ? "" : "s"}',
                                 style: TextStyle(
                                   fontSize: 11.5,
                                   color: context.appTextSecondary,
@@ -1787,7 +1787,7 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              '${med.dosage} â€¢ ${med.frequency}',
+                              '${med.dosage} • ${med.frequency}',
                               style: TextStyle(
                                 fontSize: 12.5,
                                 fontWeight: FontWeight.w600,
@@ -1796,7 +1796,7 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              'Timing: ${med.timing} ${med.duration != null ? "â€¢ ${med.duration}" : ""}',
+                              'Timing: ${med.timing} ${med.duration != null ? "• ${med.duration}" : ""}',
                               style: TextStyle(
                                 fontSize: 11.5,
                                 color: context.appTextSecondary,
@@ -2099,7 +2099,7 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
                             if (visit.hospital != null) ...[
                               const SizedBox(width: 8),
                               Text(
-                                'â€¢',
+                                '•',
                                 style: TextStyle(
                                   color: context.appTextSecondary,
                                 ),
@@ -2226,7 +2226,7 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              '${f.fileType.toUpperCase()} â€¢ ${DateFormat('dd MMM yyyy').format(f.createdAt)}',
+                              '${f.fileType.toUpperCase()} • ${DateFormat('dd MMM yyyy').format(f.createdAt)}',
                               style: TextStyle(
                                 fontSize: 11,
                                 color: context.appTextSecondary,

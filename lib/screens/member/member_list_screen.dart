@@ -5,7 +5,6 @@ import '../../config/theme.dart';
 import '../../config/routes.dart';
 import '../../config/supabase_config.dart';
 import '../../providers/auth_provider.dart';
-import '../../providers/family_provider.dart';
 import '../../providers/member_provider.dart';
 import '../../models/doctor_model.dart';
 import '../../models/member_model.dart';
@@ -15,6 +14,7 @@ import '../../widgets/bottom_nav.dart';
 import '../../widgets/tree_view.dart';
 import '../../widgets/family_grouped_list_view.dart';
 import '../../widgets/view_toggle_pill.dart';
+import '../../widgets/premium_header_background.dart';
 
 class MemberListScreen extends StatefulWidget {
   const MemberListScreen({super.key});
@@ -44,9 +44,9 @@ class _MemberListScreenState extends State<MemberListScreen> {
       final members = context.read<MemberProvider>().members;
       await _loadMemberDoctors(members);
       try {
-        final profile = await OwnerProfileService().getProfile(uid);
-        if (mounted && profile?.name != null) {
-          setState(() => _ownerName = profile!.name);
+        final ownerMember = await OwnerProfileService().getOwnerMember(uid);
+        if (mounted && ownerMember?.name != null) {
+          setState(() => _ownerName = ownerMember!.name);
         }
       } catch (_) {}
     }
@@ -65,22 +65,17 @@ class _MemberListScreenState extends State<MemberListScreen> {
   @override
   Widget build(BuildContext context) {
     final memberProv = context.watch<MemberProvider>();
-    final familyProv = context.watch<FamilyProvider>();
     final authProv = context.watch<AuthProvider>();
     final members = memberProv.members;
-    final userName = authProv.profile?.fullName ?? 'Family';
+    final userName = authProv.user?.fullName ?? _ownerName ?? 'Family';
 
     return Scaffold(
       backgroundColor: context.appBackground,
       body: Column(
         children: [
           // ── Gradient Header with Title, Back Button & Pill Toggle ───
-          Container(
-            width: double.infinity,
-            decoration: const BoxDecoration(
-              gradient: AppColors.heroGradient,
-              borderRadius: BorderRadius.vertical(bottom: Radius.circular(28)),
-            ),
+          PremiumHeaderBackground(
+            borderRadius: const BorderRadius.vertical(bottom: Radius.circular(28)),
             child: SafeArea(
               bottom: false,
               child: Padding(

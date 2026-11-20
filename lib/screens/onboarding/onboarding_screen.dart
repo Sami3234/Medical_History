@@ -354,28 +354,21 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       compact ? 18 : 24,
                     ),
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          Colors.white.withOpacity(0.92),
-                          const Color(0xFFEFF8F3).withOpacity(0.84),
-                        ],
-                      ),
+                      color: Colors.white.withValues(alpha: 0.16),
                       borderRadius: BorderRadius.circular(32),
                       border: Border.all(
-                        color: Colors.white.withOpacity(0.95),
-                        width: 1.6,
+                        color: Colors.white.withValues(alpha: 0.35),
+                        width: 1.5,
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF042F1C).withOpacity(0.24),
+                          color: AppColors.primaryDark.withValues(alpha: 0.35),
                           blurRadius: 36,
                           offset: const Offset(0, 16),
                         ),
                         BoxShadow(
-                          color: const Color(0xFF1A8E60).withOpacity(0.12),
-                          blurRadius: 16,
+                          color: AppColors.primary.withValues(alpha: 0.15),
+                          blurRadius: 18,
                           offset: const Offset(0, 4),
                         ),
                       ],
@@ -388,14 +381,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           children: [
                             Container(
                               padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
+                                horizontal: 13,
                                 vertical: 6,
                               ),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF4FA023).withOpacity(0.09),
+                                color: Colors.white.withValues(alpha: 0.20),
                                 borderRadius: BorderRadius.circular(20),
                                 border: Border.all(
-                                  color: const Color(0xFF4FA023).withOpacity(0.20),
+                                  color: Colors.white.withValues(alpha: 0.40),
+                                  width: 1.0,
                                 ),
                               ),
                               child: Text(
@@ -403,46 +397,46 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                 style: const TextStyle(
                                   fontSize: 10.5,
                                   fontWeight: FontWeight.w800,
-                                  color: Color(0xFF2C6B14),
-                                  letterSpacing: 0.7,
+                                  color: Colors.white,
+                                  letterSpacing: 0.8,
                                 ),
                               ),
                             ),
                             Text(
                               '0${index + 1} / 0${_pages.length}',
                               style: TextStyle(
-                                fontSize: 11.5,
+                                fontSize: 12,
                                 fontWeight: FontWeight.w700,
-                                color: const Color(0xFF4FA023).withOpacity(0.85),
-                                letterSpacing: 0.5,
+                                color: Colors.white.withValues(alpha: 0.90),
+                                letterSpacing: 0.6,
                               ),
                             ),
                           ],
                         ),
                         SizedBox(height: compact ? 16 : 24),
                         Container(
-                          width: compact ? 84 : 104,
-                          height: compact ? 84 : 104,
+                          width: compact ? 88 : 108,
+                          height: compact ? 88 : 108,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            gradient: const LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: [Color(0xFF74C43B), Color(0xFF48AA22)],
-                            ),
-                            border: Border.all(color: Colors.white, width: 4.5),
+                            color: Colors.white,
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFF4FA023).withOpacity(0.38),
-                                blurRadius: 26,
-                                offset: const Offset(0, 9),
+                                color: AppColors.primaryDark.withValues(alpha: 0.45),
+                                blurRadius: 28,
+                                offset: const Offset(0, 10),
+                              ),
+                              BoxShadow(
+                                color: AppColors.glowLime.withValues(alpha: 0.40),
+                                blurRadius: 16,
+                                spreadRadius: 2,
                               ),
                             ],
                           ),
                           child: Icon(
                             page.icon,
-                            size: compact ? 42 : 50,
-                            color: Colors.white,
+                            size: compact ? 44 : 52,
+                            color: AppColors.primaryDark,
                           ),
                         ),
                         SizedBox(height: compact ? 16 : 22),
@@ -450,9 +444,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           page.title,
                           textAlign: TextAlign.center,
                           style: TextStyle(
-                            fontSize: compact ? 21 : 25,
+                            fontSize: compact ? 22 : 26,
                             fontWeight: FontWeight.w800,
-                            color: const Color(0xFF063523),
+                            color: Colors.white,
                             height: 1.2,
                             letterSpacing: -0.45,
                           ),
@@ -462,9 +456,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           page.description,
                           textAlign: TextAlign.center,
                           style: TextStyle(
-                            fontSize: compact ? 12.5 : 13.5,
+                            fontSize: compact ? 13 : 14,
                             height: 1.5,
-                            color: const Color(0xFF2C5240),
+                            color: Colors.white.withValues(alpha: 0.92),
+                            fontWeight: FontWeight.w400,
                           ),
                         ),
                         SizedBox(height: compact ? 16 : 22),
@@ -475,19 +470,19 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           children: page.features.map((feature) {
                             return Container(
                               padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
+                                horizontal: 14,
                                 vertical: 8,
                               ),
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.92),
+                                color: Colors.white.withValues(alpha: 0.20),
                                 borderRadius: BorderRadius.circular(20),
                                 border: Border.all(
-                                  color: const Color(0xFF4FA023).withOpacity(0.35),
-                                  width: 1.1,
+                                  color: Colors.white.withValues(alpha: 0.40),
+                                  width: 1.0,
                                 ),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: const Color(0xFF4FA023).withOpacity(0.08),
+                                    color: AppColors.primaryDark.withValues(alpha: 0.15),
                                     blurRadius: 8,
                                     offset: const Offset(0, 2),
                                   ),
@@ -496,18 +491,26 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  const Icon(
-                                    Icons.check_circle_rounded,
-                                    size: 16,
-                                    color: Color(0xFF4FA023),
+                                  Container(
+                                    width: 18,
+                                    height: 18,
+                                    decoration: const BoxDecoration(
+                                      color: Colors.white,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(
+                                      Icons.check_rounded,
+                                      size: 13,
+                                      color: AppColors.primaryDark,
+                                    ),
                                   ),
-                                  const SizedBox(width: 7),
+                                  const SizedBox(width: 8),
                                   Text(
                                     feature,
                                     style: const TextStyle(
-                                      fontSize: 12,
+                                      fontSize: 12.5,
                                       fontWeight: FontWeight.w700,
-                                      color: Color(0xFF2C6B14),
+                                      color: Colors.white,
                                     ),
                                   ),
                                 ],

@@ -12,6 +12,7 @@ import '../../providers/health_provider.dart';
 import '../../providers/member_provider.dart';
 import '../../providers/records_provider.dart';
 import '../../providers/visit_provider.dart';
+import '../../widgets/premium_header_background.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -472,49 +473,10 @@ class _SearchHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      clipBehavior: Clip.antiAlias,
+    return PremiumHeaderBackground(
+      borderRadius: const BorderRadius.vertical(bottom: Radius.circular(28)),
       padding: const EdgeInsets.fromLTRB(12, 10, 16, 18),
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xFF267310),
-            Color(0xFF388E18),
-            Color(0xFF4FA023),
-          ],
-        ),
-        borderRadius: BorderRadius.vertical(bottom: Radius.circular(28)),
-      ),
-      child: Stack(
-        children: [
-          Positioned(
-            right: -20,
-            top: -20,
-            child: Container(
-              width: 140,
-              height: 140,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: 0.08),
-              ),
-            ),
-          ),
-          Positioned(
-            left: -20,
-            bottom: -20,
-            child: Container(
-              width: 120,
-              height: 120,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: 0.05),
-              ),
-            ),
-          ),
-          Row(
+      child: Row(
         children: [
           IconButton(
             onPressed: onBack,
@@ -563,8 +525,6 @@ class _SearchHeader extends StatelessWidget {
               ),
             ),
           ),
-        ],
-      ),
         ],
       ),
     );

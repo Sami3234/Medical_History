@@ -214,7 +214,7 @@ class BackupScreen extends StatelessWidget {
                               ),
                               SizedBox(width: 4),
                               Text(
-                                'Hidden AppData',
+                                'Encrypted Vault',
                                 style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w600,
@@ -237,7 +237,7 @@ class BackupScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      'WhatsApp-style private backups in your Google Drive. Never lose family records, prescriptions, or history.',
+                      'Automated private cloud backups. Never lose family records, prescriptions, or medical history.',
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
@@ -422,7 +422,7 @@ class BackupScreen extends StatelessWidget {
                             ),
                             SizedBox(height: 2),
                             Text(
-                              'Google Drive AppData Storage',
+                              'Encrypted Private Vault',
                               style: TextStyle(
                                 fontSize: 11,
                                 color: AppColors.textLight,

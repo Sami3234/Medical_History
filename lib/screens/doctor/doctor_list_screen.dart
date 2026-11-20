@@ -10,6 +10,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/doctor_provider.dart';
 import '../../widgets/app_avatar.dart';
 import '../../widgets/bottom_nav.dart';
+import '../../widgets/premium_header_background.dart';
 
 class DoctorListScreen extends StatefulWidget {
   const DoctorListScreen({super.key});
@@ -174,56 +175,17 @@ class _DoctorListScreenState extends State<DoctorListScreen> {
   }
 
   Widget _buildHeader(int doctorCount) {
-    return Container(
-      width: double.infinity,
+    return PremiumHeaderBackground(
       padding: EdgeInsets.fromLTRB(
         20,
         18 + MediaQuery.paddingOf(context).top,
         20,
         22,
       ),
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xFF267310),
-            Color(0xFF388E18),
-            Color(0xFF4FA023),
-          ],
-        ),
-        borderRadius: BorderRadius.vertical(bottom: Radius.circular(30)),
-      ),
-      child: Stack(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Positioned(
-            right: -25,
-            top: -25,
-            child: Container(
-              width: 170,
-              height: 170,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: 0.08),
-              ),
-            ),
-          ),
-          Positioned(
-            left: -35,
-            bottom: -35,
-            child: Container(
-              width: 140,
-              height: 140,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: 0.05),
-              ),
-            ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
+          Row(
                 children: [
                   Container(
                     width: 46,
@@ -318,9 +280,7 @@ class _DoctorListScreenState extends State<DoctorListScreen> {
               ),
             ],
           ),
-        ],
-      ),
-    );
+        );
   }
 
   Widget _buildStats({

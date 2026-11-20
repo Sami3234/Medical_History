@@ -358,39 +358,6 @@ class _SecurityPrivacyScreenState extends State<SecurityPrivacyScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-
-              // Data Security & HIPAA Info
-              _buildSectionHeader('DATA ENCRYPTION & PRIVACY'),
-              const SizedBox(height: 10),
-              Container(
-                padding: const EdgeInsets.all(18),
-                decoration: _cardDecoration(),
-                child: Column(
-                  children: [
-                    _buildSecurityFeatureRow(
-                      icon: Icons.shield_outlined,
-                      title: 'Encrypted transport and storage',
-                      subtitle:
-                          'Supabase protects transport and managed storage. This app does not yet provide end-to-end client-side encryption.',
-                    ),
-                    const Divider(height: 24),
-                    _buildSecurityFeatureRow(
-                      icon: Icons.lock_clock_outlined,
-                      title: 'Role-Based Row Security (RLS)',
-                      subtitle:
-                          'Only your authenticated account has permissions to read and write your family data.',
-                    ),
-                    const Divider(height: 24),
-                    _buildSecurityFeatureRow(
-                      icon: Icons.cloud_done_outlined,
-                      title: 'Isolated Google Drive Vault',
-                      subtitle:
-                          'Backups use Google Drive AppData folder, isolated from third-party apps.',
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
             ],
           ),
         ),
@@ -480,51 +447,6 @@ class _SecurityPrivacyScreenState extends State<SecurityPrivacyScreen> {
       border: Border.all(color: AppColors.border, width: 1.2),
       boxShadow: const [
         BoxShadow(color: AppColors.shadow, blurRadius: 6, offset: Offset(0, 2)),
-      ],
-    );
-  }
-
-  Widget _buildSecurityFeatureRow({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-  }) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: context.appSurfaceSoft,
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Icon(icon, color: AppColors.primary, size: 20),
-        ),
-        const SizedBox(width: 14),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: context.appTextPrimary,
-                ),
-              ),
-              const SizedBox(height: 3),
-              Text(
-                subtitle,
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: AppColors.textLight,
-                  height: 1.35,
-                ),
-              ),
-            ],
-          ),
-        ),
       ],
     );
   }

@@ -453,17 +453,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                       ),
-                      const SizedBox(height: 12),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 48,
-                        child: TextButton.icon(
-                          onPressed: () => context.push(AppRoutes.sharedMember),
-                          icon: const Icon(Icons.health_and_safety_outlined),
-                          label: const Text('View a shared medical record'),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 16),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [

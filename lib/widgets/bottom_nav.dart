@@ -342,13 +342,12 @@ const String _appointmentSvg = '''
 </svg>
 ''';
 
-/// 6. Document: Folded dog-ear document with horizontal lines in #2C6B14
-const String _documentSvg = '''
-<svg viewBox="0 0 24 24" fill="#2C6B14" stroke="#2C6B14" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
-  <path d="M5 4a2 2 0 0 1 2-2h7l5 5v13a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4z" fill="#2C6B14" stroke-width="1.5" />
-  <path d="M14 2v5h5" fill="#EBF7E4" stroke="#EBF7E4" stroke-width="1" />
-  <line x1="8.5" y1="12" x2="15.5" y2="12" stroke="#FFFFFF" stroke-width="1.8" />
-  <line x1="8.5" y1="15.5" x2="13.5" y2="15.5" stroke="#FFFFFF" stroke-width="1.8" />
+/// 6. Shared Record: Medical protection shield with cross in #2C6B14
+const String _sharedRecordSvg = '''
+<svg viewBox="0 0 24 24" fill="none" stroke="#2C6B14" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
+  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" fill="#EBF7E4" stroke="#2C6B14" stroke-width="1.8" />
+  <line x1="12" y1="8.5" x2="12" y2="14.5" stroke="#2C6B14" stroke-width="2" />
+  <line x1="9" y1="11.5" x2="15" y2="11.5" stroke="#2C6B14" stroke-width="2" />
 </svg>
 ''';
 
@@ -568,11 +567,11 @@ class _QuickActionsPopup extends StatelessWidget {
                             const SizedBox(width: 10),
                             Expanded(
                               child: _ActionCard(
-                                svgString: _documentSvg,
-                                title: 'Document',
+                                svgString: _sharedRecordSvg,
+                                title: 'Shared Record',
                                 onTap: () {
                                   onClose();
-                                  context.push(AppRoutes.documents);
+                                  context.push(AppRoutes.sharedMember);
                                 },
                               ),
                             ),

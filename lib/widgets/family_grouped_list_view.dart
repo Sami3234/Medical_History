@@ -24,6 +24,8 @@ class _FamilyGroupedListViewState extends State<FamilyGroupedListView> {
   final Map<String, bool> _expanded = {
     'grandparents': true,
     'parents': true,
+    'youAndSpouse': true,
+    'siblings': true,
     'children': true,
     'others': true,
   };
@@ -94,6 +96,8 @@ class _FamilyGroupedListViewState extends State<FamilyGroupedListView> {
 
     final grandparents = <MemberModel>[];
     final parents = <MemberModel>[];
+    final youAndSpouse = <MemberModel>[];
+    final siblings = <MemberModel>[];
     final children = <MemberModel>[];
     final others = <MemberModel>[];
 
@@ -108,20 +112,44 @@ class _FamilyGroupedListViewState extends State<FamilyGroupedListView> {
           rel.contains('nana') ||
           rel.contains('nani')) {
         grandparents.add(m);
+      } else if (rel == 'self' ||
+          rel == 'me' ||
+          rel == 'myself' ||
+          rel == 'you' ||
+          rel.contains('spouse') ||
+          rel.contains('wife') ||
+          rel.contains('husband') ||
+          rel.contains('partner') ||
+          rel.contains('shohar') ||
+          rel.contains('biwi') ||
+          rel.contains('begum')) {
+        youAndSpouse.add(m);
       } else if (rel.contains('father') ||
           rel.contains('mother') ||
-          rel == 'self' ||
-          rel == 'spouse' ||
-          rel == 'wife' ||
-          rel == 'husband') {
+          rel.contains('dad') ||
+          rel.contains('mom') ||
+          rel.contains('walid') ||
+          rel.contains('walida') ||
+          rel.contains('abu') ||
+          rel.contains('abbu') ||
+          rel.contains('ammi') ||
+          rel.contains('ami')) {
         parents.add(m);
+      } else if (rel.contains('brother') ||
+          rel.contains('sister') ||
+          rel.contains('sibling') ||
+          rel.contains('bhai') ||
+          rel.contains('behan') ||
+          rel.contains('baji')) {
+        siblings.add(m);
       } else if (rel.contains('son') ||
           rel.contains('daughter') ||
           rel.contains('child') ||
           rel.contains('kid') ||
-          rel.contains('brother') ||
-          rel.contains('sister') ||
-          rel.contains('sibling')) {
+          rel.contains('beta') ||
+          rel.contains('beti') ||
+          rel.contains('bacha') ||
+          rel.contains('bachi')) {
         children.add(m);
       } else {
         others.add(m);
@@ -135,6 +163,7 @@ class _FamilyGroupedListViewState extends State<FamilyGroupedListView> {
           _buildSection(
             key: 'grandparents',
             title: 'Grandparents',
+            icon: Icons.groups_rounded,
             members: grandparents,
           ),
           const SizedBox(height: 12),
@@ -143,7 +172,26 @@ class _FamilyGroupedListViewState extends State<FamilyGroupedListView> {
           _buildSection(
             key: 'parents',
             title: 'Parents',
+            icon: Icons.family_restroom_rounded,
             members: parents,
+          ),
+          const SizedBox(height: 12),
+        ],
+        if (youAndSpouse.isNotEmpty) ...[
+          _buildSection(
+            key: 'youAndSpouse',
+            title: 'You & Spouse',
+            icon: Icons.favorite_rounded,
+            members: youAndSpouse,
+          ),
+          const SizedBox(height: 12),
+        ],
+        if (siblings.isNotEmpty) ...[
+          _buildSection(
+            key: 'siblings',
+            title: 'Brothers & Sisters',
+            icon: Icons.diversity_3_rounded,
+            members: siblings,
           ),
           const SizedBox(height: 12),
         ],
@@ -151,6 +199,7 @@ class _FamilyGroupedListViewState extends State<FamilyGroupedListView> {
           _buildSection(
             key: 'children',
             title: 'Children',
+            icon: Icons.child_care_rounded,
             members: children,
           ),
           const SizedBox(height: 12),
@@ -159,6 +208,7 @@ class _FamilyGroupedListViewState extends State<FamilyGroupedListView> {
           _buildSection(
             key: 'others',
             title: 'Other Members',
+            icon: Icons.group_add_rounded,
             members: others,
           ),
           const SizedBox(height: 12),
@@ -170,6 +220,7 @@ class _FamilyGroupedListViewState extends State<FamilyGroupedListView> {
   Widget _buildSection({
     required String key,
     required String title,
+    required IconData icon,
     required List<MemberModel> members,
   }) {
     final isExpanded = _expanded[key] ?? true;
@@ -179,6 +230,7 @@ class _FamilyGroupedListViewState extends State<FamilyGroupedListView> {
       children: [
         _buildSectionHeader(
           title: title,
+          icon: icon,
           count: members.length,
           isExpanded: isExpanded,
           onToggle: () => _toggle(key),
@@ -200,6 +252,7 @@ class _FamilyGroupedListViewState extends State<FamilyGroupedListView> {
 
   Widget _buildSectionHeader({
     required String title,
+    required IconData icon,
     required int count,
     required bool isExpanded,
     required VoidCallback onToggle,
@@ -222,10 +275,10 @@ class _FamilyGroupedListViewState extends State<FamilyGroupedListView> {
                   width: 1.0,
                 ),
               ),
-              child: const Icon(
-                Icons.groups_rounded,
+              child: Icon(
+                icon,
                 size: 18,
-                color: Color(0xFF087A45),
+                color: const Color(0xFF087A45),
               ),
             ),
             const SizedBox(width: 10),

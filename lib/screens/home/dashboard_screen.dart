@@ -22,8 +22,11 @@ import '../../services/offline_data_service.dart';
 import '../../widgets/bottom_nav.dart';
 import '../../widgets/info_banner.dart';
 import '../../widgets/tree_view.dart';
+import '../../widgets/family_grouped_list_view.dart';
+import '../../widgets/view_toggle_pill.dart';
 import '../../widgets/app_avatar.dart';
 import '../../widgets/app_logo.dart';
+import '../../widgets/premium_header_background.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -37,6 +40,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   final _ownerProfileService = OwnerProfileService();
   Map<String, List<DoctorModel>> _memberDoctors = {};
   late bool _checkingOwner;
+  bool _isFamilyTreeView = true;
 
   @override
   void initState() {
@@ -297,38 +301,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Expanded(
-                            child: Text(
-                              'Family members',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w800,
-                                color: context.appTextPrimary,
+                            child: GestureDetector(
+                              onTap: () => context.push(AppRoutes.members),
+                              child: Text(
+                                'Family members',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w800,
+                                  color: context.appTextPrimary,
+                                ),
                               ),
                             ),
                           ),
                           const SizedBox(width: 8),
-                          TextButton.icon(
-                            onPressed: () => context.push(AppRoutes.memberAdd),
-                            style: TextButton.styleFrom(
-                              padding: EdgeInsets.zero,
-                              minimumSize: Size.zero,
-                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            ),
-                            icon: const Icon(
-                              Icons.person_add_rounded,
-                              size: 15,
-                              color: AppColors.primary,
-                            ),
-                            label: const Text(
-                              'Add member',
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.primary,
-                              ),
-                            ),
+                          ViewTogglePill(
+                            isTreeView: _isFamilyTreeView,
+                            onChanged: (val) =>
+                                setState(() => _isFamilyTreeView = val),
                           ),
                         ],
                       ),
@@ -342,7 +333,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                       const SizedBox(height: 12),
 
-                      // Tree Card
+                      // Tree or Grouped List Card
                       Container(
                         width: double.infinity,
                         padding: const EdgeInsets.symmetric(
@@ -365,23 +356,32 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           ],
                         ),
                         child: _familyTreeBody(
-                          loading:
-                              familyProv.loading || memberProv.loading,
+                          loading: familyProv.loading || memberProv.loading,
                           members: memberProv.members,
                           error: memberProv.error ?? familyProv.error,
-                          tree: InteractiveTreeView(
-                                members: memberProv.members,
-                                memberDoctors: _memberDoctors,
-                                currentUserName: userName,
-                                familyName: ownerName ?? userName,
-                                showToolbar: false,
-                                onMemberTap: (member) async {
-                                  await context.push('/members/${member.id}');
-                                  await _loadMemberDoctors(memberProv.members);
-                                },
-                                onAddMember: () =>
-                                    context.push(AppRoutes.memberAdd),
-                              ),
+                          tree: _isFamilyTreeView
+                              ? InteractiveTreeView(
+                                  members: memberProv.members,
+                                  memberDoctors: _memberDoctors,
+                                  currentUserName: userName,
+                                  familyName: ownerName ?? userName,
+                                  showToolbar: false,
+                                  onMemberTap: (member) async {
+                                    await context.push('/members/${member.id}');
+                                    await _loadMemberDoctors(memberProv.members);
+                                  },
+                                  onAddMember: () =>
+                                      context.push(AppRoutes.memberAdd),
+                                )
+                              : FamilyGroupedListView(
+                                  members: memberProv.members,
+                                  onMemberTap: (member) async {
+                                    await context.push('/members/${member.id}');
+                                    await _loadMemberDoctors(memberProv.members);
+                                  },
+                                  onAddMember: () =>
+                                      context.push(AppRoutes.memberAdd),
+                                ),
                         ),
                       ),
                       if (upcomingAppointments > 0) ...[
@@ -420,101 +420,32 @@ class _DashboardScreenState extends State<DashboardScreen> {
       bottomLeft: Radius.circular(30),
       bottomRight: Radius.circular(30),
     );
-    return ClipRRect(
+    return PremiumHeaderBackground(
       borderRadius: bottomRadius,
-      child: Container(
-        decoration: const BoxDecoration(
-          borderRadius: bottomRadius,
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF267310), // Deep rich emerald
-              Color(0xFF388E18), // Primary dark medical green
-              Color(0xFF4FA023), // Primary vibrant green
-            ],
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Color(0x1F1B5E20),
-              blurRadius: 18,
-              offset: Offset(0, 6),
-            ),
-          ],
-        ),
-        child: Stack(
-          children: [
-            // Elegant translucent ambient accents (clean, crisp, zero milky blur)
-            Positioned(
-              right: -30,
-              top: -30,
-              child: Container(
-                width: 170,
-                height: 170,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white.withValues(alpha: 0.08),
+      padding: EdgeInsets.fromLTRB(
+        18,
+        18 + MediaQuery.paddingOf(context).top,
+        18,
+        18,
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              const AppLogo(
+                size: 32,
+                isTransparent: true,
+              ),
+              const SizedBox(width: 10),
+              const Text(
+                'Medical History',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                  letterSpacing: -0.2,
                 ),
               ),
-            ),
-            Positioned(
-              right: 40,
-              top: -55,
-              child: Container(
-                width: 130,
-                height: 130,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: const Color(0xFFB9EB80).withValues(alpha: 0.12),
-                ),
-              ),
-            ),
-            Positioned(
-              left: -35,
-              bottom: -45,
-              child: Container(
-                width: 140,
-                height: 140,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white.withValues(alpha: 0.05),
-                ),
-              ),
-            ),
-            Container(
-              padding: EdgeInsets.fromLTRB(
-                18,
-                18 + MediaQuery.paddingOf(context).top,
-                18,
-                18,
-              ),
-              decoration: const BoxDecoration(
-                borderRadius: bottomRadius,
-                border: Border(
-                  bottom: BorderSide(
-                    color: Color(0x33FFFFFF),
-                    width: 1.0,
-                  ),
-                ),
-              ),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      const AppLogo(
-                        size: 20,
-                        isTransparent: true,
-                      ),
-                      const SizedBox(width: 8),
-                      const Text(
-                        'Medical History',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.white,
-                          letterSpacing: 0.2,
-                        ),
-                      ),
                       const Spacer(),
                       _glassHeaderAction(
                         icon: Icons.notifications_none_rounded,
@@ -638,11 +569,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                 ],
               ),
-            ),
-          ],
-        ),
-      ),
-    );
+            );
   }
 
   Widget _glassHeaderAction({

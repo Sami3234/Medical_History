@@ -534,12 +534,14 @@ class _DocsScreenState extends State<DocsScreen> {
               // Storage Info Banner
               InfoBanner(
                 icon: driveConnected
-                    ? Icons.add_to_drive_outlined
-                    : Icons.phone_android_rounded,
-                title: 'Documents are stored locally',
+                    ? Icons.cloud_done_rounded
+                    : Icons.shield_outlined,
+                title: driveConnected
+                    ? 'Cloud Backup Active'
+                    : 'Secure Local Storage',
                 subtitle: driveConnected
-                    ? 'Google Drive is connected. Run Backup to protect all local files.'
-                    : 'Cloudinary backup is attempted on upload when Drive is not connected.',
+                    ? 'Cloud backup is connected. Run Backup to protect your medical documents.'
+                    : 'Documents are securely stored on your device. Connect cloud backup to access records anywhere.',
               ),
               const SizedBox(height: 20),
             ],

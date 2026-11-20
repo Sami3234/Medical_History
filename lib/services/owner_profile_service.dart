@@ -7,6 +7,8 @@ class OwnerProfileService {
   static String? verifiedOwnerUserId;
   static bool homePrefetchFinished = false;
 
+  Future<MemberModel?> getProfile(String userId) => getOwnerMember(userId);
+
   Future<MemberModel?> getOwnerMember(String userId) async {
     // 1. Instant cached owner check
     final cached = OfflineDataService.getOwner(userId);

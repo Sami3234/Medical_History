@@ -250,7 +250,7 @@ class _AppPreferencesScreenState extends State<AppPreferencesScreen> {
               const SizedBox(height: 24),
 
               // Storage & Cache Section
-              _buildSectionHeader('STORAGE & LOCAL CACHE'),
+              _buildSectionHeader('DEVICE STORAGE & CACHE'),
               const SizedBox(height: 10),
               Container(
                 padding: const EdgeInsets.all(18),
@@ -274,7 +274,7 @@ class _AppPreferencesScreenState extends State<AppPreferencesScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Clear Offline Cache',
+                          'Clear App Cache',
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w700,
@@ -283,7 +283,7 @@ class _AppPreferencesScreenState extends State<AppPreferencesScreen> {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          'Frees up temporary images & document cache',
+                          'Frees up temporary local cache and optimizes speed',
                           style: TextStyle(
                             fontSize: 12,
                             color: context.appTextSecondary,

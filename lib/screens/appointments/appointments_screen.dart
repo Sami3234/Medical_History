@@ -12,6 +12,7 @@ import '../../providers/member_provider.dart';
 import '../../providers/records_provider.dart';
 import '../../services/notification_service.dart';
 import '../../utils/extensions.dart';
+import '../../widgets/premium_header_background.dart';
 
 class AppointmentsScreen extends StatefulWidget {
   const AppointmentsScreen({super.key});
@@ -431,57 +432,17 @@ class _AppointmentsHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      clipBehavior: Clip.antiAlias,
+    return PremiumHeaderBackground(
       padding: EdgeInsets.fromLTRB(
         16,
         12 + MediaQuery.paddingOf(context).top,
         20,
         24,
       ),
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xFF267310),
-            Color(0xFF388E18),
-            Color(0xFF4FA023),
-          ],
-        ),
-        borderRadius: BorderRadius.vertical(bottom: Radius.circular(30)),
-      ),
-      child: Stack(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Positioned(
-            right: -30,
-            top: -30,
-            child: Container(
-              width: 170,
-              height: 170,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: 0.08),
-              ),
-            ),
-          ),
-          Positioned(
-            left: -35,
-            bottom: -35,
-            child: Container(
-              width: 140,
-              height: 140,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: 0.05),
-              ),
-            ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
+          Row(
                 children: [
                   IconButton.filledTonal(
                     onPressed: onBack,
@@ -565,9 +526,7 @@ class _AppointmentsHeader extends StatelessWidget {
               ),
             ],
           ),
-        ],
-      ),
-    );
+        );
   }
 }
 

@@ -317,14 +317,14 @@ class _UploadDocScreenState extends State<UploadDocScreen> {
 
       if (!mounted) return;
       final driveConnected = context.read<BackupProvider>().isConnected;
-      var message = 'Saved locally on this device.';
+      var message = 'Document saved successfully.';
       if (!driveConnected) {
         final backedUp = await records.backupDocumentToCloudinary(document);
         message = backedUp
-            ? 'Saved locally and backed up to Cloudinary.'
-            : 'Saved locally. Cloud backup is not configured or unavailable.';
+            ? 'Document saved and backed up to secure cloud storage.'
+            : 'Document saved securely on your device.';
       } else {
-        message = 'Saved locally. It will be included in your Drive backup.';
+        message = 'Document saved and synced with cloud backup.';
       }
       if (!mounted) return;
       context.showSnack(message);

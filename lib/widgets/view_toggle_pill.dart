@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../config/theme.dart';
 
 class ViewTogglePill extends StatelessWidget {
   final bool isTreeView;
@@ -17,12 +18,12 @@ class ViewTogglePill extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(22),
         border: Border.all(
-          color: const Color(0xFFC7F0D2),
+          color: AppColors.primary.withAlpha(45),
           width: 1.0,
         ),
         boxShadow: const [
           BoxShadow(
-            color: Color(0x0F0D331E),
+            color: Color(0x10388E18),
             blurRadius: 8,
             offset: Offset(0, 2),
           ),
@@ -63,7 +64,8 @@ class ViewTogglePill extends StatelessWidget {
         curve: Curves.easeInOut,
         padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 5),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF065F46) : Colors.transparent,
+          color: isSelected ? AppColors.primary : Colors.transparent,
+          gradient: isSelected ? AppColors.heroGradient : null,
           borderRadius: BorderRadius.circular(18),
         ),
         child: Row(
@@ -72,7 +74,7 @@ class ViewTogglePill extends StatelessWidget {
             Icon(
               icon,
               size: 15,
-              color: isSelected ? Colors.white : const Color(0xFF172B21),
+              color: isSelected ? Colors.white : AppColors.textMid,
             ),
             const SizedBox(width: 5),
             Text(
@@ -80,7 +82,7 @@ class ViewTogglePill extends StatelessWidget {
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
-                color: isSelected ? Colors.white : const Color(0xFF172B21),
+                color: isSelected ? Colors.white : AppColors.textMid,
               ),
             ),
           ],

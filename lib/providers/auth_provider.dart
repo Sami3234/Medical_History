@@ -16,6 +16,7 @@ class AuthProvider extends ChangeNotifier {
   bool _emailConfirmationRequired = false;
 
   UserModel? get user => _user;
+  UserModel? get profile => _user;
   bool get loading => _loading;
   String? get error => _error;
   bool get isLoggedIn => _service.isLoggedIn;
