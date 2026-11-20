@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
@@ -24,7 +23,6 @@ import '../../providers/doctor_provider.dart';
 import '../../services/avatar_cache_service.dart';
 import '../../services/cloudinary_service.dart';
 import '../../services/image_cropper_service.dart';
-import '../../services/member_share_service.dart';
 import '../../services/member_doctor_service.dart';
 import '../../utils/extensions.dart';
 import '../../widgets/app_avatar.dart';
@@ -321,7 +319,7 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
                 children: [
                   CircleAvatar(
                     radius: 26,
-                    backgroundColor: const Color(0xFFDEF2D7),
+                    backgroundColor: const Color(0xFFD7EFE3),
                     child: Text(
                       _doctorInitials(doctor.name),
                       style: const TextStyle(
@@ -343,7 +341,7 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
                           ),
                         ),
                         Text(
-                          '${doctor.specialization ?? "General physician"} • ${visits.length} visit${visits.length == 1 ? "" : "s"}',
+                          '${doctor.specialization ?? "General physician"} â€¢ ${visits.length} visit${visits.length == 1 ? "" : "s"}',
                           style: const TextStyle(color: AppColors.textLight),
                         ),
                       ],
@@ -393,7 +391,7 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
                         width: 42,
                         height: 42,
                         decoration: BoxDecoration(
-                          color: const Color(0xFFEAF7E5),
+                          color: const Color(0xFFE6F4ED),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: const Icon(
@@ -410,7 +408,7 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
                         style: const TextStyle(fontWeight: FontWeight.w700),
                       ),
                       subtitle: Text(
-                        '${DateFormat('dd MMM yyyy').format(visit.visitDate)} • ${documents.length} document${documents.length == 1 ? "" : "s"}',
+                        '${DateFormat('dd MMM yyyy').format(visit.visitDate)} â€¢ ${documents.length} document${documents.length == 1 ? "" : "s"}',
                       ),
                       children: [
                         if (visit.symptoms?.trim().isNotEmpty == true)
@@ -656,131 +654,7 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
   }
 
   Future<void> _shareMember(MemberModel member) async {
-    try {
-      final scope = await _selectShareScope();
-      if (scope == null) return;
-      final token = await MemberShareService.createShareToken(
-        memberId: member.id,
-        scope: scope,
-      );
-      final link = Uri(
-        scheme: 'io.supabase.medicalhistory',
-        host: 'shared-member',
-        queryParameters: {'token': token},
-      ).toString();
-      await Clipboard.setData(ClipboardData(text: link));
-      if (mounted) {
-        await _showShareLinkDialog(member, link);
-      }
-    } catch (e) {
-      if (mounted) {
-        context.showSnack('Unable to create share link', isError: true);
-      }
-    }
-  }
-
-  Future<Map<String, bool>?> _selectShareScope() async {
-    var profile = true;
-    var visits = true;
-    var documents = true;
-    return showDialog<Map<String, bool>>(
-      context: context,
-      builder: (dialogContext) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          title: const Text('Choose records to share'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              CheckboxListTile(
-                value: profile,
-                title: const Text('Member profile'),
-                onChanged: (value) =>
-                    setDialogState(() => profile = value ?? false),
-              ),
-              CheckboxListTile(
-                value: visits,
-                title: const Text('Doctor visits'),
-                onChanged: (value) =>
-                    setDialogState(() => visits = value ?? false),
-              ),
-              CheckboxListTile(
-                value: documents,
-                title: const Text('Documents'),
-                onChanged: (value) =>
-                    setDialogState(() => documents = value ?? false),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: profile || visits || documents
-                  ? () => Navigator.pop(dialogContext, {
-                      'profile': profile,
-                      'visits': visits,
-                      'documents': documents,
-                    })
-                  : null,
-              child: const Text('Create link'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Future<void> _showShareLinkDialog(MemberModel member, String link) async {
-    if (!mounted) return;
-    await showDialog<void>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Secure profile link'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'This read-only link expires in 7 days. It has already been copied.',
-            ),
-            const SizedBox(height: 12),
-            SelectableText(link, style: const TextStyle(fontSize: 11)),
-            const SizedBox(height: 16),
-            TextButton.icon(
-              onPressed: () async {
-                await Clipboard.setData(ClipboardData(text: link));
-                if (dialogContext.mounted) Navigator.pop(dialogContext);
-                if (mounted) context.showSnack('Share link copied');
-              },
-              icon: const Icon(Icons.copy_outlined),
-              label: const Text('Copy again'),
-            ),
-            TextButton.icon(
-              onPressed: () async {
-                await MemberShareService.revokeAllShares(member.id);
-                if (dialogContext.mounted) Navigator.pop(dialogContext);
-                if (mounted) {
-                  context.showSnack('All active share links revoked');
-                }
-              },
-              icon: const Icon(Icons.link_off_outlined, color: Colors.red),
-              label: const Text(
-                'Revoke all active links',
-                style: TextStyle(color: Colors.red),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Done'),
-          ),
-        ],
-      ),
-    );
+    await context.push('/members/${member.id}/share');
   }
 
   Future<void> _showMemberSettings(MemberModel member) async {
@@ -1048,7 +922,7 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
     );
   }
 
-  // ── Hero Banner ────────────────────────────────────────────────────────
+  // â”€â”€ Hero Banner â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   Widget _buildHeroCard(MemberModel member) {
     return Container(
       width: double.infinity,
@@ -1093,7 +967,7 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
                       child: Container(
                         padding: const EdgeInsets.all(5),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF2E7D32),
+                          color: AppColors.primaryDark,
                           shape: BoxShape.circle,
                           border: Border.all(color: Colors.white, width: 1.5),
                         ),
@@ -1131,7 +1005,7 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '${member.relation.toUpperCase()} • PAT-${member.id.length > 5 ? member.id.substring(0, 4).toUpperCase() : member.id.toUpperCase()}',
+                      '${member.relation.toUpperCase()} â€¢ PAT-${member.id.length > 5 ? member.id.substring(0, 4).toUpperCase() : member.id.toUpperCase()}',
                       style: TextStyle(
                         fontSize: 12.5,
                         fontWeight: FontWeight.w600,
@@ -1191,7 +1065,7 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
     );
   }
 
-  // ── Quick Action Buttons ───────────────────────────────────────────────
+  // â”€â”€ Quick Action Buttons â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   Widget _buildQuickActionButtons(MemberModel member) {
     return Row(
       children: [
@@ -1276,16 +1150,16 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
             child: Container(
               padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
               decoration: BoxDecoration(
-                color: const Color(0xFFF0FDF4),
+                color: const Color(0xFFE6F4ED),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFFBBF7D0), width: 1.2),
+                border: Border.all(color: const Color(0xFFC4E7D5), width: 1.2),
               ),
               child: const Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(
                     Icons.timeline_rounded,
-                    color: Color(0xFF16A34A),
+                    color: AppColors.primaryDark,
                     size: 18,
                   ),
                   SizedBox(width: 6),
@@ -1294,7 +1168,7 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w800,
-                      color: Color(0xFF16A34A),
+                      color: AppColors.primaryDark,
                     ),
                   ),
                 ],
@@ -1390,7 +1264,7 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
                           avatarUrl: doctor.avatarUrl,
                           size: 38,
                           fontSize: 12,
-                          backgroundColor: const Color(0xFFDEF2D7),
+                          backgroundColor: const Color(0xFFD7EFE3),
                           textColor: AppColors.primaryDark,
                           border: Border.all(
                             color: AppColors.primary.withAlpha(90),
@@ -1406,7 +1280,7 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
                                 style: TextStyle(fontWeight: FontWeight.w700),
                               ),
                               Text(
-                                '${doctor.specialization ?? "General physician"} • $visits visit${visits == 1 ? "" : "s"}',
+                                '${doctor.specialization ?? "General physician"} â€¢ $visits visit${visits == 1 ? "" : "s"}',
                                 style: TextStyle(
                                   fontSize: 11.5,
                                   color: context.appTextSecondary,
@@ -1430,7 +1304,7 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
     );
   }
 
-  // ── Quick Stats Row ───────────────────────────────────────────────────
+  // â”€â”€ Quick Stats Row â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   Widget _buildStatsRow({
     required int visitsCount,
     required int medsCount,
@@ -1509,8 +1383,8 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
     return Container(width: 1, height: 24, color: context.appBorder);
   }
 
-  // ── Segmented Tab Bar ─────────────────────────────────────────────────
-  // ── Tab 1: Vitals View ────────────────────────────────────────────────
+  // â”€â”€ Segmented Tab Bar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // â”€â”€ Tab 1: Vitals View â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   Widget _buildVitalsTab(
     MemberModel member,
     List<VitalModel> vitals,
@@ -1815,7 +1689,7 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
     );
   }
 
-  // ── Tab 2: Medications View ───────────────────────────────────────────
+  // â”€â”€ Tab 2: Medications View â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   Widget _buildMedicationsTab(
     MemberModel member,
     List<MedicationModel> meds,
@@ -1886,14 +1760,14 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
                           color: med.takenToday
-                              ? const Color(0xFFDCFCE7)
+                              ? const Color(0xFFE6F4ED)
                               : const Color(0xFFEFF6FF),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Icon(
                           Icons.medication_rounded,
                           color: med.takenToday
-                              ? const Color(0xFF16A34A)
+                              ? AppColors.primaryDark
                               : const Color(0xFF2563EB),
                           size: 22,
                         ),
@@ -1913,7 +1787,7 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              '${med.dosage} • ${med.frequency}',
+                              '${med.dosage} â€¢ ${med.frequency}',
                               style: TextStyle(
                                 fontSize: 12.5,
                                 fontWeight: FontWeight.w600,
@@ -1922,7 +1796,7 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              'Timing: ${med.timing} ${med.duration != null ? "• ${med.duration}" : ""}',
+                              'Timing: ${med.timing} ${med.duration != null ? "â€¢ ${med.duration}" : ""}',
                               style: TextStyle(
                                 fontSize: 11.5,
                                 color: context.appTextSecondary,
@@ -1942,7 +1816,7 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
                           ),
                           decoration: BoxDecoration(
                             color: med.takenToday
-                                ? const Color(0xFF16A34A)
+                                ? AppColors.primaryDark
                                 : context.appSurfaceRaised,
                             borderRadius: BorderRadius.circular(20),
                           ),
@@ -1984,7 +1858,7 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
     );
   }
 
-  // ── Tab 3: Vaccines View ──────────────────────────────────────────────
+  // â”€â”€ Tab 3: Vaccines View â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   Widget _buildVaccinesTab(
     MemberModel member,
     List<VaccineModel> vaccines,
@@ -2122,7 +1996,7 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
     );
   }
 
-  // ── Tab 4: Visits View ────────────────────────────────────────────────
+  // â”€â”€ Tab 4: Visits View â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   Widget _buildVisitsTab(MemberModel member, List<VisitModel> visits) {
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 112),
@@ -2225,7 +2099,7 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
                             if (visit.hospital != null) ...[
                               const SizedBox(width: 8),
                               Text(
-                                '•',
+                                'â€¢',
                                 style: TextStyle(
                                   color: context.appTextSecondary,
                                 ),
@@ -2267,7 +2141,7 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
     );
   }
 
-  // ── Tab 5: Lab & Files View ───────────────────────────────────────────
+  // â”€â”€ Tab 5: Lab & Files View â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   Widget _buildFilesTab(MemberModel member, List<MedFileModel> files) {
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 112),
@@ -2352,7 +2226,7 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              '${f.fileType.toUpperCase()} • ${DateFormat('dd MMM yyyy').format(f.createdAt)}',
+                              '${f.fileType.toUpperCase()} â€¢ ${DateFormat('dd MMM yyyy').format(f.createdAt)}',
                               style: TextStyle(
                                 fontSize: 11,
                                 color: context.appTextSecondary,

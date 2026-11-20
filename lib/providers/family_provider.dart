@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../config/supabase_config.dart';
 import '../models/family_model.dart';
 import '../services/family_service.dart';
+import '../services/offline_data_service.dart';
 
 class FamilyProvider extends ChangeNotifier {
   final _service = FamilyService();
@@ -26,13 +27,27 @@ class FamilyProvider extends ChangeNotifier {
   }
 
   Future<bool> loadFamilies(String userId) async {
-    _setLoading(true);
+    // 1. Instant cache load (0ms)
+    final cached = OfflineDataService.getFamilies(userId);
+    if (cached.isNotEmpty) {
+      _families = List.from(cached);
+      notifyListeners();
+    } else {
+      _setLoading(true);
+    }
     _error = null;
+
+    // 2. Background revalidation
     try {
-      _families = await _service.getAll(userId);
+      final fresh = await _service.getAll(userId);
+      _families = fresh;
+      await OfflineDataService.saveFamilies(userId, fresh);
+      notifyListeners();
       return true;
     } catch (e) {
-      _error = _friendlyError(e);
+      if (_families.isEmpty) {
+        _error = _friendlyError(e);
+      }
       return false;
     } finally {
       _setLoading(false);
@@ -48,6 +63,7 @@ class FamilyProvider extends ChangeNotifier {
       data['user_id'] = uid;
       await _service.create(data);
       _families = await _service.getAll(uid);
+      await OfflineDataService.saveFamilies(uid, _families);
       return true;
     } catch (e) {
       _error = _friendlyError(e);
@@ -65,6 +81,7 @@ class FamilyProvider extends ChangeNotifier {
       final uid = SupabaseConfig.currentUserId;
       if (uid == null) throw StateError('Sign in is required.');
       _families = await _service.getAll(uid);
+      await OfflineDataService.saveFamilies(uid, _families);
       return true;
     } catch (e) {
       _error = _friendlyError(e);
@@ -79,6 +96,10 @@ class FamilyProvider extends ChangeNotifier {
     try {
       await _service.delete(id);
       _families.removeWhere((f) => f.id == id);
+      final uid = SupabaseConfig.currentUserId;
+      if (uid != null) {
+        await OfflineDataService.saveFamilies(uid, _families);
+      }
       notifyListeners();
       return true;
     } catch (e) {
@@ -90,8 +111,10 @@ class FamilyProvider extends ChangeNotifier {
 
   String _friendlyError(Object e) {
     final msg = e.toString();
-    if (msg.contains('network') || msg.contains('SocketException')) {
-      return 'Network error. Please check your connection.';
+    if (msg.contains('TimeoutException') ||
+        msg.contains('network') ||
+        msg.contains('SocketException')) {
+      return 'Network is slow. Check your connection and try again.';
     }
     if (msg.contains('permission') || msg.contains('403')) {
       return 'Permission denied. Please log in again.';

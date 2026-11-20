@@ -34,6 +34,7 @@ import '../screens/profile/notifications_settings_screen.dart';
 import '../screens/notifications/notification_center_screen.dart';
 import '../screens/profile/app_preferences_screen.dart';
 import '../screens/share/shared_member_screen.dart';
+import '../screens/share/temporary_share_create_screen.dart';
 
 class AppRoutes {
   static const splash = '/';
@@ -51,6 +52,7 @@ class AppRoutes {
   static const memberAdd = '/members/add';
   static const memberEdit = '/members/:id/edit';
   static const memberDetail = '/members/:id';
+  static const memberShare = '/members/:id/share';
   static const memberDoctorRecords =
       '/members/:memberId/doctors/:doctorId/records';
   static const doctors = '/doctors';
@@ -109,8 +111,10 @@ class AppRoutes {
       GoRoute(path: ownerSetup, builder: (_, _) => const OwnerSetupScreen()),
       GoRoute(
         path: sharedMember,
-        builder: (_, state) =>
-            SharedMemberScreen(token: state.uri.queryParameters['token'] ?? ''),
+        builder: (_, state) => SharedMemberScreen(
+          temporaryId: state.uri.queryParameters['id'] ?? '',
+          otp: state.uri.queryParameters['otp'] ?? '',
+        ),
       ),
       GoRoute(path: dashboard, builder: (_, _) => const DashboardScreen()),
       GoRoute(path: families, builder: (_, _) => const FamilyListScreen()),
@@ -134,6 +138,11 @@ class AppRoutes {
           doctorId: state.pathParameters['doctorId']!,
           initialDoctor: state.extra as DoctorModel?,
         ),
+      ),
+      GoRoute(
+        path: memberShare,
+        builder: (_, state) =>
+            TemporaryShareCreateScreen(memberId: state.pathParameters['id']!),
       ),
       GoRoute(
         path: memberDetail,

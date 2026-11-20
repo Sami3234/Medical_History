@@ -1,3 +1,4 @@
+import '../config/constants.dart';
 import '../config/supabase_config.dart';
 import '../models/member_model.dart';
 
@@ -20,7 +21,8 @@ class MemberService {
           .from('members')
           .select('*, families!inner(user_id)')
           .eq('families.user_id', userId)
-          .order('name');
+          .order('name')
+          .timeout(AppNetwork.dataTimeout);
       return data.map((e) => MemberModel.fromMap(e)).toList();
     }
     return [];

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import '../../config/constants.dart';
 import '../../config/theme.dart';
 import '../../config/routes.dart';
 import '../../config/supabase_config.dart';
@@ -17,10 +18,12 @@ import '../../models/doctor_model.dart';
 import '../../models/member_model.dart';
 import '../../services/member_doctor_service.dart';
 import '../../services/owner_profile_service.dart';
+import '../../services/offline_data_service.dart';
 import '../../widgets/bottom_nav.dart';
 import '../../widgets/info_banner.dart';
 import '../../widgets/tree_view.dart';
 import '../../widgets/app_avatar.dart';
+import '../../widgets/app_logo.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -30,28 +33,58 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  static String? _verifiedOwnerUserId;
-
   final _memberDoctorService = MemberDoctorService();
   final _ownerProfileService = OwnerProfileService();
   Map<String, List<DoctorModel>> _memberDoctors = {};
   late bool _checkingOwner;
-
-  Future<void> _loadMemberDoctors(List<MemberModel> members) async {
-    final mapping = await _memberDoctorService.getDoctorsForMembers(
-      members.map((member) => member.id).toList(),
-    );
-    if (mounted) setState(() => _memberDoctors = mapping);
-  }
 
   @override
   void initState() {
     super.initState();
     final uid =
         context.read<AuthProvider>().uid ?? SupabaseConfig.currentUserId;
-    final hasCachedMembers = context.read<MemberProvider>().members.isNotEmpty;
-    _checkingOwner = !hasCachedMembers && _verifiedOwnerUserId != uid;
+    final hasCachedMembers = context.read<MemberProvider>().members.isNotEmpty ||
+        (uid != null && OfflineDataService.getMembers(uid).isNotEmpty);
+    final hasCachedOwner =
+        uid != null && OfflineDataService.getOwner(uid) != null;
+
+    _checkingOwner =
+        !OwnerProfileService.homePrefetchFinished &&
+        !hasCachedMembers &&
+        !hasCachedOwner &&
+        OwnerProfileService.verifiedOwnerUserId != uid;
+
+    if (uid != null) {
+      final cachedMapping = OfflineDataService.getMemberDoctors(uid);
+      if (cachedMapping.isNotEmpty) {
+        _memberDoctors = cachedMapping;
+      }
+    }
+
     WidgetsBinding.instance.addPostFrameCallback((_) => _initializeDashboard());
+  }
+
+  Future<void> _loadMemberDoctors(
+    List<MemberModel> members, [
+    String? userId,
+  ]) async {
+    final uid =
+        userId ??
+        context.read<AuthProvider>().uid ??
+        SupabaseConfig.currentUserId;
+    try {
+      final mapping = await _memberDoctorService
+          .getDoctorsForMembers(
+            members.map((member) => member.id).toList(),
+          )
+          .timeout(AppNetwork.quickTimeout);
+      if (mapping.isNotEmpty) {
+        if (mounted) setState(() => _memberDoctors = mapping);
+        if (uid != null) {
+          await OfflineDataService.saveMemberDoctors(uid, mapping);
+        }
+      }
+    } catch (_) {}
   }
 
   Future<void> _initializeDashboard() async {
@@ -63,360 +96,47 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
 
     final memberProvider = context.read<MemberProvider>();
-    final hasCachedMembers = memberProvider.members.isNotEmpty;
-    if (hasCachedMembers && _checkingOwner && mounted) {
-      setState(() => _checkingOwner = false);
-    }
+    final familyProvider = context.read<FamilyProvider>();
+    final doctorProvider = context.read<DoctorProvider>();
 
-    if (_verifiedOwnerUserId != uid) {
-      final owner = await _ownerProfileService.getOwnerMember(uid);
-      if (!mounted) return;
-      if (!_ownerProfileService.isComplete(owner)) {
-        context.go(AppRoutes.ownerSetup);
-        return;
+    try {
+      if (OwnerProfileService.verifiedOwnerUserId != uid) {
+        final cachedOwner = OfflineDataService.getOwner(uid);
+        if (cachedOwner != null &&
+            _ownerProfileService.isComplete(cachedOwner)) {
+          OwnerProfileService.verifiedOwnerUserId = uid;
+        } else {
+          final owner = await _ownerProfileService
+              .getOwnerMember(uid)
+              .timeout(AppNetwork.quickTimeout);
+          if (!mounted) return;
+          if (!_ownerProfileService.isComplete(owner)) {
+            context.go(AppRoutes.ownerSetup);
+            return;
+          }
+          OwnerProfileService.verifiedOwnerUserId = uid;
+        }
       }
-      _verifiedOwnerUserId = uid;
+
+      // Revalidate in parallel with short timeout, never blocking UI
+      Future.wait([
+        familyProvider.loadFamilies(uid),
+        doctorProvider.loadDoctors(uid),
+        memberProvider.loadAll(uid),
+      ]).timeout(AppNetwork.quickTimeout).then((_) {
+        if (mounted && memberProvider.members.isNotEmpty) {
+          _loadMemberDoctors(memberProvider.members, uid);
+        }
+      }).catchError((_) {});
+    } catch (_) {
+      // Fast fallback on slow connection
+    } finally {
+      if (mounted) setState(() => _checkingOwner = false);
     }
 
-    if (hasCachedMembers) {
-      await _loadMemberDoctors(memberProvider.members);
-      return;
+    if (memberProvider.members.isNotEmpty) {
+      _loadMemberDoctors(memberProvider.members, uid);
     }
-
-    await Future.wait([
-      context.read<FamilyProvider>().loadFamilies(uid),
-      context.read<DoctorProvider>().loadDoctors(uid),
-      memberProvider.loadAll(uid),
-    ]);
-    await _loadMemberDoctors(memberProvider.members);
-    if (mounted) {
-      setState(() => _checkingOwner = false);
-    }
-  }
-
-  Widget buildSampleDashboard(BuildContext context) {
-    final auth = context.watch<AuthProvider>();
-    final familyProv = context.watch<FamilyProvider>();
-    final memberProv = context.watch<MemberProvider>();
-    final doctorProv = context.watch<DoctorProvider>();
-    final members = memberProv.members;
-    final generations = members
-        .map((member) => FamilyGeneration.fromRelation(member.relation))
-        .toSet()
-        .length;
-
-    return Scaffold(
-      backgroundColor: context.appBackground,
-      body: SafeArea(
-        child: RefreshIndicator(
-          color: AppColors.primary,
-          onRefresh: () async {
-            final uid = auth.uid ?? SupabaseConfig.currentUserId;
-            if (uid == null) return;
-            await Future.wait([
-              familyProv.loadFamilies(uid),
-              context.read<DoctorProvider>().loadDoctors(uid),
-              memberProv.loadAll(uid),
-            ]);
-            await _loadMemberDoctors(memberProv.members);
-          },
-          child: SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.only(bottom: 16),
-            child: Column(
-              children: [
-                _buildDashboardHero(),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
-                  child: Column(
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildDashboardStatPill(
-                              icon: Icons.account_tree_rounded,
-                              value: '$generations',
-                              label: 'Generations',
-                              color: const Color(0xFF167A55),
-                              background: const Color(0xFFE3F5EA),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: _buildDashboardStatPill(
-                              icon: Icons.groups_rounded,
-                              value: '${members.length}',
-                              label: 'Members',
-                              color: const Color(0xFF36566A),
-                              background: const Color(0xFFF0F5F8),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: _buildDashboardStatPill(
-                              icon: Icons.medical_services_outlined,
-                              value: '${doctorProv.doctors.length}',
-                              label: 'Doctors',
-                              color: const Color(0xFF36566A),
-                              background: const Color(0xFFF0F5F8),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 18),
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.fromLTRB(12, 12, 12, 14),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(24),
-                          border: Border.all(color: const Color(0xFFE2ECE6)),
-                        ),
-                        child: familyProv.loading
-                            ? const Padding(
-                                padding: EdgeInsets.all(32),
-                                child: CircularProgressIndicator(),
-                              )
-                            : members.isEmpty
-                            ? _buildEmptyTree()
-                            : InteractiveTreeView(
-                                members: members,
-                                memberDoctors: _memberDoctors,
-                                currentUserName: auth.user?.fullName,
-                                familyName: auth.user?.fullName ?? 'Family',
-                                showToolbar: false,
-                                showRootNode: false,
-                                onMemberTap: (member) async {
-                                  await context.push('/members/${member.id}');
-                                  await _loadMemberDoctors(memberProv.members);
-                                },
-                              ),
-                      ),
-                      const SizedBox(height: 18),
-                      _buildAssignedDoctorsDashboard(doctorProv),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-      bottomNavigationBar: const BottomNav(currentIndex: 0),
-    );
-  }
-
-  Widget _buildDashboardHero() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(20, 22, 20, 24),
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Color(0xFF075B3F), Color(0xFF1A936F)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.vertical(bottom: Radius.circular(30)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 64,
-            height: 64,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.white70, width: 1.5),
-              color: Colors.white.withAlpha(25),
-            ),
-            child: const Icon(
-              Icons.family_restroom_rounded,
-              color: Colors.white,
-              size: 34,
-            ),
-          ),
-          const SizedBox(width: 14),
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Family Health',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 25,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                SizedBox(height: 3),
-                Text(
-                  'Together for a Healthier Tomorrow',
-                  style: TextStyle(color: Colors.white70, fontSize: 12),
-                ),
-              ],
-            ),
-          ),
-          _dashboardIconButton(
-            icon: Icons.search_rounded,
-            onTap: () => context.push(AppRoutes.search),
-          ),
-          const SizedBox(width: 8),
-          _dashboardIconButton(
-            icon: Icons.notifications_none_rounded,
-            onTap: () => context.push(AppRoutes.notificationCenter),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _dashboardIconButton({
-    required IconData icon,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(22),
-      child: Container(
-        width: 44,
-        height: 44,
-        decoration: BoxDecoration(
-          color: Colors.black.withAlpha(35),
-          shape: BoxShape.circle,
-        ),
-        child: Icon(icon, color: Colors.white, size: 24),
-      ),
-    );
-  }
-
-  Widget _buildDashboardStatPill({
-    required IconData icon,
-    required String value,
-    required String label,
-    required Color color,
-    required Color background,
-  }) {
-    return Container(
-      height: 54,
-      padding: const EdgeInsets.symmetric(horizontal: 10),
-      decoration: BoxDecoration(
-        color: background,
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: color.withAlpha(35)),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, size: 20, color: color),
-          const SizedBox(width: 6),
-          Flexible(
-            child: Text(
-              '$value $label',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: color,
-                fontSize: 12,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAssignedDoctorsDashboard(DoctorProvider doctorProv) {
-    final doctors = doctorProv.doctors;
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(12, 14, 12, 12),
-      decoration: BoxDecoration(
-        color: const Color(0xFFEAF5FF),
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: const Color(0xFFCDE5FA)),
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              const Icon(
-                Icons.medical_services_rounded,
-                color: Color(0xFF1769AA),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  'Assigned Doctors (${doctors.length})',
-                  style: const TextStyle(
-                    color: Color(0xFF145B91),
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ),
-              TextButton(
-                onPressed: () => context.push(AppRoutes.doctors),
-                child: const Text('View all'),
-              ),
-            ],
-          ),
-          if (doctors.isEmpty)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 18),
-              child: Text('No doctors added yet.'),
-            )
-          else
-            SizedBox(
-              height: 150,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                itemCount: doctors.length,
-                separatorBuilder: (_, _) => const SizedBox(width: 10),
-                itemBuilder: (context, index) {
-                  final doctor = doctors[index];
-                  return InkWell(
-                    onTap: () => context.push('/doctors/${doctor.id}'),
-                    borderRadius: BorderRadius.circular(16),
-                    child: Container(
-                      width: 145,
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: const Color(0xFFD7E8F5)),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          AppAvatar(name: doctor.name, size: 44),
-                          const SizedBox(height: 8),
-                          Text(
-                            doctor.name,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(fontWeight: FontWeight.w800),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            doctor.specialization ??
-                                'Specialization not recorded',
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 11,
-                              color: AppColors.textMid,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-        ],
-      ),
-    );
   }
 
   @override
@@ -429,10 +149,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
       );
     }
-    return buildLegacyDashboard(context);
+    return _buildDashboardContent(context);
   }
 
-  Widget buildLegacyDashboard(BuildContext context) {
+  Widget _buildDashboardContent(BuildContext context) {
     final auth = context.watch<AuthProvider>();
     final familyProv = context.watch<FamilyProvider>();
     final memberProv = context.watch<MemberProvider>();
@@ -505,12 +225,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
           onRefresh: () async {
             final uid = auth.uid ?? SupabaseConfig.currentUserId;
             if (uid == null) return;
-            await Future.wait([
-              familyProv.loadFamilies(uid),
-              context.read<DoctorProvider>().loadDoctors(uid),
-              memberProv.loadAll(uid),
-            ]);
-            await _loadMemberDoctors(memberProv.members);
+            try {
+              await Future.wait([
+                familyProv.loadFamilies(uid),
+                context.read<DoctorProvider>().loadDoctors(uid),
+                memberProv.loadAll(uid),
+              ]).timeout(AppNetwork.dataTimeout);
+              await _loadMemberDoctors(
+                memberProv.members,
+              ).timeout(AppNetwork.dataTimeout);
+            } catch (_) {}
           },
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
@@ -640,19 +364,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             ),
                           ],
                         ),
-                        child: familyProv.loading
-                            ? const Center(
-                                child: Padding(
-                                  padding: EdgeInsets.all(16),
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: AppColors.primary,
-                                  ),
-                                ),
-                              )
-                            : memberProv.members.isEmpty
-                            ? _buildEmptyTree()
-                            : InteractiveTreeView(
+                        child: _familyTreeBody(
+                          loading:
+                              familyProv.loading || memberProv.loading,
+                          members: memberProv.members,
+                          error: memberProv.error ?? familyProv.error,
+                          tree: InteractiveTreeView(
                                 members: memberProv.members,
                                 memberDoctors: _memberDoctors,
                                 currentUserName: userName,
@@ -665,6 +382,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 onAddMember: () =>
                                     context.push(AppRoutes.memberAdd),
                               ),
+                        ),
                       ),
                       if (upcomingAppointments > 0) ...[
                         const SizedBox(height: 18),
@@ -710,32 +428,56 @@ class _DashboardScreenState extends State<DashboardScreen> {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [Color(0xFF168C45), Color(0xFF2AAF35), Color(0xFF65C93A)],
+            colors: [
+              Color(0xFF267310), // Deep rich emerald
+              Color(0xFF388E18), // Primary dark medical green
+              Color(0xFF4FA023), // Primary vibrant green
+            ],
           ),
+          boxShadow: [
+            BoxShadow(
+              color: Color(0x1F1B5E20),
+              blurRadius: 18,
+              offset: Offset(0, 6),
+            ),
+          ],
         ),
         child: Stack(
           children: [
+            // Elegant translucent ambient accents (clean, crisp, zero milky blur)
             Positioned(
-              right: -34,
-              top: -44,
+              right: -30,
+              top: -30,
               child: Container(
-                width: 150,
-                height: 150,
+                width: 170,
+                height: 170,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.white.withAlpha(28),
+                  color: Colors.white.withValues(alpha: 0.08),
                 ),
               ),
             ),
             Positioned(
-              left: -38,
-              bottom: -58,
+              right: 40,
+              top: -55,
+              child: Container(
+                width: 130,
+                height: 130,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: const Color(0xFFB9EB80).withValues(alpha: 0.12),
+                ),
+              ),
+            ),
+            Positioned(
+              left: -35,
+              bottom: -45,
               child: Container(
                 width: 140,
                 height: 140,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: const Color(0xFFB8F58C).withAlpha(38),
+                  color: Colors.white.withValues(alpha: 0.05),
                 ),
               ),
             ),
@@ -746,26 +488,31 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 18,
                 18,
               ),
-              decoration: BoxDecoration(
-                color: Colors.white.withAlpha(18),
+              decoration: const BoxDecoration(
                 borderRadius: bottomRadius,
+                border: Border(
+                  bottom: BorderSide(
+                    color: Color(0x33FFFFFF),
+                    width: 1.0,
+                  ),
+                ),
               ),
               child: Column(
                 children: [
                   Row(
                     children: [
-                      const Icon(
-                        Icons.favorite_rounded,
-                        size: 18,
-                        color: Colors.white,
+                      const AppLogo(
+                        size: 20,
+                        isTransparent: true,
                       ),
-                      const SizedBox(width: 7),
+                      const SizedBox(width: 8),
                       const Text(
                         'Medical History',
                         style: TextStyle(
-                          fontSize: 12,
+                          fontSize: 13,
                           fontWeight: FontWeight.w800,
                           color: Colors.white,
+                          letterSpacing: 0.2,
                         ),
                       ),
                       const Spacer(),
@@ -794,9 +541,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         border: Border.all(color: Colors.white, width: 2.2),
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.primary.withAlpha(45),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4),
+                            color: Colors.black.withValues(alpha: 0.15),
+                            blurRadius: 10,
+                            offset: const Offset(0, 3),
                           ),
                         ],
                         onTap: () => context.push(AppRoutes.profile),
@@ -811,17 +558,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
-                                fontSize: 19,
+                                fontSize: 20,
                                 fontWeight: FontWeight.w800,
                                 color: Colors.white,
+                                letterSpacing: -0.3,
                               ),
                             ),
                             const SizedBox(height: 3),
                             Text(
                               date,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 12.5,
-                                color: Colors.white70,
+                                color: Colors.white.withValues(alpha: 0.85),
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -831,52 +579,59 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ],
                   ),
                   const SizedBox(height: 17),
-                  Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      key: const Key('dashboard-search-bar'),
-                      onTap: () => context.push(AppRoutes.search),
+                  Container(
+                    height: 50,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
                       borderRadius: BorderRadius.circular(18),
-                      child: Container(
-                        height: 50,
-                        padding: const EdgeInsets.symmetric(horizontal: 15),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withAlpha(185),
-                          borderRadius: BorderRadius.circular(18),
-                          border: Border.all(color: Colors.white),
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(0xFF0C6B45).withAlpha(15),
-                              blurRadius: 12,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
+                      border: Border.all(
+                        color: const Color(0xFFDFEAE0),
+                        width: 1.0,
+                      ),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Color(0x18000000),
+                          blurRadius: 12,
+                          offset: Offset(0, 4),
                         ),
-                        child: const Row(
-                          children: [
-                            Icon(
-                              Icons.search_rounded,
-                              color: AppColors.primary,
-                              size: 22,
-                            ),
-                            SizedBox(width: 11),
-                            Expanded(
-                              child: Text(
-                                'Search your complete health history...',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  color: AppColors.textLight,
-                                  fontSize: 13,
+                      ],
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      borderRadius: BorderRadius.circular(18),
+                      clipBehavior: Clip.antiAlias,
+                      child: InkWell(
+                        key: const Key('dashboard-search-bar'),
+                        onTap: () => context.push(AppRoutes.search),
+                        child: const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 16),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.search_rounded,
+                                color: AppColors.textLight,
+                                size: 22,
+                              ),
+                              SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  'Search family, doctors or reports...',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    color: AppColors.textLight,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                  ),
                                 ),
                               ),
-                            ),
-                            Icon(
-                              Icons.tune_rounded,
-                              color: Color(0xFF62A48A),
-                              size: 19,
-                            ),
-                          ],
+                              Icon(
+                                Icons.tune_rounded,
+                                color: AppColors.textLight,
+                                size: 20,
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -902,40 +657,50 @@ class _DashboardScreenState extends State<DashboardScreen> {
         color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(15),
+          borderRadius: BorderRadius.circular(14),
           child: Container(
             width: 42,
             height: 42,
             decoration: BoxDecoration(
-              color: Colors.white.withAlpha(165),
-              borderRadius: BorderRadius.circular(15),
-              border: Border.all(color: Colors.white),
+              color: Colors.white.withValues(alpha: 0.18),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.35),
+                width: 1.1,
+              ),
             ),
             child: Stack(
               alignment: Alignment.center,
               children: [
-                Icon(icon, color: const Color(0xFF174C3B), size: 22),
+                Icon(icon, color: Colors.white, size: 21),
                 if (badgeCount > 0)
                   Positioned(
-                    top: 6,
-                    right: 6,
+                    top: 5,
+                    right: 5,
                     child: Container(
                       constraints: const BoxConstraints(
-                        minWidth: 14,
-                        minHeight: 14,
+                        minWidth: 16,
+                        minHeight: 16,
                       ),
-                      padding: const EdgeInsets.symmetric(horizontal: 3),
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFFF4D67),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.white, width: 1.2),
+                        color: const Color(0xFFFF3B30),
+                        borderRadius: BorderRadius.circular(9),
+                        border: Border.all(color: Colors.white, width: 1.3),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Color(0x33000000),
+                            blurRadius: 4,
+                            offset: Offset(0, 1),
+                          ),
+                        ],
                       ),
                       alignment: Alignment.center,
                       child: Text(
                         badgeCount > 9 ? '9+' : '$badgeCount',
                         style: const TextStyle(
-                          fontSize: 7.5,
-                          height: 1,
+                          fontSize: 9,
+                          height: 1.1,
                           fontWeight: FontWeight.w800,
                           color: Colors.white,
                         ),
@@ -948,6 +713,47 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
       ),
     );
+  }
+
+  Widget _familyTreeBody({
+    required bool loading,
+    required List<MemberModel> members,
+    required String? error,
+    required Widget tree,
+  }) {
+    if (loading && members.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 28),
+        child: Center(
+          child: CircularProgressIndicator(
+            strokeWidth: 2.4,
+            color: AppColors.primary,
+          ),
+        ),
+      );
+    }
+    if (members.isEmpty && error != null) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+        child: Column(
+          children: [
+            Icon(
+              Icons.wifi_off_rounded,
+              color: context.appTextSecondary,
+              size: 32,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Could not load your family. Check your connection, then pull down to refresh.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 13, color: context.appTextSecondary),
+            ),
+          ],
+        ),
+      );
+    }
+    if (members.isEmpty) return _buildEmptyTree();
+    return tree;
   }
 
   Widget _buildEmptyTree() {
@@ -1003,8 +809,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
               horizontal: useTwoColumns,
               icon: Icons.medical_services_outlined,
               label: 'Visits',
-              accent: const Color(0xFF15803D),
-              surface: const Color(0xFFEAF8EE),
+              accent: const Color(0xFF2C6B14),
+              surface: const Color(0xFFEBF7E4),
               onTap: () => context.push(AppRoutes.visits),
             ),
             _quickLink(
@@ -1012,8 +818,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
               horizontal: useTwoColumns,
               icon: Icons.local_hospital_outlined,
               label: 'Doctors',
-              accent: const Color(0xFF087EA4),
-              surface: const Color(0xFFEAF8FD),
+              accent: const Color(0xFF388E18),
+              surface: const Color(0xFFF2FBF0),
               onTap: () => context.push(AppRoutes.doctors),
             ),
             _quickLink(
@@ -1021,8 +827,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
               horizontal: useTwoColumns,
               icon: Icons.description_outlined,
               label: 'Documents',
-              accent: const Color(0xFF7C3AED),
-              surface: const Color(0xFFF4EFFF),
+              accent: const Color(0xFF4FA023),
+              surface: const Color(0xFFEAF8EE),
               onTap: () => context.push(AppRoutes.documents),
             ),
             _quickLink(
@@ -1030,8 +836,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
               horizontal: useTwoColumns,
               icon: Icons.event_available_outlined,
               label: 'Appointments',
-              accent: const Color(0xFFEA7B16),
-              surface: const Color(0xFFFFF4E8),
+              accent: const Color(0xFF1B5E20),
+              surface: const Color(0xFFEDF7EB),
               onTap: () => context.push(AppRoutes.appointments),
             ),
           ],

@@ -311,12 +311,12 @@ class BackupScreen extends StatelessWidget {
                       width: 48,
                       height: 48,
                       decoration: const BoxDecoration(
-                        color: Color(0xFFEFF8EC),
+                        color: Color(0xFFE6F4ED),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(
                         Icons.add_to_drive_rounded,
-                        color: Color(0xFF38931F),
+                        color: AppColors.primaryDark,
                         size: 26,
                       ),
                     ),
@@ -364,10 +364,10 @@ class BackupScreen extends StatelessWidget {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: backupProv.isConnected
                             ? Colors.grey.shade100
-                            : const Color(0xFFEFF8EC),
+                            : const Color(0xFFE6F4ED),
                         foregroundColor: backupProv.isConnected
                             ? Colors.grey.shade700
-                            : const Color(0xFF2E7D32),
+                            : AppColors.primaryDark,
                         elevation: 0,
                         padding: const EdgeInsets.symmetric(
                           horizontal: 14,

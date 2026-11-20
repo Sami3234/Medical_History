@@ -106,34 +106,32 @@ class _FamilyListScreenState extends State<FamilyListScreen> {
               const SizedBox(height: 20),
 
               // Search Bar
-              Container(
-                height: 52,
-                decoration: BoxDecoration(
-                  color: context.appSurface,
-                  borderRadius: BorderRadius.circular(18),
-                  border: Border.all(color: AppColors.border, width: 1.2),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.shadow,
-                      blurRadius: 6,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: TextField(
-                  controller: _searchController,
-                  onChanged: (v) => setState(() => _query = v),
-                  decoration: const InputDecoration(
-                    hintText: 'Search family name or ID...',
-                    prefixIcon: Icon(
-                      Icons.search_rounded,
-                      color: AppColors.textLight,
-                      size: 22,
-                    ),
-                    border: InputBorder.none,
-                    enabledBorder: InputBorder.none,
-                    focusedBorder: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(vertical: 14),
+              TextField(
+                controller: _searchController,
+                onChanged: (v) => setState(() => _query = v),
+                style: const TextStyle(color: AppColors.textDark, fontSize: 14),
+                decoration: InputDecoration(
+                  hintText: 'Search family name or ID...',
+                  hintStyle: const TextStyle(color: AppColors.textLight, fontSize: 14),
+                  prefixIcon: const Icon(
+                    Icons.search_rounded,
+                    color: AppColors.textLight,
+                    size: 22,
+                  ),
+                  filled: true,
+                  fillColor: context.appSurface,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(20),
+                    borderSide: const BorderSide(color: AppColors.border, width: 1.2),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(20),
+                    borderSide: const BorderSide(color: AppColors.border, width: 1.2),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(20),
+                    borderSide: const BorderSide(color: AppColors.primary, width: 1.8),
                   ),
                 ),
               ),
@@ -230,7 +228,7 @@ class _FamilyListScreenState extends State<FamilyListScreen> {
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
-                                color: Color(0xFF2E7D32),
+                                color: AppColors.primaryDark,
                               ),
                             ),
                           ],
@@ -262,7 +260,7 @@ class _FamilyListScreenState extends State<FamilyListScreen> {
       width: 38,
       height: 38,
       decoration: const BoxDecoration(
-        color: Color(0xFFDEF2D7),
+        color: Color(0xFFD7EFE3),
         shape: BoxShape.circle,
       ),
       alignment: Alignment.center,
@@ -271,7 +269,7 @@ class _FamilyListScreenState extends State<FamilyListScreen> {
         style: const TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.w800,
-          color: Color(0xFF235E1E),
+          color: AppColors.primaryDark,
         ),
       ),
     );

@@ -20,6 +20,10 @@ Get-Content -LiteralPath $envPath | ForEach-Object {
 
 $supabaseUrl = $values['NEXT_PUBLIC_SUPABASE_URL']
 $supabaseAnonKey = $values['NEXT_PUBLIC_SUPABASE_ANON_KEY']
+$tempShareUrl = $values['TEMP_SHARE_API_URL']
+if ([string]::IsNullOrWhiteSpace($tempShareUrl)) {
+  $tempShareUrl = 'https://medical-history-temporary-share.kk34samikhan.workers.dev'
+}
 
 if ([string]::IsNullOrWhiteSpace($supabaseUrl) -or
     [string]::IsNullOrWhiteSpace($supabaseAnonKey)) {
@@ -32,7 +36,8 @@ try {
     --$Mode `
     --target-platform android-arm64 `
     "--dart-define=SUPABASE_URL=$supabaseUrl" `
-    "--dart-define=SUPABASE_ANON_KEY=$supabaseAnonKey"
+    "--dart-define=SUPABASE_ANON_KEY=$supabaseAnonKey" `
+    "--dart-define=TEMP_SHARE_API_URL=$tempShareUrl"
 } finally {
   Pop-Location
 }

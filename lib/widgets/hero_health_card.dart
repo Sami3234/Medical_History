@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../config/theme.dart';
 import 'app_avatar.dart';
+import 'glass_container.dart';
 
 class HeroHealthCardAvatar {
   final String name;
@@ -52,29 +53,25 @@ class HeroHealthCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(24),
         child: Stack(
           children: [
-            // Decorative background curves
-            Positioned(
+            // Ambient Gaussian Blur background curves (Figma Hero Lime Orb)
+            const Positioned(
               right: -30,
               top: -30,
-              child: Container(
-                width: 140,
-                height: 140,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white.withAlpha(28),
-                ),
+              child: AmbientBlurOrb(
+                size: 160,
+                color: Color(0xFFB9EB80),
+                blur: 25,
+                opacity: 0.65,
               ),
             ),
-            Positioned(
+            const Positioned(
               right: 20,
               bottom: -40,
-              child: Container(
-                width: 110,
-                height: 110,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white.withAlpha(20),
-                ),
+              child: AmbientBlurOrb(
+                size: 130,
+                color: Color(0xFF74C43B),
+                blur: 30,
+                opacity: 0.35,
               ),
             ),
             Padding(
@@ -181,7 +178,7 @@ class HeroHealthCard extends StatelessWidget {
                                         style: const TextStyle(
                                           fontSize: 12,
                                           fontWeight: FontWeight.w700,
-                                          color: Color(0xFF2E7D32),
+                                          color: AppColors.primaryDark,
                                         ),
                                       ),
                                     );
@@ -193,7 +190,7 @@ class HeroHealthCard extends StatelessWidget {
                             onPressed: onAction,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.white,
-                              foregroundColor: const Color(0xFF2E7D32),
+                              foregroundColor: AppColors.primary,
                               elevation: 0,
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 16,
@@ -232,7 +229,7 @@ class HeroHealthCard extends StatelessWidget {
                         onPressed: onAction,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.white,
-                          foregroundColor: const Color(0xFF2E7D32),
+                          foregroundColor: AppColors.primary,
                           elevation: 0,
                           padding: const EdgeInsets.symmetric(
                             horizontal: 18,

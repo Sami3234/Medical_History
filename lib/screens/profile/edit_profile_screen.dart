@@ -249,7 +249,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         height: 110,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: const Color(0xFFDEF2D7),
+                          color: const Color(0xFFD7EFE3),
                           border: Border.all(color: Colors.white, width: 4),
                           boxShadow: const [
                             BoxShadow(
@@ -282,7 +282,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                           style: const TextStyle(
                                             fontSize: 32,
                                             fontWeight: FontWeight.w800,
-                                            color: Color(0xFF235E1E),
+                                            color: AppColors.primaryDark,
                                           ),
                                         ),
                                       ),
@@ -293,7 +293,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                     style: const TextStyle(
                                       fontSize: 32,
                                       fontWeight: FontWeight.w800,
-                                      color: Color(0xFF235E1E),
+                                      color: AppColors.primaryDark,
                                     ),
                                   ),
                                 ),

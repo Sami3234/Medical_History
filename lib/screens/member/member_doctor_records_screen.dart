@@ -110,7 +110,7 @@ class _MemberDoctorRecordsScreenState extends State<MemberDoctorRecordsScreen> {
               margin: const EdgeInsets.fromLTRB(20, 14, 20, 10),
               padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
-                color: const Color(0xFFEAF3E7),
+                color: const Color(0xFFE6F4ED),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: TabBar(
@@ -293,7 +293,7 @@ class _MemberDoctorRecordsScreenState extends State<MemberDoctorRecordsScreen> {
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: const Color(0xFFEAF7E5),
+                color: const Color(0xFFE6F4ED),
                 borderRadius: BorderRadius.circular(13),
               ),
               child: const Icon(
@@ -384,7 +384,7 @@ class _MemberDoctorRecordsScreenState extends State<MemberDoctorRecordsScreen> {
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: const Color(0xFFEAF7E5),
+              color: const Color(0xFFE6F4ED),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(_fileIcon(document.fileType), color: AppColors.primary),

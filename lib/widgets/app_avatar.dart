@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import '../config/theme.dart';
 import '../services/avatar_cache_service.dart';
 
 class AppAvatar extends StatelessWidget {
@@ -41,8 +42,8 @@ class AppAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final double computedFontSize = fontSize ?? (size * 0.38).clamp(10.0, 26.0);
-    final bg = backgroundColor ?? const Color(0xFFDEF2D7);
-    final fg = textColor ?? const Color(0xFF235E1E);
+    final bg = backgroundColor ?? const Color(0xFFD7EFE3);
+    final fg = textColor ?? AppColors.primaryDark;
 
     Widget avatarContent;
 

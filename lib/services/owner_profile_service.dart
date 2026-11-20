@@ -1,20 +1,44 @@
+import '../config/constants.dart';
 import '../config/supabase_config.dart';
 import '../models/member_model.dart';
+import 'offline_data_service.dart';
 
 class OwnerProfileService {
-  Future<MemberModel?> getOwnerMember(String userId) async {
-    final db = SupabaseConfig.db;
-    if (!SupabaseConfig.isInitialized || db == null) return null;
+  static String? verifiedOwnerUserId;
+  static bool homePrefetchFinished = false;
 
-    final row = await db
-        .from('members')
-        .select('*, families!inner(user_id)')
-        .eq('families.user_id', userId)
-        .ilike('relation', 'self')
-        .order('created_at')
-        .limit(1)
-        .maybeSingle();
-    return row == null ? null : MemberModel.fromMap(row);
+  Future<MemberModel?> getOwnerMember(String userId) async {
+    // 1. Instant cached owner check
+    final cached = OfflineDataService.getOwner(userId);
+    if (cached != null) {
+      verifiedOwnerUserId = userId;
+    }
+
+    final db = SupabaseConfig.db;
+    if (!SupabaseConfig.isInitialized || db == null) return cached;
+
+    try {
+      final row = await db
+          .from('members')
+          .select('*, families!inner(user_id)')
+          .eq('families.user_id', userId)
+          .ilike('relation', 'self')
+          .order('created_at')
+          .limit(1)
+          .maybeSingle()
+          .timeout(AppNetwork.quickTimeout);
+
+      if (row != null) {
+        final member = MemberModel.fromMap(row);
+        await OfflineDataService.saveOwner(userId, member);
+        verifiedOwnerUserId = userId;
+        return member;
+      }
+      return cached;
+    } catch (_) {
+      // In case of timeout or offline, return cached owner
+      return cached;
+    }
   }
 
   bool isComplete(MemberModel? member) {
@@ -97,6 +121,9 @@ class OwnerProfileService {
         })
         .eq('id', userId);
 
-    return MemberModel.fromMap(row);
+    final member = MemberModel.fromMap(row);
+    verifiedOwnerUserId = userId;
+    await OfflineDataService.saveOwner(userId, member);
+    return member;
   }
 }

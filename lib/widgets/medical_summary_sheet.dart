@@ -526,7 +526,7 @@ class MedicalSummarySheet extends StatelessWidget {
                 size: 16,
                 color: hasAllergy
                     ? const Color(0xFFDC2626)
-                    : const Color(0xFF16A34A),
+                    : AppColors.primaryDark,
               ),
               const SizedBox(width: 6),
               Text(
@@ -536,7 +536,7 @@ class MedicalSummarySheet extends StatelessWidget {
                   fontWeight: FontWeight.w700,
                   color: hasAllergy
                       ? const Color(0xFF991B1B)
-                      : const Color(0xFF15803D),
+                      : AppColors.primaryDark,
                 ),
               ),
             ],

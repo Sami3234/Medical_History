@@ -1,3 +1,4 @@
+import '../config/constants.dart';
 import '../config/supabase_config.dart';
 import '../models/family_model.dart';
 
@@ -8,7 +9,8 @@ class FamilyService {
           .from('families')
           .select()
           .eq('user_id', userId)
-          .order('created_at', ascending: false);
+          .order('created_at', ascending: false)
+          .timeout(AppNetwork.dataTimeout);
       return data.map((e) => FamilyModel.fromMap(e)).toList();
     }
     return [];

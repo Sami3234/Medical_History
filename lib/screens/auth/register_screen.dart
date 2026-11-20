@@ -6,6 +6,7 @@ import '../../config/routes.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/info_banner.dart';
 import '../../utils/extensions.dart';
+import '../../widgets/app_logo.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -93,6 +94,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: 12),
+                const AppLogo(size: 48, borderRadius: 14),
+                const SizedBox(height: 18),
                 Text(
                   'START YOUR HEALTH SPACE',
                   style: TextStyle(

@@ -67,21 +67,21 @@ class _ForgotScreenState extends State<ForgotScreen> {
                   width: 170,
                   height: 170,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFEFF8EC),
+                    color: const Color(0xFFE6F4ED),
                     borderRadius: BorderRadius.circular(44),
                   ),
                   alignment: Alignment.center,
                   child: Container(
                     width: 110,
                     height: 110,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFDEF2D7),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFD7EFE3),
                       shape: BoxShape.circle,
                     ),
                     alignment: Alignment.center,
                     child: const Icon(
                       Icons.lock_outline_rounded,
-                      color: Color(0xFF38931F),
+                      color: AppColors.primaryDark,
                       size: 44,
                     ),
                   ),

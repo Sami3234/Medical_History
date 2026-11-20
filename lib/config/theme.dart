@@ -2,49 +2,65 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AppColors {
-  // Primary Green Palette (Refined from Design Screenshots)
-  static const primary = Color(0xFF3FA722);
-  static const primaryLight = Color(0xFF6EC632);
-  static const primaryDark = Color(0xFF246D16);
-  static const accent = Color(0xFF88D84C);
+  // Primary Medical Green Palette (Derived from Figma "Jai Medical History")
+  static const primary = Color(0xFF4FA023);
+  static const primaryLight = Color(0xFF74C43B);
+  static const primaryDark = Color(0xFF388E18);
+  static const accent = Color(0xFFB9EB80);
 
-  // Hero Card Gradient
+  // Ambient Aurora Glows (From Starting Screen)
+  static const glowLime = Color(0xFFC5F2A0);
+  static const glowLeaf = Color(0xFF88D84C);
+  static const glowMint = Color(0xFFB9EB80);
+
+  // Same greens as the splash screen, used on headers and cards.
   static const heroGradient = LinearGradient(
-    colors: [Color(0xFF3DA31C), Color(0xFF6EC632)],
+    colors: [primaryDark, primary, primaryLight],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
 
   static const heroSubtleGradient = LinearGradient(
-    colors: [Color(0xFFEBF6E7), Color(0xFFF4FAF1)],
+    colors: [Color(0xFFEBF7E4), Color(0xFFF6F9F2)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
 
-  // Backgrounds
-  static const bg = Color(0xFFF7FAF6);
+  // Backgrounds — Clean, modern, warm-mint medical palette from Figma
+  static const bg = Color(0xFFF6F9F2);
   static const card = Color(0xFFFFFFFF);
-  static const surface = Color(0xFFEAF5E7);
-  static const chipBg = Color(0xFFE2F2D9);
-  static const chipText = Color(0xFF235E1E);
+  static const surface = Color(0xFFEBF7E4);
+  static const chipBg = Color(0xFFD8EEB8);
+  static const chipText = Color(0xFF2C6B14);
 
-  // Text
-  static const textDark = Color(0xFF0F3521);
-  static const textMid = Color(0xFF4C6656);
-  static const textLight = Color(0xFF8B9E92);
-  static const textPrimary = Color(0xFF0F3521);
-  static const textSecondary = Color(0xFF4C6656);
+  // Full-screen gradient from the starting screen.
+  static const pageGradient = LinearGradient(
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+    colors: [primaryDark, primary, primaryLight],
+  );
+
+  // Glass colors & specular borders
+  static const glassBorder = Color(0x66FFFFFF);
+  static const glassBorderDark = Color(0x22FFFFFF);
+
+  // Text — Exact Figma Typography Tones
+  static const textDark = Color(0xFF173722);
+  static const textMid = Color(0xFF4A6652);
+  static const textLight = Color(0xFF7A8E7B);
+  static const textPrimary = Color(0xFF173722);
+  static const textSecondary = Color(0xFF7A8E7B);
 
   // Status
-  static const success = Color(0xFF388E3C);
+  static const success = Color(0xFF4FA023);
   static const warning = Color(0xFFFFA000);
   static const error = Color(0xFFE53935);
   static const info = Color(0xFF1E88E5);
 
   // Borders & Shadows
-  static const divider = Color(0xFFE5EDE3);
-  static const border = Color(0xFFE8EFE6);
-  static const shadow = Color(0x0C0E2818);
+  static const divider = Color(0xFFE5EDE4);
+  static const border = Color(0xFFDFEAE0);
+  static const shadow = Color(0x0C173722);
 }
 
 extension AppThemeContext on BuildContext {
@@ -157,12 +173,12 @@ class AppTheme {
 
   static ThemeData get dark {
     const colorScheme = ColorScheme.dark(
-      primary: Color(0xFF7BD957),
-      onPrimary: Color(0xFF0B2A12),
-      primaryContainer: Color(0xFF214A29),
-      onPrimaryContainer: Color(0xFFC5F5B4),
-      secondary: Color(0xFF9AD77C),
-      onSecondary: Color(0xFF12321A),
+      primary: Color(0xFF2EB872),
+      onPrimary: Color(0xFF042F1A),
+      primaryContainer: Color(0xFF104E31),
+      onPrimaryContainer: Color(0xFFB4F3D2),
+      secondary: Color(0xFF38B26C),
+      onSecondary: Color(0xFF052F1A),
       surface: Color(0xFF17231B),
       onSurface: Color(0xFFE8F3EA),
       surfaceContainerLowest: Color(0xFF0D1510),

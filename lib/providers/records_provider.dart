@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../config/constants.dart';
 import '../config/supabase_config.dart';
 import '../models/appointment_model.dart';
 import '../models/med_file_model.dart';
@@ -48,13 +49,18 @@ class RecordsProvider extends ChangeNotifier {
       _files = await _localDocuments.loadDocuments();
       _drafts = await _localDocuments.loadDrafts();
       if (SupabaseConfig.isInitialized && SupabaseConfig.db != null) {
-        final data = await SupabaseConfig.db!
-            .from('appointments')
-            .select('*, members(name)')
-            .order('appointment_time');
-        _appointments = data
-            .map((item) => AppointmentModel.fromMap(item))
-            .toList();
+        try {
+          final data = await SupabaseConfig.db!
+              .from('appointments')
+              .select('*, members(name)')
+              .order('appointment_time')
+              .timeout(AppNetwork.quickTimeout);
+          _appointments = (data as List)
+              .map((item) => AppointmentModel.fromMap(item))
+              .toList();
+        } catch (_) {
+          // Keep existing appointments or empty on slow network
+        }
       } else {
         _appointments = [];
       }

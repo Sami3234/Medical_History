@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../config/supabase_config.dart';
 import '../models/doctor_model.dart';
 import '../services/doctor_service.dart';
+import '../services/offline_data_service.dart';
 
 class DoctorProvider extends ChangeNotifier {
   final _service = DoctorService();
@@ -26,13 +27,27 @@ class DoctorProvider extends ChangeNotifier {
   }
 
   Future<bool> loadDoctors(String userId) async {
-    _setLoading(true);
+    // 1. Instant cache load (0ms)
+    final cached = OfflineDataService.getDoctors(userId);
+    if (cached.isNotEmpty) {
+      _doctors = List.from(cached);
+      notifyListeners();
+    } else {
+      _setLoading(true);
+    }
     _error = null;
+
+    // 2. Background revalidation
     try {
-      _doctors = await _service.getAll(userId);
+      final fresh = await _service.getAll(userId);
+      _doctors = fresh;
+      await OfflineDataService.saveDoctors(userId, fresh);
+      notifyListeners();
       return true;
     } catch (e) {
-      _error = _friendlyError(e);
+      if (_doctors.isEmpty) {
+        _error = _friendlyError(e);
+      }
       return false;
     } finally {
       _setLoading(false);
@@ -48,6 +63,7 @@ class DoctorProvider extends ChangeNotifier {
       data['user_id'] = uid;
       await _service.create(data);
       _doctors = await _service.getAll(uid);
+      await OfflineDataService.saveDoctors(uid, _doctors);
       return true;
     } catch (e) {
       _error = _friendlyError(e);
@@ -65,6 +81,7 @@ class DoctorProvider extends ChangeNotifier {
       final uid = SupabaseConfig.currentUserId;
       if (uid == null) throw StateError('Sign in is required.');
       _doctors = await _service.getAll(uid);
+      await OfflineDataService.saveDoctors(uid, _doctors);
       return true;
     } catch (e) {
       _error = _friendlyError(e);
@@ -79,6 +96,10 @@ class DoctorProvider extends ChangeNotifier {
     try {
       await _service.delete(id);
       _doctors.removeWhere((d) => d.id == id);
+      final uid = SupabaseConfig.currentUserId;
+      if (uid != null) {
+        await OfflineDataService.saveDoctors(uid, _doctors);
+      }
       notifyListeners();
       return true;
     } catch (e) {
@@ -96,8 +117,10 @@ class DoctorProvider extends ChangeNotifier {
 
   String _friendlyError(Object e) {
     final msg = e.toString();
-    if (msg.contains('network') || msg.contains('SocketException')) {
-      return 'Network error. Please check your connection.';
+    if (msg.contains('TimeoutException') ||
+        msg.contains('network') ||
+        msg.contains('SocketException')) {
+      return 'Network is slow. Check your connection and try again.';
     }
     if (msg.contains('permission') || msg.contains('403')) {
       return 'Permission denied. Please log in again.';

@@ -369,7 +369,7 @@ class _VisitFormScreenState extends State<VisitFormScreen> {
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w800,
-                            color: Color(0xFF235E1E),
+                            color: AppColors.primaryDark,
                           ),
                         ),
                       ),
@@ -654,7 +654,7 @@ class _VisitFormScreenState extends State<VisitFormScreen> {
                       children: [
                         const Icon(
                           Icons.add_rounded,
-                          color: Color(0xFF2E7D32),
+                          color: AppColors.primaryDark,
                           size: 20,
                         ),
                         const SizedBox(width: 6),
@@ -663,7 +663,7 @@ class _VisitFormScreenState extends State<VisitFormScreen> {
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w700,
-                            color: Color(0xFF2E7D32),
+                            color: AppColors.primaryDark,
                           ),
                         ),
                       ],

@@ -137,15 +137,32 @@ class _VisitListScreenState extends State<VisitListScreen> {
                     const SizedBox(height: 18),
                     TextField(
                       onChanged: (value) => setState(() => _query = value),
+                      style: const TextStyle(color: AppColors.textDark, fontSize: 14),
                       decoration: InputDecoration(
                         hintText: 'Search doctor, member, diagnosis...',
-                        prefixIcon: const Icon(Icons.search_rounded),
+                        hintStyle: const TextStyle(color: AppColors.textLight, fontSize: 14),
+                        prefixIcon: const Icon(Icons.search_rounded, color: AppColors.textLight),
                         suffixIcon: _query.isEmpty
                             ? null
                             : IconButton(
                                 onPressed: () => setState(() => _query = ''),
-                                icon: const Icon(Icons.clear_rounded),
+                                icon: const Icon(Icons.clear_rounded, color: AppColors.textLight),
                               ),
+                        filled: true,
+                        fillColor: Colors.white,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(20),
+                          borderSide: const BorderSide(color: AppColors.border, width: 1.2),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(20),
+                          borderSide: const BorderSide(color: AppColors.border, width: 1.2),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(20),
+                          borderSide: const BorderSide(color: AppColors.primary, width: 1.8),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 14),
@@ -267,7 +284,7 @@ class _VisitListScreenState extends State<VisitListScreen> {
       child: Row(
         children: [
           const CircleAvatar(
-            backgroundColor: Color(0xFFEFF8EC),
+            backgroundColor: Color(0xFFE6F4ED),
             child: Icon(
               Icons.medical_information_outlined,
               color: AppColors.primary,

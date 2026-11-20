@@ -1,3 +1,11 @@
+class AppAssets {
+  static const logo = 'assets/images/logo.png';
+  static const logoSvg = 'assets/images/logo.svg';
+  static const logoTransparent = 'assets/images/logo_transparent.svg';
+  static const icon192 = 'assets/icons/android-chrome-192x192.png';
+  static const icon512 = 'assets/icons/android-chrome-512x512.png';
+}
+
 class AppStrings {
   static const appName = 'Medical History';
   static const appTagline = 'Your Family\'s Health Companion';
@@ -36,6 +44,25 @@ class AppStrings {
     defaultValue:
         '1037238815678-pc1p6sbs2rtr91pj59j1jk3g8jq39gq0.apps.googleusercontent.com',
   );
+  static const temporaryShareApiUrl = String.fromEnvironment(
+    'TEMP_SHARE_API_URL',
+    defaultValue:
+        'https://medical-history-temporary-share.kk34samikhan.workers.dev',
+  );
+}
+
+class AppNetwork {
+  /// Slow connections stop waiting here instead of spinning for minutes.
+  static const dataTimeout = Duration(seconds: 4);
+
+  /// Quick timeout for responsive UI prefetching & non-blocking revalidation.
+  static const quickTimeout = Duration(seconds: 3);
+
+  /// Maximum time the splash screen is allowed to hold before opening dashboard.
+  static const maxSplashTimeout = Duration(milliseconds: 3200);
+
+  /// Minimum time the splash screen displays its opening animation.
+  static const minSplashDuration = Duration(milliseconds: 2200);
 }
 
 class AppKeys {

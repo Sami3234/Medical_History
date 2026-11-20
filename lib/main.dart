@@ -12,6 +12,7 @@ import 'providers/records_provider.dart';
 import 'providers/backup_provider.dart';
 
 import 'services/avatar_cache_service.dart';
+import 'services/offline_data_service.dart';
 import 'services/notification_service.dart';
 import 'services/native_document_service.dart';
 
@@ -22,6 +23,7 @@ import 'providers/notification_inbox_provider.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await SupabaseConfig.init();
+  await OfflineDataService.init();
   await AvatarMemoryCache.initPersisted();
   await NotificationService.initialize();
   try {

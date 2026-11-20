@@ -520,7 +520,7 @@ class _MemberFormScreenState extends State<MemberFormScreen> {
                                       width: 68,
                                       height: 68,
                                       decoration: BoxDecoration(
-                                        color: const Color(0xFFDEF2D7),
+                                        color: const Color(0xFFD7EFE3),
                                         shape: BoxShape.circle,
                                         border: Border.all(
                                           color: AppColors.primary,
@@ -540,7 +540,7 @@ class _MemberFormScreenState extends State<MemberFormScreen> {
                                             )
                                           : const Icon(
                                               Icons.camera_alt_rounded,
-                                              color: Color(0xFF235E1E),
+                                              color: AppColors.primaryDark,
                                               size: 28,
                                             ),
                                     ),

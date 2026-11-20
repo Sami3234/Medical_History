@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../config/theme.dart';
 import '../../utils/extensions.dart';
 import '../../providers/theme_provider.dart';
+import '../../widgets/app_logo.dart';
 
 class AppPreferencesScreen extends StatefulWidget {
   const AppPreferencesScreen({super.key});
@@ -355,17 +356,9 @@ class _AppPreferencesScreenState extends State<AppPreferencesScreen> {
               Center(
                 child: Column(
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withAlpha(20),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.favorite_rounded,
-                        color: AppColors.primary,
-                        size: 22,
-                      ),
+                    const AppLogo(
+                      size: 48,
+                      borderRadius: 14,
                     ),
                     const SizedBox(height: 8),
                     Text(

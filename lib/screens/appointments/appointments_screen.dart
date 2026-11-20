@@ -444,21 +444,37 @@ class _AppointmentsHeader extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF176F43), Color(0xFF2FAE45), Color(0xFF67C93C)],
+          colors: [
+            Color(0xFF267310),
+            Color(0xFF388E18),
+            Color(0xFF4FA023),
+          ],
         ),
         borderRadius: BorderRadius.vertical(bottom: Radius.circular(30)),
       ),
       child: Stack(
         children: [
           Positioned(
-            right: -24,
-            top: -35,
+            right: -30,
+            top: -30,
             child: Container(
-              width: 150,
-              height: 150,
+              width: 170,
+              height: 170,
               decoration: BoxDecoration(
-                color: Colors.white.withAlpha(22),
                 shape: BoxShape.circle,
+                color: Colors.white.withValues(alpha: 0.08),
+              ),
+            ),
+          ),
+          Positioned(
+            left: -35,
+            bottom: -35,
+            child: Container(
+              width: 140,
+              height: 140,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withValues(alpha: 0.05),
               ),
             ),
           ),

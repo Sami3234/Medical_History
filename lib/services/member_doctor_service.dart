@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import '../config/constants.dart';
 import '../config/supabase_config.dart';
 import '../models/doctor_model.dart';
 
@@ -14,7 +17,8 @@ class MemberDoctorService {
           .from('member_doctors')
           .select('member_id, created_at, doctors(*)')
           .inFilter('member_id', memberIds)
-          .order('created_at', ascending: false);
+          .order('created_at', ascending: false)
+          .timeout(AppNetwork.quickTimeout);
       final result = <String, List<DoctorModel>>{};
       for (final row in rows) {
         final memberId = row['member_id'] as String;
@@ -26,6 +30,8 @@ class MemberDoctorService {
         }
       }
       return result;
+    } on TimeoutException {
+      return {};
     } catch (_) {
       final entries = await Future.wait(
         memberIds.map((memberId) async {
@@ -44,7 +50,8 @@ class MemberDoctorService {
         .from('member_doctors')
         .select('created_at, doctors(*)')
         .eq('member_id', memberId)
-        .order('created_at', ascending: false);
+        .order('created_at', ascending: false)
+        .timeout(AppNetwork.dataTimeout);
     return rows
         .map(
           (row) => DoctorModel.fromMap(

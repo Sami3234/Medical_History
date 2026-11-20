@@ -310,7 +310,7 @@ class _FamilyDetailScreenState extends State<FamilyDetailScreen> {
                               style: const TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w800,
-                                color: Color(0xFF235E1E),
+                                color: AppColors.primaryDark,
                               ),
                             ),
                           ),

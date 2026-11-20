@@ -1,3 +1,4 @@
+import '../config/constants.dart';
 import '../config/supabase_config.dart';
 import '../models/doctor_model.dart';
 
@@ -8,7 +9,8 @@ class DoctorService {
           .from('doctors')
           .select()
           .eq('user_id', userId)
-          .order('name');
+          .order('name')
+          .timeout(AppNetwork.dataTimeout);
       return data.map((e) => DoctorModel.fromMap(e)).toList();
     }
     return [];

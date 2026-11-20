@@ -79,3 +79,22 @@ flutter test
 cd admin_panel
 npm run build
 ```
+
+## Temporary medical sharing
+
+Supabase remains the primary authentication and application-data backend.
+Temporary doctor access uses a separate Cloudflare Worker and private R2 bucket:
+
+- Selected records are encrypted on the device with AES-256-GCM.
+- A random temporary ID plus six-digit passcode grants read-only access.
+- Access expires after 15 minutes and can be revoked earlier by the owner.
+- Each file is fetched only when the viewer opens it.
+- The selected files are limited to 100 MB total and 25 MB per file.
+- The R2 bucket must remain private; no R2 credentials are shipped in Flutter.
+
+Deployment instructions are in
+cloudflare/temporary_share_worker/README.md. Pass the deployed endpoint with:
+
+    --dart-define=TEMP_SHARE_API_URL=https://YOUR-WORKER.workers.dev
+
+The existing Supabase schema and application CRUD flows are unchanged.

@@ -269,34 +269,32 @@ class _DocsScreenState extends State<DocsScreen> {
               const SizedBox(height: 20),
 
               // Search Bar
-              Container(
-                height: 52,
-                decoration: BoxDecoration(
-                  color: context.appSurface,
-                  borderRadius: BorderRadius.circular(18),
-                  border: Border.all(color: context.appBorder, width: 1.2),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.shadow,
-                      blurRadius: 6,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: TextField(
-                  controller: _searchCtrl,
-                  onChanged: (v) => setState(() => _query = v),
-                  decoration: const InputDecoration(
-                    hintText: 'Search prescriptions or reports...',
-                    prefixIcon: Icon(
-                      Icons.search_rounded,
-                      color: AppColors.textLight,
-                      size: 22,
-                    ),
-                    border: InputBorder.none,
-                    enabledBorder: InputBorder.none,
-                    focusedBorder: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(vertical: 14),
+              TextField(
+                controller: _searchCtrl,
+                onChanged: (v) => setState(() => _query = v),
+                style: const TextStyle(color: AppColors.textDark, fontSize: 14),
+                decoration: InputDecoration(
+                  hintText: 'Search prescriptions or reports...',
+                  hintStyle: const TextStyle(color: AppColors.textLight, fontSize: 14),
+                  prefixIcon: const Icon(
+                    Icons.search_rounded,
+                    color: AppColors.textLight,
+                    size: 22,
+                  ),
+                  filled: true,
+                  fillColor: context.appSurface,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(20),
+                    borderSide: BorderSide(color: context.appBorder, width: 1.2),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(20),
+                    borderSide: BorderSide(color: context.appBorder, width: 1.2),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(20),
+                    borderSide: const BorderSide(color: AppColors.primary, width: 1.8),
                   ),
                 ),
               ),
@@ -462,7 +460,7 @@ class _DocsScreenState extends State<DocsScreen> {
                             width: 54,
                             height: 54,
                             decoration: const BoxDecoration(
-                              color: Color(0xFFEFF8EC),
+                              color: Color(0xFFE6F4ED),
                               borderRadius: BorderRadius.all(
                                 Radius.circular(16),
                               ),
@@ -471,7 +469,7 @@ class _DocsScreenState extends State<DocsScreen> {
                               isHeartIcon
                                   ? Icons.favorite_border_rounded
                                   : Icons.description_outlined,
-                              color: const Color(0xFF38931F),
+                              color: AppColors.primaryDark,
                               size: 26,
                             ),
                           ),
@@ -506,7 +504,7 @@ class _DocsScreenState extends State<DocsScreen> {
                                   style: const TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.w600,
-                                    color: Color(0xFF2E7D32),
+                                    color: AppColors.primary,
                                   ),
                                 ),
                               ],
@@ -578,10 +576,10 @@ class _DocsScreenState extends State<DocsScreen> {
         duration: const Duration(milliseconds: 150),
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF287D1F) : context.appSurface,
+          color: isSelected ? AppColors.primaryDark : context.appSurface,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isSelected ? const Color(0xFF287D1F) : context.appBorder,
+            color: isSelected ? AppColors.primaryDark : context.appBorder,
             width: 1.2,
           ),
           boxShadow: [

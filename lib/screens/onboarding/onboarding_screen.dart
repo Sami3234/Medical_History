@@ -1,8 +1,11 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../config/theme.dart';
 import '../../config/routes.dart';
+import '../../widgets/app_logo.dart';
+import '../../widgets/glass_container.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -258,12 +261,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           Row(
             children: [
               Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(14),
-                  boxShadow: const [
+                decoration: const BoxDecoration(
+                  borderRadius: BorderRadius.all(Radius.circular(14)),
+                  boxShadow: [
                     BoxShadow(
                       color: Color(0x220F3521),
                       blurRadius: 16,
@@ -271,11 +271,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     ),
                   ],
                 ),
-                child: const Icon(
-                  Icons.favorite_rounded,
-                  color: AppColors.primary,
-                  size: 22,
-                ),
+                child: const AppLogo(size: 42, borderRadius: 14),
               ),
               const SizedBox(width: 11),
               const Column(
@@ -303,23 +299,29 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             ],
           ),
           if (!isLastPage)
-            TextButton(
-              onPressed: _completeOnboarding,
-              style: TextButton.styleFrom(
-                foregroundColor: Colors.white,
-                backgroundColor: Colors.white.withAlpha(28),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 9,
+            ClipRRect(
+              borderRadius: BorderRadius.circular(14),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                child: TextButton(
+                  onPressed: _completeOnboarding,
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    backgroundColor: Colors.white.withAlpha(36),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 9,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      side: BorderSide(color: Colors.white.withOpacity(0.35)),
+                    ),
+                  ),
+                  child: const Text(
+                    'Skip',
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+                  ),
                 ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  side: BorderSide(color: Colors.white.withAlpha(42)),
-                ),
-              ),
-              child: const Text(
-                'Skip',
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
               ),
             )
           else
@@ -338,156 +340,184 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           child: ConstrainedBox(
             constraints: BoxConstraints(minHeight: constraints.maxHeight - 14),
             child: Center(
-              child: Container(
-                width: double.infinity,
-                constraints: const BoxConstraints(maxWidth: 520),
-                padding: EdgeInsets.fromLTRB(
-                  compact ? 20 : 28,
-                  compact ? 20 : 28,
-                  compact ? 20 : 28,
-                  compact ? 18 : 24,
-                ),
-                decoration: BoxDecoration(
-                  color: context.isDarkMode
-                      ? context.appSurface.withAlpha(246)
-                      : Colors.white.withAlpha(246),
-                  borderRadius: BorderRadius.circular(30),
-                  border: Border.all(
-                    color: context.isDarkMode
-                        ? context.appBorder
-                        : Colors.white.withAlpha(170),
-                  ),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Color(0x300F3521),
-                      blurRadius: 28,
-                      offset: Offset(0, 14),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(32),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+                  child: Container(
+                    width: double.infinity,
+                    constraints: const BoxConstraints(maxWidth: 520),
+                    padding: EdgeInsets.fromLTRB(
+                      compact ? 20 : 28,
+                      compact ? 20 : 28,
+                      compact ? 20 : 28,
+                      compact ? 18 : 24,
                     ),
-                  ],
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 11,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.surface,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            page.badge,
-                            style: const TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w800,
-                              color: AppColors.primaryDark,
-                              letterSpacing: 0.65,
-                            ),
-                          ),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          Colors.white.withOpacity(0.92),
+                          const Color(0xFFEFF8F3).withOpacity(0.84),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(32),
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.95),
+                        width: 1.6,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF042F1C).withOpacity(0.24),
+                          blurRadius: 36,
+                          offset: const Offset(0, 16),
                         ),
-                        Text(
-                          '0${index + 1} / 0${_pages.length}',
-                          style: const TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textLight,
-                            letterSpacing: 0.5,
-                          ),
+                        BoxShadow(
+                          color: const Color(0xFF1A8E60).withOpacity(0.12),
+                          blurRadius: 16,
+                          offset: const Offset(0, 4),
                         ),
                       ],
                     ),
-                    SizedBox(height: compact ? 16 : 24),
-                    Container(
-                      width: compact ? 82 : 102,
-                      height: compact ? 82 : 102,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: const LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [Color(0xFFEAF7E5), Color(0xFFD5EFCB)],
-                        ),
-                        border: Border.all(color: Colors.white, width: 5),
-                        boxShadow: [
-                          BoxShadow(
-                            color: page.accentColor.withAlpha(45),
-                            blurRadius: 22,
-                            offset: const Offset(0, 9),
-                          ),
-                        ],
-                      ),
-                      child: Icon(
-                        page.icon,
-                        size: compact ? 40 : 48,
-                        color: page.accentColor,
-                      ),
-                    ),
-                    SizedBox(height: compact ? 16 : 22),
-                    Text(
-                      page.title,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: compact ? 21 : 25,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.textPrimary,
-                        height: 1.2,
-                        letterSpacing: -0.45,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      page.description,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: compact ? 12.5 : 13.5,
-                        height: 1.5,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                    SizedBox(height: compact ? 15 : 20),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      alignment: WrapAlignment.center,
-                      children: page.features.map((feature) {
-                        return Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 11,
-                            vertical: 7,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.bg,
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: AppColors.divider),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(
-                                Icons.check_circle_rounded,
-                                size: 15,
-                                color: AppColors.primary,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
                               ),
-                              const SizedBox(width: 6),
-                              Text(
-                                feature,
-                                style: const TextStyle(
-                                  fontSize: 11.5,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.textPrimary,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF4FA023).withOpacity(0.09),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: const Color(0xFF4FA023).withOpacity(0.20),
                                 ),
+                              ),
+                              child: Text(
+                                page.badge,
+                                style: const TextStyle(
+                                  fontSize: 10.5,
+                                  fontWeight: FontWeight.w800,
+                                  color: Color(0xFF2C6B14),
+                                  letterSpacing: 0.7,
+                                ),
+                              ),
+                            ),
+                            Text(
+                              '0${index + 1} / 0${_pages.length}',
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w700,
+                                color: const Color(0xFF4FA023).withOpacity(0.85),
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: compact ? 16 : 24),
+                        Container(
+                          width: compact ? 84 : 104,
+                          height: compact ? 84 : 104,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: const LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [Color(0xFF74C43B), Color(0xFF48AA22)],
+                            ),
+                            border: Border.all(color: Colors.white, width: 4.5),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFF4FA023).withOpacity(0.38),
+                                blurRadius: 26,
+                                offset: const Offset(0, 9),
                               ),
                             ],
                           ),
-                        );
-                      }).toList(),
+                          child: Icon(
+                            page.icon,
+                            size: compact ? 42 : 50,
+                            color: Colors.white,
+                          ),
+                        ),
+                        SizedBox(height: compact ? 16 : 22),
+                        Text(
+                          page.title,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: compact ? 21 : 25,
+                            fontWeight: FontWeight.w800,
+                            color: const Color(0xFF063523),
+                            height: 1.2,
+                            letterSpacing: -0.45,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          page.description,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: compact ? 12.5 : 13.5,
+                            height: 1.5,
+                            color: const Color(0xFF2C5240),
+                          ),
+                        ),
+                        SizedBox(height: compact ? 16 : 22),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          alignment: WrapAlignment.center,
+                          children: page.features.map((feature) {
+                            return Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.92),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: const Color(0xFF4FA023).withOpacity(0.35),
+                                  width: 1.1,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color(0xFF4FA023).withOpacity(0.08),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(
+                                    Icons.check_circle_rounded,
+                                    size: 16,
+                                    color: Color(0xFF4FA023),
+                                  ),
+                                  const SizedBox(width: 7),
+                                  Text(
+                                    feature,
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w700,
+                                      color: Color(0xFF2C6B14),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ),
             ),
@@ -503,71 +533,80 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            padding: const EdgeInsets.fromLTRB(16, 10, 10, 10),
-            decoration: BoxDecoration(
-              color: Colors.white.withAlpha(32),
-              borderRadius: BorderRadius.circular(22),
-              border: Border.all(color: Colors.white.withAlpha(48)),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: List.generate(_pages.length, (index) {
-                    final isActive = _currentPage == index;
-                    return GestureDetector(
-                      onTap: () => _pageController.animateToPage(
-                        index,
-                        duration: const Duration(milliseconds: 300),
-                        curve: Curves.easeInOutCubic,
-                      ),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 280),
-                        curve: Curves.easeOutCubic,
-                        margin: const EdgeInsets.only(right: 7),
-                        width: isActive ? 30 : 8,
-                        height: 8,
-                        decoration: BoxDecoration(
-                          color: isActive
-                              ? Colors.white
-                              : Colors.white.withAlpha(90),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                      ),
-                    );
-                  }),
-                ),
-                ElevatedButton(
-                  onPressed: _nextPage,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: AppColors.primaryDark,
-                    elevation: 0,
-                    padding: EdgeInsets.symmetric(
-                      horizontal: isLastPage ? 20 : 18,
-                      vertical: 13,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        isLastPage ? 'Get Started' : 'Next',
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      const SizedBox(width: 7),
-                      const Icon(Icons.arrow_forward_rounded, size: 18),
-                    ],
+          ClipRRect(
+            borderRadius: BorderRadius.circular(24),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+              child: Container(
+                padding: const EdgeInsets.fromLTRB(16, 10, 10, 10),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.18),
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(
+                    color: Colors.white.withOpacity(0.35),
+                    width: 1.2,
                   ),
                 ),
-              ],
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: List.generate(_pages.length, (index) {
+                        final isActive = _currentPage == index;
+                        return GestureDetector(
+                          onTap: () => _pageController.animateToPage(
+                            index,
+                            duration: const Duration(milliseconds: 300),
+                            curve: Curves.easeInOutCubic,
+                          ),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 280),
+                            curve: Curves.easeOutCubic,
+                            margin: const EdgeInsets.only(right: 7),
+                            width: isActive ? 30 : 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              color: isActive
+                                  ? Colors.white
+                                  : Colors.white.withOpacity(0.35),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                          ),
+                        );
+                      }),
+                    ),
+                    ElevatedButton(
+                      onPressed: _nextPage,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: AppColors.primary,
+                        elevation: 0,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: isLastPage ? 22 : 20,
+                          vertical: 13,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            isLastPage ? 'Get Started' : 'Next',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          const SizedBox(width: 7),
+                          const Icon(Icons.arrow_forward_rounded, size: 18),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
           SizedBox(height: compact ? 7 : 10),
@@ -607,41 +646,37 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     return Scaffold(
       backgroundColor: AppColors.primaryDark,
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              AppColors.primaryDark,
-              AppColors.primary,
-              AppColors.primaryLight,
-            ],
-          ),
-        ),
+        decoration: const BoxDecoration(gradient: AppColors.pageGradient),
         child: Stack(
           children: [
-            Positioned(
-              top: -95,
-              right: -70,
-              child: Container(
-                width: 250,
-                height: 250,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white.withAlpha(16),
-                ),
+            const Positioned(
+              top: -60,
+              right: -50,
+              child: AmbientBlurOrb(
+                size: 260,
+                color: Color(0xFFC5F2A0),
+                blur: 45,
+                opacity: 0.55,
               ),
             ),
-            Positioned(
-              bottom: 75,
-              left: -110,
-              child: Container(
-                width: 260,
-                height: 260,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: AppColors.primaryDark.withAlpha(32),
-                ),
+            const Positioned(
+              bottom: 120,
+              left: -70,
+              child: AmbientBlurOrb(
+                size: 240,
+                color: Color(0xFF90DC4B),
+                blur: 50,
+                opacity: 0.35,
+              ),
+            ),
+            const Positioned(
+              top: 240,
+              left: 20,
+              child: AmbientBlurOrb(
+                size: 150,
+                color: Color(0xFFC5F2A0),
+                blur: 40,
+                opacity: 0.25,
               ),
             ),
             SafeArea(

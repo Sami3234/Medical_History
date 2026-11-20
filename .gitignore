@@ -45,6 +45,7 @@ android/build/
 **/android/build/
 .gradle/
 **/.gradle/
+android/.kotlin/
 local.properties
 key.properties
 *.keystore
@@ -81,3 +82,8 @@ pnpm-debug.log*
 !.env.example
 !**/.env.example
 dart_defines.json
+
+# Cloudflare local configuration and state
+cloudflare/**/wrangler.toml
+cloudflare/**/.wrangler/
+cloudflare/**/.dev.vars

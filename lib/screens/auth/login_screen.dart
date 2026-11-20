@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
@@ -6,6 +7,8 @@ import '../../config/theme.dart';
 import '../../config/routes.dart';
 import '../../providers/auth_provider.dart';
 import '../../utils/extensions.dart';
+import '../../widgets/app_logo.dart';
+import '../../widgets/glass_container.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -94,28 +97,24 @@ class _LoginScreenState extends State<LoginScreen> {
             decoration: const BoxDecoration(gradient: AppColors.heroGradient),
             child: Stack(
               children: [
-                Positioned(
+                const Positioned(
                   right: -40,
                   top: -20,
-                  child: Container(
-                    width: 220,
-                    height: 220,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.white.withAlpha(35),
-                    ),
+                  child: AmbientBlurOrb(
+                    size: 240,
+                    color: Color(0xFFC5F2A0),
+                    blur: 35,
+                    opacity: 0.75,
                   ),
                 ),
-                Positioned(
+                const Positioned(
                   left: -30,
                   bottom: -30,
-                  child: Container(
-                    width: 140,
-                    height: 140,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.white.withAlpha(20),
-                    ),
+                  child: AmbientBlurOrb(
+                    size: 160,
+                    color: Color(0xFF88D84C),
+                    blur: 40,
+                    opacity: 0.45,
                   ),
                 ),
                 SafeArea(
@@ -131,24 +130,14 @@ class _LoginScreenState extends State<LoginScreen> {
                         // Logo Row
                         Row(
                           children: [
-                            Container(
-                              width: 48,
-                              height: 48,
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(14),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withAlpha(20),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 3),
-                                  ),
-                                ],
-                              ),
-                              child: const Icon(
-                                Icons.favorite_rounded,
-                                color: Color(0xFF3EA31B),
-                                size: 26,
+                            GlassContainer(
+                              blur: 20,
+                              opacity: 0.2,
+                              borderRadius: BorderRadius.circular(16),
+                              padding: const EdgeInsets.all(4),
+                              child: const AppLogo(
+                                size: 44,
+                                borderRadius: 12,
                               ),
                             ),
                             const SizedBox(width: 14),
@@ -205,7 +194,7 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ),
 
-          // Bottom White Sheet
+          // Bottom Clean Card / Sheet
           Align(
             alignment: Alignment.bottomCenter,
             child: Container(
@@ -216,10 +205,10 @@ class _LoginScreenState extends State<LoginScreen> {
                 borderRadius: const BorderRadius.vertical(
                   top: Radius.circular(32),
                 ),
-                boxShadow: [
+                boxShadow: const [
                   BoxShadow(
                     color: Color(0x18000000),
-                    blurRadius: 20,
+                    blurRadius: 24,
                     offset: Offset(0, -6),
                   ),
                 ],
@@ -464,7 +453,17 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 48,
+                        child: TextButton.icon(
+                          onPressed: () => context.push(AppRoutes.sharedMember),
+                          icon: const Icon(Icons.health_and_safety_outlined),
+                          label: const Text('View a shared medical record'),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [

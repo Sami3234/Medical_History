@@ -175,7 +175,7 @@ class _SearchScreenState extends State<SearchScreen> {
             member.emergencyContact,
           ].whereType<String>().join(' '),
           icon: Icons.person_outline_rounded,
-          color: const Color(0xFF29935F),
+          color: AppColors.primaryDark,
           route: '/members/${member.id}',
         ),
       );
@@ -474,12 +474,47 @@ class _SearchHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
+      clipBehavior: Clip.antiAlias,
       padding: const EdgeInsets.fromLTRB(12, 10, 16, 18),
       decoration: const BoxDecoration(
-        gradient: AppColors.heroGradient,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFF267310),
+            Color(0xFF388E18),
+            Color(0xFF4FA023),
+          ],
+        ),
         borderRadius: BorderRadius.vertical(bottom: Radius.circular(28)),
       ),
-      child: Row(
+      child: Stack(
+        children: [
+          Positioned(
+            right: -20,
+            top: -20,
+            child: Container(
+              width: 140,
+              height: 140,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withValues(alpha: 0.08),
+              ),
+            ),
+          ),
+          Positioned(
+            left: -20,
+            bottom: -20,
+            child: Container(
+              width: 120,
+              height: 120,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withValues(alpha: 0.05),
+              ),
+            ),
+          ),
+          Row(
         children: [
           IconButton(
             onPressed: onBack,
@@ -501,32 +536,35 @@ class _SearchHeader extends StatelessWidget {
               ),
               decoration: InputDecoration(
                 hintText: 'Search your complete health history',
-                hintStyle: TextStyle(color: Colors.blueGrey.shade400),
-                prefixIcon: const Icon(Icons.search_rounded),
+                hintStyle: const TextStyle(color: AppColors.textLight, fontSize: 14),
+                prefixIcon: const Icon(Icons.search_rounded, color: AppColors.textLight),
                 suffixIcon: query.isEmpty
                     ? null
                     : IconButton(
                         onPressed: onClear,
-                        icon: const Icon(Icons.close_rounded),
+                        icon: const Icon(Icons.close_rounded, color: AppColors.textLight),
                         tooltip: 'Clear search',
                       ),
                 filled: true,
-                fillColor: Colors.white.withAlpha(242),
+                fillColor: Colors.white,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(18),
+                  borderRadius: BorderRadius.circular(20),
                   borderSide: BorderSide.none,
                 ),
                 enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(18),
+                  borderRadius: BorderRadius.circular(20),
                   borderSide: BorderSide.none,
                 ),
                 focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(18),
-                  borderSide: const BorderSide(color: Colors.white, width: 1.5),
+                  borderRadius: BorderRadius.circular(20),
+                  borderSide: const BorderSide(color: Colors.white, width: 1.8),
                 ),
               ),
             ),
           ),
+        ],
+      ),
         ],
       ),
     );
@@ -621,7 +659,7 @@ class _SearchLanding extends StatelessWidget {
             (query) => ListTile(
               contentPadding: EdgeInsets.zero,
               leading: const CircleAvatar(
-                backgroundColor: Color(0xFFEAF5E7),
+                backgroundColor: Color(0xFFE6F4ED),
                 child: Icon(Icons.history_rounded, color: AppColors.primary),
               ),
               title: Text(
@@ -652,7 +690,7 @@ class _SearchLanding extends StatelessWidget {
               'Members',
               counts['Members'] ?? 0,
               Icons.groups_2_outlined,
-              const Color(0xFF29935F),
+              AppColors.primaryDark,
               onCategorySelected,
             ),
             _BrowseCard(

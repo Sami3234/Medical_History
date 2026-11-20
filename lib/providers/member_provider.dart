@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../config/supabase_config.dart';
 import '../models/member_model.dart';
 import '../services/member_service.dart';
+import '../services/offline_data_service.dart';
 
 class MemberProvider extends ChangeNotifier {
   final _service = MemberService();
@@ -40,13 +41,27 @@ class MemberProvider extends ChangeNotifier {
   }
 
   Future<bool> loadAll(String userId) async {
-    _setLoading(true);
+    // 1. Instant cache load (0ms)
+    final cached = OfflineDataService.getMembers(userId);
+    if (cached.isNotEmpty) {
+      _members = List.from(cached);
+      notifyListeners();
+    } else {
+      _setLoading(true);
+    }
     _error = null;
+
+    // 2. Background revalidation
     try {
-      _members = await _service.getAll(userId);
+      final fresh = await _service.getAll(userId);
+      _members = fresh;
+      await OfflineDataService.saveMembers(userId, fresh);
+      notifyListeners();
       return true;
     } catch (e) {
-      _error = _friendlyError(e);
+      if (_members.isEmpty) {
+        _error = _friendlyError(e);
+      }
       return false;
     } finally {
       _setLoading(false);
@@ -58,12 +73,14 @@ class MemberProvider extends ChangeNotifier {
     _error = null;
     try {
       final newMember = await _service.create(data);
-      // Ensure the member is in local list immediately
       _members.removeWhere((m) => m.id == newMember.id);
       _members.add(newMember);
 
       final uid = SupabaseConfig.currentUserId;
-      if (uid != null) _members = await _service.getAll(uid);
+      if (uid != null) {
+        _members = await _service.getAll(uid);
+        await OfflineDataService.saveMembers(uid, _members);
+      }
 
       notifyListeners();
       return true;
@@ -109,6 +126,10 @@ class MemberProvider extends ChangeNotifier {
           createdAt: old.createdAt,
         );
       }
+      final uid = SupabaseConfig.currentUserId;
+      if (uid != null) {
+        await OfflineDataService.saveMembers(uid, _members);
+      }
       notifyListeners();
       return true;
     } catch (e) {
@@ -131,6 +152,10 @@ class MemberProvider extends ChangeNotifier {
       }
       await _service.delete(id);
       _members.removeWhere((m) => m.id == id);
+      final uid = SupabaseConfig.currentUserId;
+      if (uid != null) {
+        await OfflineDataService.saveMembers(uid, _members);
+      }
       notifyListeners();
       return true;
     } catch (e) {
@@ -142,8 +167,10 @@ class MemberProvider extends ChangeNotifier {
 
   String _friendlyError(Object e) {
     final msg = e.toString();
-    if (msg.contains('network') || msg.contains('SocketException')) {
-      return 'Network error. Please check your connection.';
+    if (msg.contains('TimeoutException') ||
+        msg.contains('network') ||
+        msg.contains('SocketException')) {
+      return 'Network is slow. Check your connection and try again.';
     }
     if (msg.contains('permission') || msg.contains('403')) {
       return 'Permission denied. Please log in again.';

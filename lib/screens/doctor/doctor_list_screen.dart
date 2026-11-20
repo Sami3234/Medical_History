@@ -186,21 +186,37 @@ class _DoctorListScreenState extends State<DoctorListScreen> {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF176F43), Color(0xFF2FAE45), Color(0xFF67C93C)],
+          colors: [
+            Color(0xFF267310),
+            Color(0xFF388E18),
+            Color(0xFF4FA023),
+          ],
         ),
         borderRadius: BorderRadius.vertical(bottom: Radius.circular(30)),
       ),
       child: Stack(
         children: [
           Positioned(
-            right: -18,
-            top: -22,
+            right: -25,
+            top: -25,
             child: Container(
-              width: 160,
-              height: 160,
+              width: 170,
+              height: 170,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.white.withAlpha(24),
+                color: Colors.white.withValues(alpha: 0.08),
+              ),
+            ),
+          ),
+          Positioned(
+            left: -35,
+            bottom: -35,
+            child: Container(
+              width: 140,
+              height: 140,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withValues(alpha: 0.05),
               ),
             ),
           ),
@@ -284,17 +300,18 @@ class _DoctorListScreenState extends State<DoctorListScreen> {
                           icon: const Icon(Icons.close_rounded),
                         ),
                   filled: true,
-                  fillColor: Colors.white.withAlpha(235),
+                  fillColor: Colors.white,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(18),
+                    borderRadius: BorderRadius.circular(20),
                     borderSide: BorderSide.none,
                   ),
                   enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(18),
-                    borderSide: BorderSide(color: Colors.white.withAlpha(150)),
+                    borderRadius: BorderRadius.circular(20),
+                    borderSide: BorderSide.none,
                   ),
                   focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(18),
+                    borderRadius: BorderRadius.circular(20),
                     borderSide: const BorderSide(color: Colors.white, width: 2),
                   ),
                 ),
@@ -318,7 +335,7 @@ class _DoctorListScreenState extends State<DoctorListScreen> {
             icon: Icons.groups_2_outlined,
             value: '$total',
             label: 'Doctors',
-            color: const Color(0xFF2E7D32),
+            color: AppColors.primary,
           ),
         ),
         const SizedBox(width: 10),
@@ -668,9 +685,9 @@ class _DoctorListScreenState extends State<DoctorListScreen> {
       fontSize: size * 0.3,
       backgroundColor: featured
           ? Colors.white.withAlpha(225)
-          : const Color(0xFFE6F5E0),
+          : const Color(0xFFE2F3E9),
       border: Border.all(
-        color: featured ? Colors.white : const Color(0xFFCBE7C2),
+        color: featured ? Colors.white : const Color(0xFFBCE3CD),
         width: 1.5,
       ),
     );

@@ -54,9 +54,9 @@ enum FamilyGeneration {
   parents(
     level: 2,
     title: '2nd Gen • Parents & Core',
-    color: Color(0xFF16A34A),
-    bgColor: Color(0xFFF0FDF4),
-    borderColor: Color(0xFFBBF7D0),
+    color: AppColors.primaryDark,
+    bgColor: Color(0xFFE6F4ED),
+    borderColor: Color(0xFFC4E7D5),
   ),
   children(
     level: 3,
@@ -172,7 +172,7 @@ IconData getRelationIcon(String? relation) {
 
 Color getRelationBadgeColor(String? relation) {
   final rel = (relation ?? '').toLowerCase().trim();
-  if (rel == 'self') return const Color(0xFF16A34A);
+  if (rel == 'self') return AppColors.primaryDark;
   if (rel == 'spouse' || rel == 'wife' || rel == 'husband') {
     return const Color(0xFFE11D48);
   }
@@ -862,15 +862,11 @@ class _InteractiveTreeViewState extends State<InteractiveTreeView> {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF235E1E), Color(0xFF2E7D25)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        gradient: AppColors.heroGradient,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF235E1E).withAlpha(45),
+            color: AppColors.primaryDark.withAlpha(45),
             blurRadius: 8,
             offset: const Offset(0, 3),
           ),

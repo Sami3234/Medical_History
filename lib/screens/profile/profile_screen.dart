@@ -68,7 +68,7 @@ class ProfileScreen extends StatelessWidget {
                       avatarUrl: user?.avatarUrl,
                       size: 68,
                       border: Border.all(
-                        color: const Color(0xFF4ADE80),
+                        color: AppColors.primary,
                         width: 1.5,
                       ),
                     ),
@@ -100,8 +100,8 @@ class ProfileScreen extends StatelessWidget {
                                 context.push(AppRoutes.editProfile),
                             icon: const Icon(Icons.edit_rounded, size: 14),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFFEFF8EC),
-                              foregroundColor: const Color(0xFF2E7D32),
+                              backgroundColor: const Color(0xFFE6F4ED),
+                              foregroundColor: AppColors.primaryDark,
                               elevation: 0,
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 14,
@@ -200,8 +200,8 @@ class ProfileScreen extends StatelessWidget {
                     }
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFEFF8EC),
-                    foregroundColor: const Color(0xFF2E7D32),
+                    backgroundColor: const Color(0xFFE6F4ED),
+                    foregroundColor: AppColors.primaryDark,
                     elevation: 0,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
@@ -248,7 +248,7 @@ class ProfileScreen extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Icon(icon, color: const Color(0xFF2E7D32), size: 24),
+            Icon(icon, color: AppColors.primaryDark, size: 24),
             const SizedBox(width: 14),
             Expanded(
               child: Column(
